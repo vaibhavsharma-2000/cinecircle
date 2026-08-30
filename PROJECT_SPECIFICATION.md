@@ -76,3 +76,4 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 - **Frontend**: Next.js 15 (App Router, TypeScript, Tailwind CSS, `@usefragments/ui`, Lucide React icons)
 - **Database & Auth**: Supabase (Postgres Database, Row Level Security, Supabase Auth)
 - **External Data**: TMDB API v3 (Paginated Search & Discovery, Watch Providers, YouTube Trailers)
+- **Analytics & Observability**: `@vercel/analytics` integrated into Root Layout (`<Analytics />`) for privacy-friendly real-time audience metrics.
