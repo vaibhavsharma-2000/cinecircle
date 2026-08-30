@@ -149,6 +149,7 @@ export function GroupMatcherView({
                   id: item.tmdb_id,
                   title: item.title,
                   poster_path: item.poster_path,
+                  backdrop_path: null,
                   media_type: item.media_type,
                   release_date: item.release_year,
                   vote_average: item.rating_stars || 8.0,
