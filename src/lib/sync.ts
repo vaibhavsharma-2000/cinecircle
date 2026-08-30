@@ -302,3 +302,91 @@ export async function updateLiveWatchlistItem(
     return false;
   }
 }
+
+/**
+ * Realtime WebSocket Subscription: Listen for live recommendations across friends
+ */
+export function subscribeToRecommendations(
+  onInsert: (rec: Recommendation) => void,
+  onDelete: (id: string) => void
+) {
+  const channel = supabase
+    .channel("realtime_recommendations")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "recommendations" },
+      (payload) => {
+        const row = payload.new as any;
+        const rec: Recommendation = {
+          id: String(row.id),
+          sender_name: row.sender_name || "Friend",
+          sender_avatar: row.sender_avatar || "tony_stark",
+          recipient: row.recipient || "All Friends",
+          tmdb_id: row.tmdb_id,
+          media_type: (row.media_type as "movie" | "tv") || "movie",
+          title: row.title,
+          poster_path: row.poster_path,
+          backdrop_path: row.backdrop_path,
+          release_year: row.release_year || "2024",
+          genre: row.genre || "Featured",
+          rating_stars: Number(row.rating_stars) || 5.0,
+          note: row.note || "",
+          tags: Array.isArray(row.tags) ? row.tags : ["MustWatch"],
+          created_at: row.created_at,
+        };
+        onInsert(rec);
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "DELETE", schema: "public", table: "recommendations" },
+      (payload) => {
+        if (payload.old && payload.old.id) {
+          onDelete(String(payload.old.id));
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+/**
+ * Realtime WebSocket Subscription: Listen for live comments on a recommendation
+ */
+export function subscribeToComments(
+  recommendationId: string,
+  onInsert: (comment: any) => void
+) {
+  const channel = supabase
+    .channel(`realtime_comments_${recommendationId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "recommendation_comments",
+        filter: `recommendation_id=eq.${recommendationId}`,
+      },
+      (payload) => {
+        const row = payload.new as any;
+        onInsert({
+          id: String(row.id),
+          recommendation_id: row.recommendation_id,
+          tmdb_id: row.tmdb_id,
+          author_name: row.author_name,
+          author_avatar: row.author_avatar,
+          comment_text: row.comment_text,
+          created_at: row.created_at,
+        });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+

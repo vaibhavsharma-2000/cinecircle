@@ -12,6 +12,7 @@ import {
 } from "@/lib/tmdb";
 import { Star, X, Play, Plus, Check, Sparkles, Tv, Clock, Calendar } from "lucide-react";
 import { WatchlistItem, supabase } from "@/lib/supabase";
+import { subscribeToComments } from "@/lib/sync";
 
 interface MovieDetailModalProps {
   isOpen: boolean;
@@ -72,6 +73,21 @@ export function MovieDetailModal({
 
     fetchComments();
     setNewComment("");
+
+    // Realtime comment stream
+    const unsubscribe = subscribeToComments(recId, (newComm: any) => {
+      setComments((prev) => {
+        const alreadyExists = prev.some(
+          (c) => c.author === newComm.author_name && c.text === newComm.comment_text
+        );
+        if (alreadyExists) return prev;
+        return [...prev, { author: newComm.author_name, text: newComm.comment_text }];
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [isOpen, movieId, recommendationNote, recommendedBy]);
 
   const handleAddComment = async () => {

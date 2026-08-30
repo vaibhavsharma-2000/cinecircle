@@ -14,6 +14,7 @@ import { MovieDetailModal } from "@/components/MovieDetailModal";
 import { AuthModal } from "@/components/AuthModal";
 import { CookieConsentModal } from "@/components/CookieConsentModal";
 import { InstallPwaModal } from "@/components/InstallPwaModal";
+import { InviteModal } from "@/components/InviteModal";
 import { MovieItem } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem, FriendItem, supabase } from "@/lib/supabase";
 
@@ -35,6 +36,7 @@ import {
   addLiveWatchlistItem,
   removeLiveWatchlistItem,
   updateLiveWatchlistItem,
+  subscribeToRecommendations,
 } from "@/lib/sync";
 
 // Environment check: Staging / Dev uses mock data; Production starts completely clean
@@ -66,6 +68,8 @@ export default function Home() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [installPwaModalOpen, setInstallPwaModalOpen] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [invitedBy, setInvitedBy] = useState<string | null>(null);
 
   const [detailModal, setDetailModal] = useState<{
     isOpen: boolean;
@@ -131,8 +135,33 @@ export default function Home() {
     localStorage.setItem(`${STORAGE_PREFIX}watchlist`, JSON.stringify(watchlist));
   }, [watchlist]);
 
-  // Live Supabase Auth & Multi-User Data Synchronization
+  // Live Supabase Auth, Invite Handling, & Multi-User Data Synchronization
   useEffect(() => {
+    // Check for incoming friend invite query param (?invite=username)
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const inviteUser = urlParams.get("invite");
+      if (inviteUser && inviteUser.trim() !== "") {
+        const cleanInviter = inviteUser.trim().replace(/^@/, "");
+        setInvitedBy(cleanInviter);
+        setFriends((prev) => {
+          const exists = prev.some((f) => f.username.toLowerCase() === cleanInviter.toLowerCase());
+          if (exists) return prev;
+          return [
+            {
+              id: `friend_invite_${Date.now()}`,
+              username: cleanInviter,
+              display_name: cleanInviter.charAt(0).toUpperCase() + cleanInviter.slice(1),
+              avatar_character_id: "barbie",
+              status: "ACCEPTED",
+              stats: { recommendedCount: 1, watchedCount: 8, topGenre: "Drama" },
+            },
+            ...prev,
+          ];
+        });
+      }
+    }
+
     // 1. Initial session check and data fetch
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
@@ -182,7 +211,25 @@ export default function Home() {
       }
     });
 
-    // 3. Auth State change subscription
+    // 3. Realtime WebSocket subscription for live recommendations across circle
+    const unsubRecs = subscribeToRecommendations(
+      (newRec) => {
+        setFriendRecommendations((prev) => {
+          const exists = prev.some(
+            (r) =>
+              r.id === newRec.id ||
+              (r.tmdb_id === newRec.tmdb_id && r.sender_name === newRec.sender_name)
+          );
+          if (exists) return prev;
+          return [newRec, ...prev];
+        });
+      },
+      (deletedId) => {
+        setFriendRecommendations((prev) => prev.filter((r) => r.id !== deletedId));
+      }
+    );
+
+    // 4. Auth State change subscription
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -211,7 +258,10 @@ export default function Home() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      unsubRecs();
+    };
   }, []);
 
   const handleToggleTheme = () => {
@@ -403,6 +453,24 @@ export default function Home() {
         onOpenInstallPwa={() => setInstallPwaModalOpen(true)}
       />
 
+      {/* Incoming Invite Welcome Banner */}
+      {invitedBy && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+          <div className="p-4 bg-emerald-950/50 border border-emerald-500/40 rounded-2xl flex items-center justify-between text-xs text-emerald-300 shadow-lg animate-in fade-in">
+            <span className="font-extrabold flex items-center gap-2">
+              🎉 Welcome to CineCircle! You&apos;ve joined <strong className="underline decoration-emerald-400">@{invitedBy}</strong>&apos;s private movie circle!
+            </span>
+            <button
+              type="button"
+              onClick={() => setInvitedBy(null)}
+              className="text-emerald-400 hover:text-white font-bold ml-4 text-sm cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Tab View Container with Generous Spacing */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 mb-16 flex-1 w-full">
         {activeTab === "discover" && (
@@ -458,6 +526,7 @@ export default function Home() {
             friends={friends}
             onAddFriend={handleAddFriend}
             onRemoveFriend={handleRemoveFriend}
+            onOpenInvite={() => setInviteModalOpen(true)}
           />
         )}
       </main>
@@ -558,6 +627,14 @@ export default function Home() {
       <InstallPwaModal
         isOpen={installPwaModalOpen}
         onClose={() => setInstallPwaModalOpen(false)}
+      />
+
+      {/* 1-Click Friend Invite Modal */}
+      <InviteModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        currentUsername={profile.username}
+        currentDisplayName={profile.displayName}
       />
 
       {/* Footer */}

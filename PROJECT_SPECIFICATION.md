@@ -48,9 +48,10 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 ## 👥 Friend Circle Recommendation Feed & Dedicated Recommendations Page
 - **Dedicated Recommendations View**: Separate primary tab for full recommendation feed. The main **Discover** landing page previews the 3 most recent recommendations with a direct button leading to the dedicated **Recommendations** page.
 - **Recommendation Modal**: Includes friend search bar, full-width optional review note textarea, star rating, and dynamic **Custom Tag Creation** (#tags).
-- **Live Supabase Multi-User Sync**: Recommendations, user watchlists, and profile updates synchronize directly to Supabase (`recommendations`, `watchlist`, `profiles`). Authenticated users automatically fetch their remote records on sign-in and write updates in real time.
+- **Live Supabase Multi-User Sync & Realtime WebSockets**: Recommendations, comments, user watchlists, and profile updates synchronize directly to Supabase (`recommendations`, `recommendation_comments`, `watchlist`, `profiles`). Authenticated users automatically receive live updates via WebSocket subscriptions (`postgres_changes`), rendering new recommendations and comments immediately without page refresh.
+- **1-Click Friend Invite Links (`/?invite=${username}`)**: Users can generate personalized invite links from the Friends tab with 1-click **Copy Link**, **WhatsApp**, and **iMessage/SMS** sharing. When a friend opens the link, the app automatically stages the mutual circle connection and presents a celebration banner (*"🎉 You've joined @username's CineCircle"*).
 - **Row Level Security (RLS)**: Enabled across all Postgres tables (`profiles`, `friendships`, `recommendations`, `watchlist`, `recommendation_comments`) with granular security policies preventing unauthorized mutation while allowing circle members to view recommendations.
-- **Supabase Comments Thread**: `recommendation_comments` table created in Supabase Postgres with RLS policies enabled. Comments are loaded dynamically and saved directly to the database.
+- **Supabase Comments Thread**: `recommendation_comments` table created in Supabase Postgres with RLS policies enabled. Comments are loaded dynamically and saved directly to the database with realtime live updates.
 - **Recommendation Deletion with Confirmation Overlay**: Each feed item features a trash trigger button (🗑️). Clicking it opens a **Delete Recommendation Overlay** modal asking for explicit user confirmation before deletion, which purges the record from both UI state and Supabase.
 
 ---
