@@ -249,3 +249,75 @@ export function getTMDBImageUrl(path: string | null, size: "w500" | "original" =
   if (path.startsWith("http")) return path;
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }
+
+export interface CastMember {
+  id: number;
+  name: string;
+  character: string;
+  profile_path: string | null;
+}
+
+export async function getMovieCredits(
+  id: number,
+  mediaType: "movie" | "tv" = "movie"
+): Promise<CastMember[]> {
+  try {
+    const res = await fetch(
+      `${TMDB_BASE_URL}/${mediaType}/${id}/credits?api_key=${TMDB_API_KEY}&language=en-US`
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.cast || []).slice(0, 10).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      character: c.character || "Cast",
+      profile_path: c.profile_path,
+    }));
+  } catch (error) {
+    console.error("Error fetching credits from TMDB:", error);
+    return [];
+  }
+}
+
+export async function getPersonFilmography(
+  personId: number
+): Promise<{ personName: string; credits: MovieItem[] }> {
+  try {
+    const [personRes, creditsRes] = await Promise.all([
+      fetch(`${TMDB_BASE_URL}/person/${personId}?api_key=${TMDB_API_KEY}&language=en-US`),
+      fetch(
+        `${TMDB_BASE_URL}/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}&language=en-US`
+      ),
+    ]);
+
+    let personName = "Actor";
+    if (personRes.ok) {
+      const personData = await personRes.json();
+      personName = personData.name || "Actor";
+    }
+
+    if (!creditsRes.ok) return { personName, credits: [] };
+    const creditsData = await creditsRes.json();
+
+    const valid: MovieItem[] = (creditsData.cast || [])
+      .filter((m: any) => m.poster_path && (m.title || m.name))
+      .sort((a: any, b: any) => (b.vote_count || 0) - (a.vote_count || 0))
+      .slice(0, 6)
+      .map((m: any) => ({
+        id: m.id,
+        title: m.title || m.name,
+        overview: m.overview || "",
+        poster_path: m.poster_path,
+        backdrop_path: m.backdrop_path,
+        release_date: m.release_date || m.first_air_date,
+        vote_average: m.vote_average ? Number(m.vote_average.toFixed(1)) : 7.5,
+        vote_count: m.vote_count || 500,
+        media_type: (m.media_type as "movie" | "tv") || "movie",
+      }));
+
+    return { personName, credits: valid };
+  } catch (error) {
+    console.error("Error fetching person filmography from TMDB:", error);
+    return { personName: "Actor", credits: [] };
+  }
+}

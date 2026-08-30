@@ -68,6 +68,14 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
+## 📺 Regional Streaming Intelligence & Cast Exploration
+- **Multi-Country Streaming Selector**: Country toggle ordered by priority (🇩🇪 Germany, 🇮🇳 India, 🇨🇦 Canada, 🇺🇸 USA, 🇬🇧 UK, 🇦🇺 Australia) dynamically queries TMDB for regional watch providers.
+- **Persistent User Choice**: The user's selected streaming country is automatically saved to `localStorage` (`cinecircle_streaming_country`) with Germany (`DE`) as the default fallback, eliminating redundant clicks across movies and sessions.
+- **Top Cast & Crew Row**: Horizontal scrolling avatars in `MovieDetailModal` highlighting top billed cast and characters.
+- **Cast Filmography Drawer (`CastFilmographyModal`)**: Clicking any actor or director opens their top-rated filmography with 1-click **"Watch Trailer"**, **"Add to Watchlist"**, and instant modal view transition.
+
+---
+
 ## 🌿 Git Branching & Environment Isolation Architecture
 - **Environment Flag Driven**: Codebase is 100% identical between `main` and `staging`. Toggled dynamically via `NEXT_PUBLIC_ENABLE_MOCK_DATA`:
   - **Staging / Dev Mode (`NEXT_PUBLIC_ENABLE_MOCK_DATA="true"`)**: Preloads mock circle members (*Alex, Maya, Sam*), demo recommendations, and testing user profile (`tony.stark@avengers.io`) for rapid UI validation.

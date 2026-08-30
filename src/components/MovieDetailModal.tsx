@@ -6,13 +6,28 @@ import {
   MovieItem,
   getMovieDetails,
   getWatchProviders,
+  getMovieCredits,
+  CastMember,
   getMovieTrailerKey,
   getTMDBImageUrl,
   WatchProvidersResult,
 } from "@/lib/tmdb";
-import { Star, X, Play, Plus, Check, Sparkles, Tv, Clock, Calendar } from "lucide-react";
+import {
+  Star,
+  X,
+  Play,
+  Plus,
+  Check,
+  Sparkles,
+  Tv,
+  Clock,
+  Calendar,
+  User,
+  ExternalLink,
+} from "lucide-react";
 import { WatchlistItem, supabase } from "@/lib/supabase";
 import { subscribeToComments } from "@/lib/sync";
+import { CastFilmographyModal } from "./CastFilmographyModal";
 
 interface MovieDetailModalProps {
   isOpen: boolean;
@@ -48,8 +63,23 @@ export function MovieDetailModal({
   const [movie, setMovie] = useState<MovieItem | null>(initialMovie || null);
   const [providers, setProviders] = useState<WatchProvidersResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("cinecircle_streaming_country") || "DE";
+    }
+    return "DE";
+  });
+  const [cast, setCast] = useState<CastMember[]>([]);
+  const [filmographyPerson, setFilmographyPerson] = useState<{ id: number; name: string } | null>(null);
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState<{author: string; text: string}[]>([]);
+
+  const handleSelectCountry = (code: string) => {
+    setSelectedCountry(code);
+    try {
+      localStorage.setItem("cinecircle_streaming_country", code);
+    } catch (e) {}
+  };
 
   // Fetch comments from Supabase when opening a modal
   useEffect(() => {
@@ -117,15 +147,28 @@ export function MovieDetailModal({
 
     async function loadData() {
       setIsLoading(true);
-      const details = await getMovieDetails(movieId!, mediaType);
+      const [details, watchData, creditsData] = await Promise.all([
+        getMovieDetails(movieId!, mediaType),
+        getWatchProviders(movieId!, mediaType, selectedCountry),
+        getMovieCredits(movieId!, mediaType),
+      ]);
       if (details) setMovie(details);
-      const watchData = await getWatchProviders(movieId!, mediaType);
       setProviders(watchData);
+      setCast(creditsData);
       setIsLoading(false);
     }
 
     loadData();
   }, [isOpen, movieId, mediaType]);
+
+  // Refetch watch providers when user switches country
+  useEffect(() => {
+    if (isOpen && movieId) {
+      getWatchProviders(movieId, mediaType, selectedCountry).then((res) => {
+        setProviders(res);
+      });
+    }
+  }, [selectedCountry, isOpen, movieId, mediaType]);
 
   if (!isOpen || !movieId) return null;
 
@@ -263,34 +306,137 @@ export function MovieDetailModal({
             </p>
           </div>
 
-          {/* Where to Stream / Watch Providers */}
-          <div className="space-y-2.5 pt-2 border-t border-[var(--surface-border)]">
-            <h3 className="text-xs font-extrabold text-[var(--text-primary)] flex items-center gap-1.5 uppercase tracking-wider">
-              <Tv className="w-4 h-4 text-[var(--brand-accent)]" /> Where to Stream
-            </h3>
+          {/* Where to Stream / Watch Providers with Regional Country Selector */}
+          <div className="space-y-3 pt-3 border-t border-[var(--surface-border)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-xs font-extrabold text-[var(--text-primary)] flex items-center gap-1.5 uppercase tracking-wider">
+                <Tv className="w-4 h-4 text-[var(--brand-accent)]" /> Where to Stream
+              </h3>
+
+              {/* Regional Country Selector in order: Germany, India, Canada, USA, UK, Australia */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+                {[
+                  { code: "DE", label: "🇩🇪 Germany" },
+                  { code: "IN", label: "🇮🇳 India" },
+                  { code: "CA", label: "🇨🇦 Canada" },
+                  { code: "US", label: "🇺🇸 USA" },
+                  { code: "GB", label: "🇬🇧 UK" },
+                  { code: "AU", label: "🇦🇺 Australia" },
+                ].map((c) => (
+                  <button
+                    key={c.code}
+                    type="button"
+                    onClick={() => handleSelectCountry(c.code)}
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold transition shrink-0 cursor-pointer ${
+                      selectedCountry === c.code
+                        ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow"
+                        : "bg-[var(--canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--surface-border)]"
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {providers?.flatrate && providers.flatrate.length > 0 ? (
-              <div className="flex flex-wrap gap-3">
-                {providers.flatrate.map((prov) => (
-                  <div
-                    key={prov.provider_id}
-                    className="flex items-center gap-2 bg-[var(--canvas)] p-2.5 rounded-xl border border-[var(--surface-border)]"
-                  >
-                    <img
-                      src={getTMDBImageUrl(prov.logo_path, "w500")}
-                      alt={prov.provider_name}
-                      className="w-6 h-6 rounded-lg object-cover"
-                    />
-                    <span className="text-xs font-bold text-[var(--text-primary)]">{prov.provider_name}</span>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-[var(--text-secondary)]">Subscription Streaming:</p>
+                <div className="flex flex-wrap gap-2.5">
+                  {providers.flatrate.map((prov) => (
+                    <div
+                      key={prov.provider_id}
+                      className="flex items-center gap-2 bg-[var(--canvas)] p-2 rounded-xl border border-[var(--surface-border)] shadow-sm"
+                    >
+                      <img
+                        src={getTMDBImageUrl(prov.logo_path, "w500")}
+                        alt={prov.provider_name}
+                        className="w-5 h-5 rounded-md object-cover"
+                      />
+                      <span className="text-xs font-bold text-[var(--text-primary)]">{prov.provider_name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : providers?.rent && providers.rent.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-[var(--text-secondary)]">Available to Rent / Purchase:</p>
+                <div className="flex flex-wrap gap-2.5">
+                  {providers.rent.slice(0, 4).map((prov) => (
+                    <div
+                      key={prov.provider_id}
+                      className="flex items-center gap-2 bg-[var(--canvas)] p-2 rounded-xl border border-[var(--surface-border)] shadow-sm"
+                    >
+                      <img
+                        src={getTMDBImageUrl(prov.logo_path, "w500")}
+                        alt={prov.provider_name}
+                        className="w-5 h-5 rounded-md object-cover"
+                      />
+                      <span className="text-xs font-bold text-[var(--text-primary)]">{prov.provider_name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               <p className="text-xs text-[var(--text-secondary)] italic">
-                Available to stream/rent on digital platforms (Apple TV, Amazon Prime Video, Google Play).
+                No active subscription streaming found for {selectedCountry}. Check digital store platforms or JustWatch below.
               </p>
             )}
+
+            {providers?.link && (
+              <a
+                href={providers.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--brand-accent)] hover:underline pt-1"
+              >
+                View Full Regional Streaming Availability on JustWatch <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
           </div>
+
+          {/* Top Cast & Crew Filmography Exploration */}
+          {cast.length > 0 && (
+            <div className="space-y-3 pt-3 border-t border-[var(--surface-border)]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-extrabold text-[var(--text-primary)] flex items-center gap-1.5 uppercase tracking-wider">
+                  <User className="w-4 h-4 text-[var(--brand-accent)]" /> Top Cast & Filmography
+                </h3>
+                <span className="text-[10px] text-[var(--text-secondary)]">Tap actor to view top films</span>
+              </div>
+
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+                {cast.map((member) => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => setFilmographyPerson({ id: member.id, name: member.name })}
+                    className="flex flex-col items-center gap-1.5 shrink-0 w-20 text-center group cursor-pointer"
+                  >
+                    <div className="w-14 h-14 rounded-full overflow-hidden bg-[var(--canvas)] border border-[var(--surface-border)] group-hover:border-[var(--brand-accent)] transition shadow">
+                      {member.profile_path ? (
+                        <img
+                          src={getTMDBImageUrl(member.profile_path, "w500")}
+                          alt={member.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center font-bold text-xs text-[var(--text-secondary)]">
+                          {member.name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-bold text-[var(--text-primary)] truncate w-full group-hover:text-[var(--brand-accent)] transition">
+                      {member.name}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)] truncate w-full">
+                      {member.character}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* MAIN CTA ROW: Primary Recommend CTA */}
           <div className="pt-4 border-t border-[var(--surface-border)] flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -321,6 +467,24 @@ export function MovieDetailModal({
 
         </div>
       </div>
+
+      {/* Cast Filmography Drawer / Modal */}
+      {filmographyPerson && (
+        <CastFilmographyModal
+          isOpen={filmographyPerson !== null}
+          onClose={() => setFilmographyPerson(null)}
+          personId={filmographyPerson.id}
+          personName={filmographyPerson.name}
+          onSelectMovie={(newMovie) => {
+            setMovie(newMovie);
+            setProviders(null);
+            setCast([]);
+          }}
+          onOpenTrailer={onOpenTrailer}
+          onToggleWatchlist={onToggleWatchlist}
+          watchlist={watchlist}
+        />
+      )}
     </div>
   );
 }
