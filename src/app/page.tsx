@@ -24,6 +24,18 @@ import {
   MOCK_DEMO_EMAIL,
 } from "@/lib/mockData";
 
+import {
+  fetchUserProfile,
+  upsertUserProfile,
+  fetchLiveRecommendations,
+  createLiveRecommendation,
+  deleteLiveRecommendation,
+  fetchLiveWatchlist,
+  addLiveWatchlistItem,
+  removeLiveWatchlistItem,
+  updateLiveWatchlistItem,
+} from "@/lib/sync";
+
 // Environment check: Staging / Dev uses mock data; Production starts completely clean
 const IS_MOCK_MODE = process.env.NEXT_PUBLIC_ENABLE_MOCK_DATA === "true";
 const STORAGE_PREFIX = IS_MOCK_MODE ? "cinecircle_stage_" : "cinecircle_prod_";
@@ -31,6 +43,7 @@ const STORAGE_PREFIX = IS_MOCK_MODE ? "cinecircle_stage_" : "cinecircle_prod_";
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>("discover");
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(IS_MOCK_MODE ? MOCK_DEMO_EMAIL : null);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>(IS_MOCK_MODE ? MOCK_WATCHLIST : []);
   const [friendRecommendations, setFriendRecommendations] = useState<Recommendation[]>(
@@ -116,30 +129,83 @@ export default function Home() {
     localStorage.setItem(`${STORAGE_PREFIX}watchlist`, JSON.stringify(watchlist));
   }, [watchlist]);
 
-  // Supabase Auth listener
+  // Live Supabase Auth & Multi-User Data Synchronization
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email) {
-        setUserEmail(session.user.email);
-        const meta = session.user.user_metadata || {};
-        if (meta.display_name) {
+    // 1. Initial session check and data fetch
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+        setUserEmail(session.user.email ?? null);
+
+        // Fetch user profile from Supabase
+        const dbProfile = await fetchUserProfile(session.user.id);
+        if (dbProfile) {
           setProfile({
-            displayName: meta.display_name,
-            username: meta.username || session.user.email.split("@")[0],
-            avatarId: meta.avatar_id || "tony_stark",
-            age: meta.age || "24",
+            displayName: dbProfile.display_name,
+            username: dbProfile.username,
+            avatarId: dbProfile.avatar_character_id,
+            age: dbProfile.age ? String(dbProfile.age) : "24",
           });
+        } else {
+          // Initialize new profile in Supabase
+          const meta = session.user.user_metadata || {};
+          const newProfile = {
+            id: session.user.id,
+            username: meta.username || (session.user.email?.split("@")[0] || "user"),
+            display_name: meta.display_name || "User",
+            avatar_character_id: meta.avatar_id || "tony_stark",
+            age: meta.age || "24",
+          };
+          setProfile({
+            displayName: newProfile.display_name,
+            username: newProfile.username,
+            avatarId: newProfile.avatar_character_id,
+            age: newProfile.age,
+          });
+          await upsertUserProfile(newProfile);
+        }
+
+        // Fetch live watchlist
+        const dbWatchlist = await fetchLiveWatchlist(session.user.id);
+        if (dbWatchlist.length > 0) {
+          setWatchlist(dbWatchlist);
         }
       }
     });
 
+    // 2. Load live recommendations for all users
+    fetchLiveRecommendations().then((dbRecs) => {
+      if (dbRecs.length > 0) {
+        setFriendRecommendations(dbRecs);
+      }
+    });
+
+    // 3. Auth State change subscription
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user?.email) {
-        setUserEmail(session.user.email);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+        setUserEmail(session.user.email ?? null);
+        const dbProfile = await fetchUserProfile(session.user.id);
+        if (dbProfile) {
+          setProfile({
+            displayName: dbProfile.display_name,
+            username: dbProfile.username,
+            avatarId: dbProfile.avatar_character_id,
+            age: dbProfile.age ? String(dbProfile.age) : "24",
+          });
+        }
+        const dbWatchlist = await fetchLiveWatchlist(session.user.id);
+        if (dbWatchlist.length > 0) {
+          setWatchlist(dbWatchlist);
+        }
       } else {
-        // Keep cached email if present
+        setUserId(null);
+        if (!IS_MOCK_MODE) {
+          setUserEmail(null);
+          setWatchlist([]);
+        }
       }
     });
 
@@ -158,7 +224,17 @@ export default function Home() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    setUserId(null);
     setUserEmail(null);
+    if (!IS_MOCK_MODE) {
+      setWatchlist([]);
+      setProfile({
+        displayName: "Guest",
+        username: "guest",
+        avatarId: "tony_stark",
+        age: "24",
+      });
+    }
   };
 
   // Movie Details Click Handler
@@ -177,45 +253,65 @@ export default function Home() {
     });
   };
 
-  // Watchlist Handlers
-  const handleToggleWatchlist = (movie: MovieItem) => {
+  // Watchlist Handlers with Live Supabase Persistence
+  const handleToggleWatchlist = async (movie: MovieItem) => {
     const exists = watchlist.find((w) => w.tmdb_id === movie.id);
     if (exists) {
-      setWatchlist(watchlist.filter((w) => w.tmdb_id !== movie.id));
+      setWatchlist((prev) => prev.filter((w) => w.tmdb_id !== movie.id));
+      await removeLiveWatchlistItem(exists.id);
     } else {
+      const releaseYear = (movie.release_date || movie.first_air_date || "").substring(0, 4) || "2024";
+      const tempId = `watch_${Date.now()}`;
       const newItem: WatchlistItem = {
-        id: `watch_${Date.now()}`,
+        id: tempId,
         tmdb_id: movie.id,
         media_type: movie.media_type || "movie",
         title: movie.title || movie.name || "Untitled",
         poster_path: movie.poster_path,
-        release_year: (movie.release_date || movie.first_air_date || "").substring(0, 4),
+        release_year: releaseYear,
         genre: "Movie",
         status: "WANT_TO_WATCH",
         added_at: new Date().toISOString(),
       };
-      setWatchlist([newItem, ...watchlist]);
+      setWatchlist((prev) => [newItem, ...prev]);
+
+      const saved = await addLiveWatchlistItem({
+        userId: userId || undefined,
+        tmdbId: movie.id,
+        mediaType: (movie.media_type as "movie" | "tv") || "movie",
+        title: movie.title || movie.name || "Untitled",
+        posterPath: movie.poster_path,
+        releaseYear,
+        genre: "Movie",
+        status: "WANT_TO_WATCH",
+      });
+
+      if (saved) {
+        setWatchlist((prev) => prev.map((w) => (w.id === tempId ? saved : w)));
+      }
     }
   };
 
-  const handleUpdateWatchlistStatus = (
+  const handleUpdateWatchlistStatus = async (
     id: string,
     status: "WANT_TO_WATCH" | "WATCHED",
     rating?: number
   ) => {
-    setWatchlist(
-      watchlist.map((item) =>
+    setWatchlist((prev) =>
+      prev.map((item) =>
         item.id === id ? { ...item, status, rating_stars: rating || item.rating_stars } : item
       )
     );
+    await updateLiveWatchlistItem(id, { status, rating_stars: rating });
   };
 
-  const handleRemoveFromWatchlist = (id: string) => {
-    setWatchlist(watchlist.filter((w) => w.id !== id));
+  const handleRemoveFromWatchlist = async (id: string) => {
+    setWatchlist((prev) => prev.filter((w) => w.id !== id));
+    await removeLiveWatchlistItem(id);
   };
 
-  // Recommendation Submission Handler
-  const handlePublishRecommendation = (data: {
+  // Recommendation Submission Handler with Live Supabase Persistence
+  const handlePublishRecommendation = async (data: {
     tmdbId: number;
     title: string;
     posterPath: string | null;
@@ -224,8 +320,9 @@ export default function Home() {
     tags: string[];
     recipient: string;
   }) => {
+    const tempId = `rec_${Date.now()}`;
     const newRec: Recommendation = {
-      id: `rec_${Date.now()}`,
+      id: tempId,
       sender_name: profile.displayName,
       sender_avatar: profile.avatarId,
       recipient: data.recipient,
@@ -240,7 +337,32 @@ export default function Home() {
       tags: data.tags,
       created_at: new Date().toISOString(),
     };
-    setFriendRecommendations([newRec, ...friendRecommendations]);
+    setFriendRecommendations((prev) => [newRec, ...prev]);
+
+    const saved = await createLiveRecommendation({
+      senderId: userId || undefined,
+      senderName: profile.displayName,
+      senderAvatar: profile.avatarId,
+      recipient: data.recipient,
+      tmdbId: data.tmdbId,
+      mediaType: "movie",
+      title: data.title,
+      posterPath: data.posterPath,
+      ratingStars: data.ratingStars,
+      note: data.note,
+      tags: data.tags,
+    });
+
+    if (saved) {
+      setFriendRecommendations((prev) =>
+        prev.map((r) => (r.id === tempId ? saved : r))
+      );
+    }
+  };
+
+  const handleDeleteRecommendation = async (id: string) => {
+    setFriendRecommendations((prev) => prev.filter((r) => r.id !== id));
+    await deleteLiveRecommendation(id);
   };
 
   // Friends Handlers
@@ -253,11 +375,11 @@ export default function Home() {
       status: "ACCEPTED",
       stats: { recommendedCount: 0, watchedCount: 0, topGenre: "Drama" },
     };
-    setFriends([...friends, newFriend]);
+    setFriends((prev) => [...prev, newFriend]);
   };
 
   const handleRemoveFriend = (id: string) => {
-    setFriends(friends.filter((f) => f.id !== id));
+    setFriends((prev) => prev.filter((f) => f.id !== id));
   };
 
   return (
@@ -288,9 +410,7 @@ export default function Home() {
             }
             onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
             onToggleWatchlist={handleToggleWatchlist}
-            onDeleteRecommendation={(id) =>
-              setFriendRecommendations(friendRecommendations.filter((r) => r.id !== id))
-            }
+            onDeleteRecommendation={handleDeleteRecommendation}
             onViewAllRecommendations={() => setActiveTab("recommendations")}
             watchlist={watchlist}
             friendRecommendations={friendRecommendations}
@@ -303,9 +423,7 @@ export default function Home() {
             watchlist={watchlist}
             onOpenMovieDetail={handleOpenMovieDetail}
             onToggleWatchlist={handleToggleWatchlist}
-            onDeleteRecommendation={(id) =>
-              setFriendRecommendations(friendRecommendations.filter((r) => r.id !== id))
-            }
+            onDeleteRecommendation={handleDeleteRecommendation}
           />
         )}
 
@@ -397,15 +515,24 @@ export default function Home() {
         currentDisplayName={profile.displayName}
         currentUsername={profile.username}
         currentAge={profile.age}
-        onSaveProfile={(updated) =>
-          setProfile({
-            ...profile,
+        onSaveProfile={async (updated) => {
+          const newProf = {
             displayName: updated.displayName,
             username: updated.username,
             avatarId: updated.avatarId,
             age: updated.age || profile.age,
-          })
-        }
+          };
+          setProfile(newProf);
+          if (userId) {
+            await upsertUserProfile({
+              id: userId,
+              username: newProf.username,
+              display_name: newProf.displayName,
+              avatar_character_id: newProf.avatarId,
+              age: newProf.age,
+            });
+          }
+        }}
         onDeleteAccount={async () => {
           await supabase.auth.signOut();
           localStorage.removeItem(`${STORAGE_PREFIX}user_email`);

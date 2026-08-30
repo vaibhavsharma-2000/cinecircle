@@ -1,0 +1,304 @@
+import { supabase, Recommendation, WatchlistItem, FriendItem, UserProfile } from "./supabase";
+
+/**
+ * Fetch a user profile by user UUID from Supabase profiles table
+ */
+export async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data as UserProfile;
+  } catch (err) {
+    console.error("Error fetching user profile:", err);
+    return null;
+  }
+}
+
+/**
+ * Upsert user profile
+ */
+export async function upsertUserProfile(profile: {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_character_id: string;
+  age?: string;
+}): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        id: profile.id,
+        username: profile.username,
+        display_name: profile.display_name,
+        avatar_character_id: profile.avatar_character_id,
+        age: profile.age,
+      },
+      { onConflict: "id" }
+    );
+    if (error) {
+      console.error("Error saving profile to Supabase:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Error upserting user profile:", err);
+    return false;
+  }
+}
+
+/**
+ * Fetch all circle recommendations from Supabase
+ */
+export async function fetchLiveRecommendations(): Promise<Recommendation[]> {
+  try {
+    const { data, error } = await supabase
+      .from("recommendations")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+
+    return data.map((row: any) => ({
+      id: String(row.id),
+      sender_name: row.sender_name || "Friend",
+      sender_avatar: row.sender_avatar || "tony_stark",
+      recipient: row.recipient || "All Friends",
+      tmdb_id: row.tmdb_id,
+      media_type: (row.media_type as "movie" | "tv") || "movie",
+      title: row.title,
+      poster_path: row.poster_path,
+      backdrop_path: row.backdrop_path,
+      release_year: row.release_year || "2024",
+      genre: row.genre || "Featured",
+      rating_stars: Number(row.rating_stars) || 5.0,
+      note: row.note || "",
+      tags: Array.isArray(row.tags) ? row.tags : ["MustWatch"],
+      created_at: row.created_at,
+    }));
+  } catch (err) {
+    console.error("Error fetching live recommendations:", err);
+    return [];
+  }
+}
+
+/**
+ * Insert a new recommendation to Supabase
+ */
+export async function createLiveRecommendation(rec: {
+  senderId?: string;
+  senderName: string;
+  senderAvatar: string;
+  recipient: string;
+  tmdbId: number;
+  mediaType: "movie" | "tv";
+  title: string;
+  posterPath: string | null;
+  backdropPath?: string | null;
+  releaseYear?: string;
+  genre?: string;
+  ratingStars: number;
+  note: string;
+  tags: string[];
+}): Promise<Recommendation | null> {
+  try {
+    const insertPayload: any = {
+      tmdb_id: rec.tmdbId,
+      media_type: rec.mediaType,
+      title: rec.title,
+      poster_path: rec.posterPath,
+      backdrop_path: rec.backdropPath,
+      release_year: rec.releaseYear || "2024",
+      genre: rec.genre || "Featured",
+      rating_stars: rec.ratingStars,
+      note: rec.note,
+      tags: rec.tags,
+      sender_name: rec.senderName,
+      sender_avatar: rec.senderAvatar,
+      recipient: rec.recipient,
+    };
+
+    if (rec.senderId) {
+      insertPayload.sender_id = rec.senderId;
+    }
+
+    const { data, error } = await supabase
+      .from("recommendations")
+      .insert([insertPayload])
+      .select()
+      .single();
+
+    if (error || !data) {
+      console.error("Error inserting live recommendation:", error);
+      return null;
+    }
+
+    return {
+      id: String(data.id),
+      sender_name: data.sender_name,
+      sender_avatar: data.sender_avatar,
+      recipient: data.recipient,
+      tmdb_id: data.tmdb_id,
+      media_type: data.media_type,
+      title: data.title,
+      poster_path: data.poster_path,
+      backdrop_path: data.backdrop_path,
+      release_year: data.release_year,
+      genre: data.genre,
+      rating_stars: Number(data.rating_stars),
+      note: data.note,
+      tags: data.tags,
+      created_at: data.created_at,
+    };
+  } catch (err) {
+    console.error("Error creating live recommendation:", err);
+    return null;
+  }
+}
+
+/**
+ * Delete a recommendation from Supabase
+ */
+export async function deleteLiveRecommendation(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("recommendations").delete().eq("id", id);
+    if (error) {
+      console.error("Error deleting recommendation:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Error in deleteLiveRecommendation:", err);
+    return false;
+  }
+}
+
+/**
+ * Fetch user watchlist from Supabase
+ */
+export async function fetchLiveWatchlist(userId?: string): Promise<WatchlistItem[]> {
+  try {
+    let query = supabase.from("watchlist").select("*").order("created_at", { ascending: false });
+    if (userId) {
+      query = query.eq("user_id", userId);
+    }
+
+    const { data, error } = await query;
+    if (error || !data) return [];
+
+    return data.map((row: any) => ({
+      id: String(row.id),
+      tmdb_id: row.tmdb_id,
+      media_type: (row.media_type as "movie" | "tv") || "movie",
+      title: row.title,
+      poster_path: row.poster_path,
+      release_year: row.release_year || "2024",
+      genre: row.genre || "Featured",
+      status: (row.status as "WANT_TO_WATCH" | "WATCHED") || "WANT_TO_WATCH",
+      rating_stars: row.rating_stars ? Number(row.rating_stars) : undefined,
+      recommended_by: row.recommended_by || undefined,
+      added_at: row.created_at,
+    }));
+  } catch (err) {
+    console.error("Error fetching live watchlist:", err);
+    return [];
+  }
+}
+
+/**
+ * Add an item to Supabase watchlist
+ */
+export async function addLiveWatchlistItem(item: {
+  userId?: string;
+  tmdbId: number;
+  mediaType: "movie" | "tv";
+  title: string;
+  posterPath: string | null;
+  releaseYear?: string;
+  genre?: string;
+  status: "WANT_TO_WATCH" | "WATCHED";
+  ratingStars?: number;
+  recommendedBy?: string;
+}): Promise<WatchlistItem | null> {
+  try {
+    const payload: any = {
+      tmdb_id: item.tmdbId,
+      media_type: item.mediaType,
+      title: item.title,
+      poster_path: item.posterPath,
+      release_year: item.releaseYear || "2024",
+      genre: item.genre || "Featured",
+      status: item.status,
+      rating_stars: item.ratingStars || null,
+      recommended_by: item.recommendedBy || null,
+    };
+
+    if (item.userId) {
+      payload.user_id = item.userId;
+    }
+
+    const { data, error } = await supabase.from("watchlist").insert([payload]).select().single();
+    if (error || !data) {
+      console.error("Error adding to watchlist in Supabase:", error);
+      return null;
+    }
+
+    return {
+      id: String(data.id),
+      tmdb_id: data.tmdb_id,
+      media_type: data.media_type,
+      title: data.title,
+      poster_path: data.poster_path,
+      release_year: data.release_year,
+      genre: data.genre,
+      status: data.status,
+      rating_stars: data.rating_stars ? Number(data.rating_stars) : undefined,
+      recommended_by: data.recommended_by,
+      added_at: data.created_at,
+    };
+  } catch (err) {
+    console.error("Error in addLiveWatchlistItem:", err);
+    return null;
+  }
+}
+
+/**
+ * Remove an item from Supabase watchlist
+ */
+export async function removeLiveWatchlistItem(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("watchlist").delete().eq("id", id);
+    if (error) {
+      console.error("Error removing watchlist item:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Error in removeLiveWatchlistItem:", err);
+    return false;
+  }
+}
+
+/**
+ * Update watchlist item status / rating
+ */
+export async function updateLiveWatchlistItem(
+  id: string,
+  updates: { status?: "WANT_TO_WATCH" | "WATCHED"; rating_stars?: number }
+): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("watchlist").update(updates).eq("id", id);
+    if (error) {
+      console.error("Error updating watchlist item:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Error in updateLiveWatchlistItem:", err);
+    return false;
+  }
+}

@@ -48,8 +48,10 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 ## 👥 Friend Circle Recommendation Feed & Dedicated Recommendations Page
 - **Dedicated Recommendations View**: Separate primary tab for full recommendation feed. The main **Discover** landing page previews the 3 most recent recommendations with a direct button leading to the dedicated **Recommendations** page.
 - **Recommendation Modal**: Includes friend search bar, full-width optional review note textarea, star rating, and dynamic **Custom Tag Creation** (#tags).
+- **Live Supabase Multi-User Sync**: Recommendations, user watchlists, and profile updates synchronize directly to Supabase (`recommendations`, `watchlist`, `profiles`). Authenticated users automatically fetch their remote records on sign-in and write updates in real time.
+- **Row Level Security (RLS)**: Enabled across all Postgres tables (`profiles`, `friendships`, `recommendations`, `watchlist`, `recommendation_comments`) with granular security policies preventing unauthorized mutation while allowing circle members to view recommendations.
 - **Supabase Comments Thread**: `recommendation_comments` table created in Supabase Postgres with RLS policies enabled. Comments are loaded dynamically and saved directly to the database.
-- **Recommendation Deletion with Confirmation Overlay**: Each feed item features a trash trigger button (🗑️). Clicking it opens a **Delete Recommendation Overlay** modal asking for explicit user confirmation before deletion.
+- **Recommendation Deletion with Confirmation Overlay**: Each feed item features a trash trigger button (🗑️). Clicking it opens a **Delete Recommendation Overlay** modal asking for explicit user confirmation before deletion, which purges the record from both UI state and Supabase.
 
 ---
 
