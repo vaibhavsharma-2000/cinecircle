@@ -183,7 +183,7 @@ export function AvatarPickerModal({
             </div>
             <div className="min-w-0">
               <span className="text-[10px] font-black text-[var(--brand-accent)] uppercase tracking-wider block">
-                Selected Avatar
+                Selected Avatar • <span className="text-[var(--text-secondary)] font-medium normal-case">{currentSelectedAvatar.license}</span>
               </span>
               <h4 className="font-extrabold text-xs text-[var(--text-primary)] truncate">
                 {currentSelectedAvatar.name} ({currentSelectedAvatar.showMovie})
