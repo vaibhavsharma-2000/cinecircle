@@ -13,6 +13,7 @@ import { AccountModal } from "@/components/AccountModal";
 import { MovieDetailModal } from "@/components/MovieDetailModal";
 import { AuthModal } from "@/components/AuthModal";
 import { CookieConsentModal } from "@/components/CookieConsentModal";
+import { InstallPwaModal } from "@/components/InstallPwaModal";
 import { MovieItem } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem, FriendItem, supabase } from "@/lib/supabase";
 
@@ -64,6 +65,7 @@ export default function Home() {
   // Modal States
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
+  const [installPwaModalOpen, setInstallPwaModalOpen] = useState(false);
 
   const [detailModal, setDetailModal] = useState<{
     isOpen: boolean;
@@ -398,6 +400,7 @@ export default function Home() {
         friendsCount={friends.length}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
+        onOpenInstallPwa={() => setInstallPwaModalOpen(true)}
       />
 
       {/* Main Tab View Container with Generous Spacing */}
@@ -550,6 +553,12 @@ export default function Home() {
 
       {/* Global Cookie Preferences & Consent Banner */}
       <CookieConsentModal />
+
+      {/* PWA Mobile Installation Guidance Modal */}
+      <InstallPwaModal
+        isOpen={installPwaModalOpen}
+        onClose={() => setInstallPwaModalOpen(false)}
+      />
 
       {/* Footer */}
       <footer className="border-t border-[var(--surface-border)] mt-24 py-12 text-center text-xs text-[var(--text-secondary)]">

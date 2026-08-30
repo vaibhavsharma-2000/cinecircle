@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Header, Button, Avatar, Badge } from "@usefragments/ui";
 import { SearchAutocomplete } from "./SearchAutocomplete";
 import { MovieItem } from "@/lib/tmdb";
-import { Sun, Moon, LogIn, LogOut, Film, Bookmark, Users, Sparkles, Settings, ChevronDown } from "lucide-react";
+import { Sun, Moon, LogIn, LogOut, Film, Bookmark, Users, Sparkles, Settings, ChevronDown, Smartphone } from "lucide-react";
 
 interface NavbarProps {
   activeTab: string;
@@ -19,6 +19,7 @@ interface NavbarProps {
   friendsCount: number;
   isDarkMode: boolean;
   onToggleTheme: () => void;
+  onOpenInstallPwa?: () => void;
 }
 
 export function Navbar({
@@ -34,6 +35,7 @@ export function Navbar({
   friendsCount,
   isDarkMode,
   onToggleTheme,
+  onOpenInstallPwa,
 }: NavbarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const mobileRef = useRef<HTMLDivElement>(null);
@@ -138,6 +140,19 @@ export function Navbar({
                     </>
                   )}
                 </button>
+
+                {onOpenInstallPwa && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      onOpenInstallPwa();
+                    }}
+                    className="w-full px-3 py-2.5 rounded-xl text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-hover)] flex items-center gap-2 transition text-left"
+                  >
+                    <Smartphone className="w-4 h-4 text-[var(--text-secondary)]" /> Install App
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -244,6 +259,19 @@ export function Navbar({
                       </>
                     )}
                   </button>
+
+                  {onOpenInstallPwa && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        onOpenInstallPwa();
+                      }}
+                      className="w-full px-3 py-2.5 rounded-xl text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-hover)] flex items-center gap-2 transition text-left cursor-pointer"
+                    >
+                      <Smartphone className="w-4 h-4 text-[var(--text-secondary)]" /> Install App
+                    </button>
+                  )}
 
                   <button
                     type="button"

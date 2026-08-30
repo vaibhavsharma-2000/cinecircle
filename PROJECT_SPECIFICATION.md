@@ -77,3 +77,4 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 - **Database & Auth**: Supabase (Postgres Database, Row Level Security, Supabase Auth)
 - **External Data**: TMDB API v3 (Paginated Search & Discovery, Watch Providers, YouTube Trailers)
 - **Analytics & Observability**: `@vercel/analytics` integrated into Root Layout (`<Analytics />`) for privacy-friendly real-time audience metrics.
+- **PWA & Mobile App Shell**: Full Progressive Web App support via `/manifest.json`, viewport theme controls (`#000000`), standalone fullscreen display, maskable SVG icons, and interactive `InstallPwaModal` guiding iOS Safari and Android Chrome home screen installation.
