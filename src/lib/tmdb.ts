@@ -321,3 +321,106 @@ export async function getPersonFilmography(
     return { personName: "Actor", credits: [] };
   }
 }
+
+export interface GenreOption {
+  id: number;
+  name: string;
+  emoji: string;
+}
+
+export const MOVIE_GENRES: GenreOption[] = [
+  { id: 878, name: "Sci-Fi", emoji: "🚀" },
+  { id: 53, name: "Thriller", emoji: "🔪" },
+  { id: 35, name: "Comedy", emoji: "😂" },
+  { id: 18, name: "Drama", emoji: "🎭" },
+  { id: 28, name: "Action", emoji: "⚡" },
+  { id: 10749, name: "Romance", emoji: "❤️" },
+  { id: 27, name: "Horror", emoji: "👻" },
+  { id: 9648, name: "Mystery", emoji: "🕵️" },
+  { id: 16, name: "Animation", emoji: "🎨" },
+  { id: 80, name: "Crime", emoji: "💼" },
+  { id: 14, name: "Fantasy", emoji: "🧙" },
+  { id: 12, name: "Adventure", emoji: "🗺️" },
+  { id: 99, name: "Documentary", emoji: "📽️" },
+  { id: 36, name: "History", emoji: "📜" },
+];
+
+export interface FilterOptions {
+  genreIds: number[];
+  minRating?: number;
+  decade?: string;
+  sortBy?: "popularity.desc" | "vote_average.desc" | "primary_release_date.desc";
+  page?: number;
+  providerId?: number;
+  watchRegion?: string;
+}
+
+export async function discoverMoviesWithFilters(
+  filters: FilterOptions
+): Promise<{ results: MovieItem[]; totalPages: number; totalResults: number }> {
+  try {
+    const params = new URLSearchParams({
+      api_key: TMDB_API_KEY,
+      language: "en-US",
+      include_adult: "false",
+      page: String(filters.page || 1),
+      sort_by: filters.sortBy || "popularity.desc",
+    });
+
+    if (filters.genreIds && filters.genreIds.length > 0) {
+      params.append("with_genres", filters.genreIds.join(","));
+    }
+
+    if (filters.minRating && filters.minRating > 0) {
+      params.append("vote_average.gte", String(filters.minRating));
+      params.append("vote_count.gte", "100");
+    } else {
+      params.append("vote_count.gte", "50");
+    }
+
+    if (filters.decade && filters.decade !== "all") {
+      if (filters.decade === "2020s") {
+        params.append("primary_release_date.gte", "2020-01-01");
+      } else if (filters.decade === "2010s") {
+        params.append("primary_release_date.gte", "2010-01-01");
+        params.append("primary_release_date.lte", "2019-12-31");
+      } else if (filters.decade === "2000s") {
+        params.append("primary_release_date.gte", "2000-01-01");
+        params.append("primary_release_date.lte", "2009-12-31");
+      } else if (filters.decade === "90s") {
+        params.append("primary_release_date.gte", "1990-01-01");
+        params.append("primary_release_date.lte", "1999-12-31");
+      }
+    }
+
+    if (filters.providerId && filters.watchRegion) {
+      params.append("with_watch_providers", String(filters.providerId));
+      params.append("watch_region", filters.watchRegion);
+    }
+
+    const res = await fetch(`${TMDB_BASE_URL}/discover/movie?${params.toString()}`);
+    if (!res.ok) return { results: [], totalPages: 0, totalResults: 0 };
+    const data = await res.json();
+
+    const results: MovieItem[] = (data.results || []).map((item: any) => ({
+      id: item.id,
+      title: item.title || item.name,
+      overview: item.overview || "",
+      poster_path: item.poster_path,
+      backdrop_path: item.backdrop_path,
+      release_date: item.release_date || item.first_air_date,
+      vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
+      vote_count: item.vote_count || 0,
+      media_type: "movie",
+    }));
+
+    return {
+      results,
+      totalPages: data.total_pages || 1,
+      totalResults: data.total_results || 0,
+    };
+  } catch (error) {
+    console.error("Error discovering movies with filters:", error);
+    return { results: [], totalPages: 0, totalResults: 0 };
+  }
+}

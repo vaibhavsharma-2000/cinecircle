@@ -8,10 +8,25 @@ import {
   getMoviesByCategory,
   getMovieTrailerKey,
   getTMDBImageUrl,
+  discoverMoviesWithFilters,
+  FilterOptions,
+  MOVIE_GENRES,
 } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem } from "@/lib/supabase";
 import { MovieCard } from "./MovieCard";
-import { Sparkles, Users, Target, ChevronDown, ChevronUp, Loader2, Trash2, AlertTriangle } from "lucide-react";
+import {
+  Sparkles,
+  Users,
+  Target,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Trash2,
+  AlertTriangle,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
+import { GenreFilterDrawer } from "./GenreFilterDrawer";
 
 interface DiscoverViewProps {
   onOpenMovieDetail: (movie: MovieItem, rec?: Recommendation) => void;
@@ -35,6 +50,8 @@ export function DiscoverView({
   friendRecommendations,
 }: DiscoverViewProps) {
   const [selectedCategory, setSelectedCategory] = useState("critics");
+  const [isGenreDrawerOpen, setIsGenreDrawerOpen] = useState(false);
+  const [customFilters, setCustomFilters] = useState<FilterOptions | null>(null);
   const [recFilter, setRecFilter] = useState<"ALL" | "DIRECT">("ALL");
   const [showAllRecs, setShowAllRecs] = useState(false);
   const [deletingRec, setDeletingRec] = useState<Recommendation | null>(null);
@@ -49,18 +66,40 @@ export function DiscoverView({
     async function loadData() {
       setIsLoading(true);
       setPage(1);
-      const categoryResults = await getMoviesByCategory(selectedCategory, 1);
-      setTmdbMovies(categoryResults);
+      if (
+        customFilters &&
+        (customFilters.genreIds.length > 0 ||
+          (customFilters.minRating && customFilters.minRating > 0) ||
+          (customFilters.decade && customFilters.decade !== "all"))
+      ) {
+        const res = await discoverMoviesWithFilters({ ...customFilters, page: 1 });
+        setTmdbMovies(res.results);
+      } else {
+        const categoryResults = await getMoviesByCategory(selectedCategory, 1);
+        setTmdbMovies(categoryResults);
+      }
       setIsLoading(false);
     }
     loadData();
-  }, [selectedCategory]);
+  }, [selectedCategory, customFilters]);
 
   const handleLoadMoreTMDB = async () => {
     setIsLoadingMore(true);
     const nextPage = page + 1;
-    const moreMovies = await getMoviesByCategory(selectedCategory, nextPage);
-    
+    let moreMovies: MovieItem[] = [];
+
+    if (
+      customFilters &&
+      (customFilters.genreIds.length > 0 ||
+        (customFilters.minRating && customFilters.minRating > 0) ||
+        (customFilters.decade && customFilters.decade !== "all"))
+    ) {
+      const res = await discoverMoviesWithFilters({ ...customFilters, page: nextPage });
+      moreMovies = res.results;
+    } else {
+      moreMovies = await getMoviesByCategory(selectedCategory, nextPage);
+    }
+
     // Deduplicate by ID
     const existingIds = new Set(tmdbMovies.map((m) => m.id));
     const uniqueNew = moreMovies.filter((m) => !existingIds.has(m.id));
@@ -85,6 +124,13 @@ export function DiscoverView({
 
   const activeCategoryObj =
     DISCOVERY_CATEGORIES.find((c) => c.id === selectedCategory) || DISCOVERY_CATEGORIES[0];
+
+  const hasActiveCustomFilters = Boolean(
+    customFilters &&
+      (customFilters.genreIds.length > 0 ||
+        (customFilters.minRating && customFilters.minRating > 0) ||
+        (customFilters.decade && customFilters.decade !== "all"))
+  );
 
   return (
     <div className="space-y-16 animate-in fade-in duration-300">
@@ -255,13 +301,34 @@ export function DiscoverView({
           </Badge>
         </div>
 
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Custom Multi-Genre Discovery Studio Trigger Button */}
+          <Button
+            onClick={() => setIsGenreDrawerOpen(true)}
+            className={`h-11 px-5 rounded-full font-black text-xs flex items-center gap-2 transition border shadow-md cursor-pointer ${
+              hasActiveCustomFilters
+                ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] border-[var(--brand-accent)] ring-2 ring-[var(--brand-accent)]/30"
+                : "bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] border-[var(--surface-border)] hover:border-[var(--brand-accent)]"
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4 text-amber-400" />
+            <span>Filter by Genres 🎛️</span>
+            {customFilters && customFilters.genreIds.length > 0 && (
+              <span className="ml-1 px-2 py-0.5 rounded-full bg-black/40 text-amber-400 text-[10px] font-black border border-amber-500/30">
+                {customFilters.genreIds.length}
+              </span>
+            )}
+          </Button>
+
           {DISCOVERY_CATEGORIES.map((cat) => {
-            const isSelected = selectedCategory === cat.id;
+            const isSelected = !hasActiveCustomFilters && selectedCategory === cat.id;
             return (
               <Button
                 key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => {
+                  setCustomFilters(null);
+                  setSelectedCategory(cat.id);
+                }}
                 className={`h-11 px-5 rounded-full font-extrabold text-xs flex items-center gap-2 transition border ${
                   isSelected
                     ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] border-[var(--brand-accent)] shadow-md"
@@ -275,15 +342,65 @@ export function DiscoverView({
         </div>
       </section>
 
-      {/* Category Results Grid */}
-      <section className="space-y-8">
+      {/* Category or Custom Filters Results Grid */}
+      <section className="space-y-6">
+        {/* Active Custom Filter Feedback Banner */}
+        {hasActiveCustomFilters && customFilters && (
+          <div className="p-4 bg-[var(--surface-card)] border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm animate-in fade-in">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
+              <span className="text-xs font-black text-amber-400 flex items-center gap-1.5 shrink-0">
+                <SlidersHorizontal className="w-3.5 h-3.5" /> Active Discovery Filters:
+              </span>
+
+              {customFilters.genreIds.map((gId) => {
+                const gObj = MOVIE_GENRES.find((g) => g.id === gId);
+                return (
+                  <span
+                    key={gId}
+                    className="px-2.5 py-1 rounded-full bg-[var(--canvas)] border border-[var(--surface-border)] text-xs font-bold text-[var(--text-primary)] flex items-center gap-1"
+                  >
+                    {gObj?.emoji} {gObj?.name}
+                  </span>
+                );
+              })}
+
+              {customFilters.minRating && customFilters.minRating > 0 && (
+                <span className="px-2.5 py-1 rounded-full bg-[var(--canvas)] border border-[var(--surface-border)] text-xs font-black text-amber-400">
+                  ★ {customFilters.minRating.toFixed(1)}+
+                </span>
+              )}
+
+              {customFilters.decade && customFilters.decade !== "all" && (
+                <span className="px-2.5 py-1 rounded-full bg-[var(--canvas)] border border-[var(--surface-border)] text-xs font-bold text-[var(--text-secondary)]">
+                  {customFilters.decade}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                onClick={() => setIsGenreDrawerOpen(true)}
+                className="h-8 px-3 rounded-lg text-xs font-bold bg-[var(--canvas)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] text-[var(--text-primary)]"
+              >
+                Adjust Filters
+              </Button>
+              <Button
+                onClick={() => setCustomFilters(null)}
+                className="h-8 px-3 rounded-lg text-xs font-bold bg-red-950/40 text-red-400 border border-red-500/30 hover:bg-red-900/60"
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between border-b border-[var(--surface-border)] pb-4">
           <div>
             <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
-              {activeCategoryObj.label}
+              {hasActiveCustomFilters ? "Custom Genre Discovery" : activeCategoryObj.label}
             </h3>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              {tmdbMovies.length} titles loaded
+              {tmdbMovies.length} titles loaded from TMDB
             </p>
           </div>
         </div>
@@ -422,6 +539,14 @@ export function DiscoverView({
           </Card>
         </div>
       )}
+
+      {/* Custom Multi-Genre Discovery Studio Drawer */}
+      <GenreFilterDrawer
+        isOpen={isGenreDrawerOpen}
+        onClose={() => setIsGenreDrawerOpen(false)}
+        currentFilters={customFilters || { genreIds: [] }}
+        onApplyFilters={(filters) => setCustomFilters(filters)}
+      />
     </div>
   );
 }
