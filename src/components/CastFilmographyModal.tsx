@@ -132,24 +132,18 @@ export function CastFilmographyModal({
 
                       <div className="flex items-center gap-1.5 pt-1">
                         <Button
-                          onClick={async () => {
-                            const key = await getMovieTrailerKey(item.id, item.media_type);
-                            onOpenTrailer(item.title, key);
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleWatchlist(item);
                           }}
-                          className="flex-1 h-8 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] border border-[var(--surface-border)] text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition"
-                        >
-                          <Play className="w-3 h-3 fill-current" />
-                        </Button>
-
-                        <Button
-                          onClick={() => onToggleWatchlist(item)}
-                          className={`h-8 px-2.5 rounded-lg text-[11px] font-bold flex items-center justify-center transition border ${
+                          className={`w-full h-8 px-2.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition border cursor-pointer ${
                             isSaved
-                              ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30"
+                              ? "bg-[var(--brand-accent)]/20 text-[var(--text-primary)] border-[var(--brand-accent)]"
                               : "bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] border-[var(--surface-border)]"
                           }`}
                         >
-                          {isSaved ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                          {isSaved ? <Check className="w-3.5 h-3.5 text-[var(--brand-accent)] stroke-[3]" /> : <Plus className="w-3.5 h-3.5" />}
+                          <span>{isSaved ? "In Library" : "+ Library"}</span>
                         </Button>
                       </div>
                     </div>

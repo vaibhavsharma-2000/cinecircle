@@ -24,6 +24,10 @@ import {
   Calendar,
   User,
   ExternalLink,
+  Bookmark,
+  Eye,
+  CheckCircle2,
+  Trash2,
 } from "lucide-react";
 import { WatchlistItem, supabase } from "@/lib/supabase";
 import { subscribeToComments } from "@/lib/sync";
@@ -42,6 +46,11 @@ interface MovieDetailModalProps {
   onOpenTrailer: (title: string, youtubeKey: string | null) => void;
   onOpenRecommend: (movie: MovieItem) => void;
   onToggleWatchlist: (movie: MovieItem) => void;
+  onSetWatchStatus?: (
+    movie: MovieItem,
+    status: "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED" | "NONE",
+    rating?: number
+  ) => void;
   watchlist: WatchlistItem[];
 }
 
@@ -58,6 +67,7 @@ export function MovieDetailModal({
   onOpenTrailer,
   onOpenRecommend,
   onToggleWatchlist,
+  onSetWatchStatus,
   watchlist,
 }: MovieDetailModalProps) {
   const [movie, setMovie] = useState<MovieItem | null>(initialMovie || null);
@@ -190,7 +200,8 @@ export function MovieDetailModal({
   const overview = currentMovie.overview || "No synopsis available for this title.";
   const voteAverage = currentMovie.vote_average || 8.0;
 
-  const isSaved = watchlist.some((w) => w.tmdb_id === movieId && w.status === "WANT_TO_WATCH");
+  const currentWatchItem = watchlist.find((w) => w.tmdb_id === movieId);
+  const isSaved = !!currentWatchItem;
 
   const handleTrailer = async () => {
     const key = await getMovieTrailerKey(movieId, mediaType);
@@ -438,31 +449,108 @@ export function MovieDetailModal({
             </div>
           )}
 
-          {/* MAIN CTA ROW: Primary Recommend CTA */}
+          {/* YOUR LIBRARY & WATCH STATUS TRACKER */}
+          <div className="p-4 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl space-y-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-extrabold text-[var(--text-primary)] flex items-center gap-2 uppercase tracking-wider">
+                <Bookmark className="w-4 h-4 text-[var(--brand-accent)]" /> Your Library Status
+              </h3>
+              {currentWatchItem && (
+                <button
+                  type="button"
+                  onClick={() => onSetWatchStatus?.(currentMovie, "NONE")}
+                  className="text-[11px] text-red-400 hover:text-red-300 font-semibold flex items-center gap-1 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Remove from Library
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => onSetWatchStatus?.(currentMovie, "WANT_TO_WATCH")}
+                className={`py-2.5 px-3 rounded-xl font-bold text-xs flex flex-col items-center justify-center gap-1 transition border cursor-pointer ${
+                  currentWatchItem?.status === "WANT_TO_WATCH"
+                    ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] border-[var(--brand-accent)] shadow-md"
+                    : "bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--surface-border)]"
+                }`}
+              >
+                <Bookmark className="w-4 h-4" />
+                <span>Want to Watch</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onSetWatchStatus?.(currentMovie, "CURRENTLY_WATCHING")}
+                className={`py-2.5 px-3 rounded-xl font-bold text-xs flex flex-col items-center justify-center gap-1 transition border cursor-pointer ${
+                  currentWatchItem?.status === "CURRENTLY_WATCHING"
+                    ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md font-extrabold"
+                    : "bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--surface-border)]"
+                }`}
+              >
+                <Eye className="w-4 h-4" />
+                <span>Watching</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onSetWatchStatus?.(currentMovie, "WATCHED", currentWatchItem?.rating_stars || 5.0)}
+                className={`py-2.5 px-3 rounded-xl font-bold text-xs flex flex-col items-center justify-center gap-1 transition border cursor-pointer ${
+                  currentWatchItem?.status === "WATCHED"
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-md font-extrabold"
+                    : "bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--surface-border)]"
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Watched</span>
+              </button>
+            </div>
+
+            {/* Interactive Rating Row when marked as Watched */}
+            {currentWatchItem?.status === "WATCHED" && (
+              <div className="pt-2 border-t border-[var(--surface-border)] flex items-center justify-between gap-2 animate-in fade-in">
+                <span className="text-xs font-bold text-[var(--text-secondary)]">Your Star Rating:</span>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => onSetWatchStatus?.(currentMovie, "WATCHED", star)}
+                      className="p-1 hover:scale-125 transition cursor-pointer"
+                    >
+                      <Star
+                        className={`w-5 h-5 ${
+                          (currentWatchItem?.rating_stars || 5.0) >= star
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-[var(--text-muted)]"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="text-xs font-black text-amber-400 ml-1.5">
+                    {(currentWatchItem?.rating_stars || 5.0).toFixed(1)} ★
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* MAIN CTA ROW: Primary Recommend CTA and Watch Trailer */}
           <div className="pt-4 border-t border-[var(--surface-border)] flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <Button
               onClick={handleRecommendClick}
-              className="flex-1 h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-black text-xs px-6 rounded-xl shadow-xl transition flex items-center justify-center gap-2 hover:scale-[1.02]"
+              className="flex-1 h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-black text-xs px-6 rounded-xl shadow-xl transition flex items-center justify-center gap-2 hover:scale-[1.02] cursor-pointer"
             >
               <Sparkles className="w-4 h-4 fill-current" /> Recommend This Film to a Friend
             </Button>
 
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleTrailer}
-                className="h-12 bg-[var(--canvas)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] font-bold text-xs px-5 rounded-xl transition flex items-center justify-center gap-1.5 border border-[var(--surface-border)]"
-              >
-                <Play className="w-4 h-4 fill-current" /> Trailer
-              </Button>
-
-              <Button
-                onClick={() => onToggleWatchlist(currentMovie)}
-                className="h-12 bg-[var(--canvas)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] font-bold text-xs px-5 rounded-xl transition flex items-center justify-center gap-1.5 border border-[var(--surface-border)]"
-              >
-                {isSaved ? <Check className="w-4 h-4 text-[var(--brand-accent)]" /> : <Plus className="w-4 h-4" />}
-                {isSaved ? "Saved" : "Watchlist"}
-              </Button>
-            </div>
+            <Button
+              onClick={handleTrailer}
+              className="h-12 bg-[var(--canvas)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] font-bold text-xs px-5 rounded-xl transition flex items-center justify-center gap-1.5 border border-[var(--surface-border)] cursor-pointer"
+            >
+              <Play className="w-4 h-4 fill-current" /> Watch Trailer
+            </Button>
           </div>
 
         </div>

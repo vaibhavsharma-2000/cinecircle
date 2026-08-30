@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button, IconButton, Input, Textarea, Avatar, Badge, Chip } from "@usefragments/ui";
 import { MovieItem, getTMDBImageUrl } from "@/lib/tmdb";
 import { FriendItem } from "@/lib/supabase";
@@ -44,6 +44,18 @@ export function RecommendModal({
     "DarkAndTwisted",
     "FridayNightVibe",
   ]);
+
+  // Cleanly reset all fields when modal opens or switches movie
+  useEffect(() => {
+    if (isOpen) {
+      setNote("");
+      setRatingStars(5.0);
+      setRecipient("All Friends");
+      setSelectedTags(["Mindbender"]);
+      setFriendSearchQuery("");
+      setCustomTagInput("");
+    }
+  }, [isOpen, movie?.id]);
 
   const extractValue = (val: any): string => {
     if (typeof val === "string") return val;
@@ -89,6 +101,10 @@ export function RecommendModal({
       recipient,
     });
 
+    setNote("");
+    setRatingStars(5.0);
+    setRecipient("All Friends");
+    setFriendSearchQuery("");
     onClose();
   };
 

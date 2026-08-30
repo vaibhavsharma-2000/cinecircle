@@ -299,7 +299,7 @@ export async function fetchLiveWatchlist(userId?: string): Promise<WatchlistItem
       poster_path: row.poster_path,
       release_year: row.release_year || "2024",
       genre: row.genre || "Featured",
-      status: (row.status as "WANT_TO_WATCH" | "WATCHED") || "WANT_TO_WATCH",
+      status: (row.status as "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED") || "WANT_TO_WATCH",
       rating_stars: row.rating_stars ? Number(row.rating_stars) : undefined,
       recommended_by: row.recommended_by || undefined,
       added_at: row.created_at,
@@ -321,7 +321,7 @@ export async function addLiveWatchlistItem(item: {
   posterPath: string | null;
   releaseYear?: string;
   genre?: string;
-  status: "WANT_TO_WATCH" | "WATCHED";
+  status: "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED";
   ratingStars?: number;
   recommendedBy?: string;
 }): Promise<WatchlistItem | null> {
@@ -389,7 +389,7 @@ export async function removeLiveWatchlistItem(id: string): Promise<boolean> {
  */
 export async function updateLiveWatchlistItem(
   id: string,
-  updates: { status?: "WANT_TO_WATCH" | "WATCHED"; rating_stars?: number }
+  updates: { status?: "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED"; rating_stars?: number }
 ): Promise<boolean> {
   try {
     const { error } = await supabase.from("watchlist").update(updates).eq("id", id);

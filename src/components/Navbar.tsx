@@ -57,7 +57,7 @@ export function Navbar({
   const tabs = [
     { id: "discover", label: "Discover", icon: Film },
     { id: "recommendations", label: "Recommendations", icon: Sparkles },
-    { id: "watchlist", label: "Watchlist", icon: Bookmark, badge: watchlistCount },
+    { id: "watchlist", label: "My Library", icon: Bookmark, badge: watchlistCount },
     { id: "matcher", label: "Group Matcher", icon: Sparkles },
     { id: "friends", label: "Friends", icon: Users, badge: friendsCount },
   ];

@@ -4,19 +4,26 @@ import { useState } from "react";
 import { Card, Button, Badge, Avatar, EmptyState } from "@usefragments/ui";
 import { FriendItem, WatchlistItem } from "@/lib/supabase";
 import { getTMDBImageUrl, getMovieTrailerKey } from "@/lib/tmdb";
-import { Sparkles, Users, Play, Flame, Dices } from "lucide-react";
+import { MovieItem } from "@/lib/tmdb";
+import { Sparkles, Users, Play, Flame, Dices, Bookmark, Check } from "lucide-react";
 import { WatchRouletteModal } from "./WatchRouletteModal";
 
 interface GroupMatcherViewProps {
   friends: FriendItem[];
   watchlist: WatchlistItem[];
   onOpenTrailer: (title: string, youtubeKey: string | null) => void;
+  onOpenMovieDetail?: (movie: MovieItem) => void;
+  onOpenRecommend?: (movie: MovieItem) => void;
+  onToggleWatchlist?: (movie: MovieItem) => void;
 }
 
 export function GroupMatcherView({
   friends,
   watchlist,
   onOpenTrailer,
+  onOpenMovieDetail,
+  onOpenRecommend,
+  onToggleWatchlist,
 }: GroupMatcherViewProps) {
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [matches, setMatches] = useState<WatchlistItem[] | null>(null);
@@ -137,42 +144,79 @@ export function GroupMatcherView({
             </EmptyState>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-              {matches.map((item) => (
-                <Card
-                  key={item.id}
-                  className="rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] group hover:border-[var(--brand-accent)] transition duration-300 shadow-xl flex flex-col justify-between"
-                >
-                  <div className="relative aspect-[2/3] bg-black/60 overflow-hidden">
-                    <img
-                      src={getTMDBImageUrl(item.poster_path, "w500")}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    />
-                    <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-black text-[10px] uppercase shadow">
-                      ★ 100% Match
-                    </div>
-                  </div>
+              {matches.map((item) => {
+                const movieObj: MovieItem = {
+                  id: item.tmdb_id,
+                  title: item.title,
+                  poster_path: item.poster_path,
+                  media_type: item.media_type,
+                  release_date: item.release_year,
+                  vote_average: item.rating_stars || 8.0,
+                  vote_count: 100,
+                  overview: "",
+                };
+                const isSaved = watchlist.some((w) => w.tmdb_id === item.tmdb_id);
 
-                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-extrabold text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--text-primary)] transition">
-                        {item.title}
-                      </h3>
-                      <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">{item.release_year}</p>
+                return (
+                  <Card
+                    key={item.id}
+                    onClick={() => onOpenMovieDetail?.(movieObj)}
+                    className="rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] group hover:border-[var(--brand-accent)] transition duration-300 shadow-xl flex flex-col justify-between cursor-pointer"
+                  >
+                    <div className="relative aspect-[2/3] bg-black/60 overflow-hidden">
+                      <img
+                        src={getTMDBImageUrl(item.poster_path, "w500")}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-black text-[10px] uppercase shadow">
+                        ★ 100% Match
+                      </div>
                     </div>
 
-                    <Button
-                      onClick={async () => {
-                        const key = await getMovieTrailerKey(item.tmdb_id, item.media_type);
-                        onOpenTrailer(item.title, key);
-                      }}
-                      className="w-full h-10 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] text-xs font-black rounded-xl transition shadow flex items-center justify-center gap-1.5"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current" /> Watch Trailer
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-extrabold text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--text-primary)] transition">
+                          {item.title}
+                        </h3>
+                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">{item.release_year}</p>
+                      </div>
+
+                      <div className="flex gap-2 pt-1 border-t border-[var(--surface-border)]">
+                        {onOpenRecommend && (
+                          <Button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenRecommend(movieObj);
+                            }}
+                            className="flex-1 h-10 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] text-xs font-black rounded-xl transition shadow flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 fill-current" /> Recommend
+                          </Button>
+                        )}
+                        {onToggleWatchlist && (
+                          <Button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleWatchlist(movieObj);
+                            }}
+                            title={isSaved ? "Saved in Library" : "Add to Library"}
+                            className={`w-10 h-10 rounded-xl text-xs font-bold border transition flex items-center justify-center p-0 cursor-pointer ${
+                              isSaved
+                                ? "bg-[var(--brand-accent)]/20 border-[var(--brand-accent)] text-[var(--text-primary)]"
+                                : "bg-[var(--canvas)] border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            }`}
+                          >
+                            {isSaved ? <Check className="w-4 h-4 text-[var(--brand-accent)] stroke-[3]" /> : <Bookmark className="w-4 h-4" />}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </section>

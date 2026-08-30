@@ -57,7 +57,7 @@ export interface WatchlistItem {
   poster_path: string | null;
   release_year: string;
   genre: string;
-  status: "WANT_TO_WATCH" | "WATCHED";
+  status: "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED";
   rating_stars?: number;
   recommended_by?: string;
   added_at: string;

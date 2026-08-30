@@ -25,6 +25,8 @@ import {
   AlertTriangle,
   SlidersHorizontal,
   X,
+  Bookmark,
+  Check,
 } from "lucide-react";
 import { GenreFilterDrawer } from "./GenreFilterDrawer";
 
@@ -451,27 +453,27 @@ export function DiscoverView({
 
                       <div className="flex gap-2 pt-1">
                         <Button
-                          onClick={async (e) => {
+                          onClick={(e) => {
                             e.stopPropagation();
-                            const key = await getMovieTrailerKey(movie.id, movie.media_type || "movie");
-                            onOpenTrailer(title, key);
+                            onOpenRecommend(movie);
                           }}
-                          className="flex-1 h-10 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] text-xs font-black rounded-xl transition shadow"
+                          className="flex-1 h-10 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] text-xs font-black rounded-xl transition shadow flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                          Trailer
+                          <Sparkles className="w-3.5 h-3.5 fill-current" /> Recommend
                         </Button>
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
                             onToggleWatchlist(movie);
                           }}
-                          className={`w-10 h-10 rounded-xl text-xs font-bold border transition flex items-center justify-center p-0 ${
+                          title={isSaved ? "Saved in Library" : "Add to Library"}
+                          className={`w-10 h-10 rounded-xl text-xs font-bold border transition flex items-center justify-center p-0 cursor-pointer ${
                             isSaved
-                              ? "bg-[var(--brand-accent)]/15 border-[var(--brand-accent)] text-[var(--text-primary)]"
-                              : "bg-[var(--canvas)] border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                              ? "bg-[var(--brand-accent)]/20 border-[var(--brand-accent)] text-[var(--text-primary)]"
+                              : "bg-[var(--canvas)] border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
                           }`}
                         >
-                          {isSaved ? "✓" : "+"}
+                          {isSaved ? <Check className="w-4 h-4 text-[var(--brand-accent)] stroke-[3]" /> : <Bookmark className="w-4 h-4" />}
                         </Button>
                       </div>
                     </div>

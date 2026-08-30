@@ -47,13 +47,25 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ## 👥 Friend Circle Recommendation Feed & Dedicated Recommendations Page
 - **Dedicated Recommendations View**: Separate primary tab for full recommendation feed. The main **Discover** landing page previews the 3 most recent recommendations with a direct button leading to the dedicated **Recommendations** page.
-- **Recommendation Modal**: Includes friend search bar, full-width optional review note textarea, star rating, and dynamic **Custom Tag Creation** (#tags).
+- **Recommendation Modal State Management**: Full-width optional review note textarea, 1.0–5.0 star rating, friend search bar, and dynamic **Custom Tag Creation** (#tags). Form state cleanly resets upon opening, submitting, or switching movies.
 - **Live Supabase Multi-User Sync & Realtime WebSockets**: Recommendations, comments, user watchlists, and profile updates synchronize directly to Supabase (`recommendations`, `recommendation_comments`, `watchlist`, `profiles`). Authenticated users automatically receive live updates via WebSocket subscriptions (`postgres_changes`), rendering new recommendations and comments immediately without page refresh.
 - **1-Click Mutual Friend Invite Links (`/?invite=${username}`)**: Users can generate personalized invite links from the Friends tab with 1-click **Copy Link**, **WhatsApp**, and **iMessage/SMS** sharing. When a friend opens the link, the app automatically creates a reciprocal two-way friendship in Supabase (`addLiveFriendship`), adding the friend to your circle and adding you to their circle simultaneously.
 - **Project-Wide Storage & Cookie Preferences (`CookieConsentModal`)**: Configured modal and banner to manage local storage keys (`cinecircle_auth_session`, `cinecircle_streaming_country`, `avatar_character_id`, `cinecircle_cookie_consent`), respecting essential session storage, regional streaming preferences, character avatars, and genre discovery filters.
 - **Row Level Security (RLS)**: Enabled across all Postgres tables (`profiles`, `friendships`, `recommendations`, `watchlist`, `recommendation_comments`) with granular security policies preventing unauthorized mutation while allowing circle members to view recommendations.
 - **Supabase Comments Thread**: `recommendation_comments` table created in Supabase Postgres with RLS policies enabled. Comments are loaded dynamically and saved directly to the database with realtime live updates.
 - **Recommendation Deletion with Confirmation Overlay**: Each feed item features a trash trigger button (🗑️). Clicking it opens a **Delete Recommendation Overlay** modal asking for explicit user confirmation before deletion, which purges the record from both UI state and Supabase.
+
+---
+
+## 📚 My Library System & 3-Tier Watch Status Tracking
+- **"My Library" Primary Tab (`WatchlistView`)**: Evolved the Watchlist view into a full-featured personal media library featuring 5 interactive sub-tabs:
+  - 🌟 **All Titles**: Overview of every saved, in-progress, and completed movie or TV series.
+  - 📌 **Want to Watch**: Titles queued for upcoming movie nights.
+  - 🍿 **Currently Watching**: In-progress TV series and movies with a distinct Amber indicator.
+  - ✅ **Watched & Rated**: Completed titles with interactive 1.0–5.0 star user ratings.
+  - ✨ **Recommended by You**: Outgoing recommendations you've shared with friends.
+- **Movie Detail Watch Status Tracker (`MovieDetailModal`)**: Replaced binary "Add to Watchlist" button with a 3-tier segmented watch status selector (📌 *Want to Watch*, 🍿 *Watching*, ✅ *Watched* with interactive star rating picker, and ✕ *Remove from Library*).
+- **Streamlined Movie Card CTA Architecture**: Removed clutter by reserving **"Watch Trailer 🎬"** exclusively for the Movie Detail page. Movie cards across Discover, Feeds, and Group Matcher feature two clear primary actions: **"Recommend ✨"** (opens Recommendation modal) and **"Library 🔖"** (quick save/status toggle).
 
 ---
 

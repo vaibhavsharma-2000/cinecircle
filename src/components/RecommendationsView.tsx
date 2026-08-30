@@ -141,11 +141,11 @@ export function RecommendationsView({
                             e.stopPropagation();
                             onToggleWatchlist(movieObj);
                           }}
-                          className={`h-8 px-3 rounded-full text-[10px] font-bold border transition ${
+                          className={`h-8 px-3 rounded-full text-[10px] font-bold border transition cursor-pointer ${
                             isSaved ? "bg-[var(--text-primary)] text-[var(--canvas)] border-[var(--text-primary)]" : "bg-[var(--canvas)] text-[var(--text-secondary)] border-[var(--surface-border)] hover:text-[var(--text-primary)]"
                           }`}
                         >
-                          {isSaved ? "Saved" : "+ Watchlist"}
+                          {isSaved ? "Saved" : "+ Library"}
                         </Button>
 
                         <button

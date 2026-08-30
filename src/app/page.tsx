@@ -366,9 +366,65 @@ export default function Home() {
     }
   };
 
+  const handleSetWatchStatus = async (
+    movie: MovieItem,
+    status: "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED" | "NONE",
+    rating?: number
+  ) => {
+    const exists = watchlist.find((w) => w.tmdb_id === movie.id);
+    if (status === "NONE") {
+      if (exists) {
+        setWatchlist((prev) => prev.filter((w) => w.tmdb_id !== movie.id));
+        await removeLiveWatchlistItem(exists.id);
+      }
+      return;
+    }
+
+    if (exists) {
+      setWatchlist((prev) =>
+        prev.map((w) =>
+          w.tmdb_id === movie.id ? { ...w, status, rating_stars: rating !== undefined ? rating : w.rating_stars } : w
+        )
+      );
+      await updateLiveWatchlistItem(exists.id, { status, rating_stars: rating });
+    } else {
+      const releaseYear = (movie.release_date || movie.first_air_date || "").substring(0, 4) || "2024";
+      const tempId = `watch_${Date.now()}`;
+      const newItem: WatchlistItem = {
+        id: tempId,
+        tmdb_id: movie.id,
+        media_type: movie.media_type || "movie",
+        title: movie.title || movie.name || "Untitled",
+        poster_path: movie.poster_path,
+        release_year: releaseYear,
+        genre: "Movie",
+        status: status,
+        rating_stars: rating,
+        added_at: new Date().toISOString(),
+      };
+      setWatchlist((prev) => [newItem, ...prev]);
+
+      const saved = await addLiveWatchlistItem({
+        userId: userId || undefined,
+        tmdbId: movie.id,
+        mediaType: (movie.media_type as "movie" | "tv") || "movie",
+        title: movie.title || movie.name || "Untitled",
+        posterPath: movie.poster_path,
+        releaseYear,
+        genre: "Movie",
+        status: status,
+        ratingStars: rating,
+      });
+
+      if (saved) {
+        setWatchlist((prev) => prev.map((w) => (w.id === tempId ? saved : w)));
+      }
+    }
+  };
+
   const handleUpdateWatchlistStatus = async (
     id: string,
-    status: "WANT_TO_WATCH" | "WATCHED",
+    status: "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED",
     rating?: number
   ) => {
     setWatchlist((prev) =>
@@ -527,6 +583,8 @@ export default function Home() {
             currentUserDisplayName={profile.displayName}
             onUpdateStatus={handleUpdateWatchlistStatus}
             onRemove={handleRemoveFromWatchlist}
+            onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
+            onOpenMovieDetail={handleOpenMovieDetail}
             onOpenTrailer={(title, youtubeKey) =>
               setTrailerModal({ isOpen: true, title, youtubeKey })
             }
@@ -540,6 +598,9 @@ export default function Home() {
             onOpenTrailer={(title, youtubeKey) =>
               setTrailerModal({ isOpen: true, title, youtubeKey })
             }
+            onOpenMovieDetail={handleOpenMovieDetail}
+            onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
+            onToggleWatchlist={handleToggleWatchlist}
           />
         )}
 
@@ -573,6 +634,7 @@ export default function Home() {
         }
         onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
         onToggleWatchlist={handleToggleWatchlist}
+        onSetWatchStatus={handleSetWatchStatus}
         watchlist={watchlist}
       />
 

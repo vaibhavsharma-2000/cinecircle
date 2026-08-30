@@ -2,7 +2,7 @@
 
 import { Card, Badge, Avatar, Button, IconButton } from "@usefragments/ui";
 import { getTMDBImageUrl } from "@/lib/tmdb";
-import { Star, Play, Plus, Check, Target } from "lucide-react";
+import { Star, Sparkles, Bookmark, Check, Target } from "lucide-react";
 
 interface MovieCardProps {
   id: number;
@@ -18,7 +18,7 @@ interface MovieCardProps {
   tags?: string[];
   tmdbRating?: number;
   onCardClick?: () => void;
-  onTrailerClick?: (e: React.MouseEvent) => void;
+  onRecommendClick?: (e: React.MouseEvent) => void;
   onWatchlistClick?: (e: React.MouseEvent) => void;
   isSaved?: boolean;
 }
@@ -37,7 +37,7 @@ export function MovieCard({
   tags,
   tmdbRating,
   onCardClick,
-  onTrailerClick,
+  onRecommendClick,
   onWatchlistClick,
   isSaved = false,
 }: MovieCardProps) {
@@ -96,7 +96,7 @@ export function MovieCard({
                 <span>{friendName} says:</span>
               </div>
               <p className="text-xs text-[var(--text-primary)] italic line-clamp-2 leading-relaxed">
-                "{friendNote}"
+                &quot;{friendNote}&quot;
               </p>
             </div>
           )}
@@ -116,16 +116,16 @@ export function MovieCard({
           )}
         </div>
 
-        {/* Action Row */}
+        {/* Action Row: Recommend & Library */}
         <div className="flex items-center gap-2 pt-3 border-t border-[var(--surface-border)]">
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              onTrailerClick?.(e);
+              onRecommendClick?.(e);
             }}
-            className="flex-1 h-10 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] text-xs font-black rounded-xl transition shadow flex items-center justify-center gap-1.5"
+            className="flex-1 h-10 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] text-xs font-black rounded-xl transition shadow flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <Play className="w-3.5 h-3.5 fill-current" /> Trailer
+            <Sparkles className="w-3.5 h-3.5 fill-current" /> Recommend
           </Button>
 
           <IconButton
@@ -133,13 +133,14 @@ export function MovieCard({
               e.stopPropagation();
               onWatchlistClick?.(e);
             }}
-            className={`w-10 h-10 rounded-xl border transition flex items-center justify-center ${
+            title={isSaved ? "Saved in Library" : "Add to Library"}
+            className={`w-10 h-10 rounded-xl border transition flex items-center justify-center cursor-pointer ${
               isSaved
-                ? "bg-[var(--brand-accent)]/15 border-[var(--brand-accent)] text-[var(--text-primary)]"
-                : "bg-[var(--canvas)] border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                ? "bg-[var(--brand-accent)]/20 border-[var(--brand-accent)] text-[var(--text-primary)]"
+                : "bg-[var(--canvas)] border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
             }`}
           >
-            {isSaved ? <Check className="w-4 h-4 text-[var(--text-primary)]" /> : <Plus className="w-4 h-4" />}
+            {isSaved ? <Check className="w-4 h-4 text-[var(--brand-accent)] stroke-[3]" /> : <Bookmark className="w-4 h-4" />}
           </IconButton>
         </div>
       </div>
