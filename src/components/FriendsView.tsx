@@ -4,6 +4,8 @@ import { FriendItem, WatchlistItem, Recommendation } from "@/lib/supabase";
 import { Users, UserPlus, Trash2, Share2, Flame, Trophy, Sparkles } from "lucide-react";
 import { TasteCompatibilityModal } from "./TasteCompatibilityModal";
 
+import { UserAvatar } from "./UserAvatar";
+
 interface FriendsViewProps {
   friends: FriendItem[];
   watchlist?: WatchlistItem[];
@@ -191,9 +193,11 @@ export function FriendsView({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Avatar className="w-11 h-11 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-black text-sm flex items-center justify-center shadow">
-                    {friend.display_name[0]}
-                  </Avatar>
+                  <UserAvatar
+                    avatarId={friend.avatar_character_id || (friend as any).avatar_id || "tony_stark"}
+                    displayName={friend.display_name}
+                    size="lg"
+                  />
                   <div>
                     <h3 className="font-extrabold text-base text-[var(--text-primary)]">{friend.display_name}</h3>
                     <p className="text-xs text-[var(--text-secondary)]">@{friend.username}</p>

@@ -56,6 +56,15 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
+## 🎨 Crunchyroll-Style Character Avatar Vault & Persona Picker
+- **Character Avatar Vault (`AvatarPickerModal`)**: Overhauls avatar selection into a rich, full-screen interactive character portrait browser inspired by Crunchyroll.
+- **Categorized Franchise Catalog**: 30+ high-resolution character portraits categorized into 6 themes (*🔥 Popular*, *🦸 Superheroes*, *🚀 Sci-Fi & Fantasy*, *📺 Cult TV Shows*, *🎨 Anime & Animation*, *🎭 Cinema Classics*).
+- **Search & Live Filtering**: Real-time search bar to quickly find character icons by name, actor, or show/movie title (e.g. *Iron Man*, *Wednesday Addams*, *Batman*, *Miles Morales*, *Goku*, *Jinx*).
+- **Live Preview Card**: Displays selected character portrait hero card in sign-up (`AuthModal`), account settings (`AccountModal`), and profile edit (`ProfileModal`) with character name, franchise title, and iconic quotes.
+- **Universal `<UserAvatar />` Component**: Reusable avatar component rendering high-res character portraits across top navigation bar (`Navbar`), friend cards (`FriendsView`), and compatibility modals with graceful fallbacks.
+
+---
+
 ## 🤖 Expandable TMDB Algorithmic Discovery Stream
 - **Dynamic Pagination**: Includes an **`Explore More Titles`** button that fetches next pages dynamically from the TMDB API (`page=2`, `page=3`) and appends results without page reload.
 - **7 Curated Collections**: *Top Rated & Masterpieces*, *Trending Now*, *Rom-Coms & Feel-Good*, *High-Stakes Thrillers*, *Mind-Bending Sci-Fi*, *Crowd Comedies*, *Award Winners & Dramas*.

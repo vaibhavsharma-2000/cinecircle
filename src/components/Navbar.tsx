@@ -4,7 +4,20 @@ import { useState, useRef, useEffect } from "react";
 import { Header, Button, Avatar, Badge } from "@usefragments/ui";
 import { SearchAutocomplete } from "./SearchAutocomplete";
 import { MovieItem } from "@/lib/tmdb";
-import { Sun, Moon, LogIn, LogOut, Film, Bookmark, Users, Sparkles, Settings, ChevronDown, Smartphone } from "lucide-react";
+import { UserAvatar } from "./UserAvatar";
+import {
+  Sun,
+  Moon,
+  LogIn,
+  LogOut,
+  Film,
+  Bookmark,
+  Users,
+  Sparkles,
+  Settings,
+  ChevronDown,
+  Smartphone,
+} from "lucide-react";
 
 interface NavbarProps {
   activeTab: string;
@@ -87,11 +100,9 @@ export function Navbar({
               <button
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="h-9 px-3 rounded-full bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] transition flex items-center justify-center gap-1.5 shadow-sm"
+                className="h-9 px-2 rounded-full bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] transition flex items-center justify-center gap-1 shadow-sm cursor-pointer"
               >
-                <Avatar className="w-6 h-6 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-black text-[11px] flex items-center justify-center shrink-0">
-                  {profile.displayName[0]}
-                </Avatar>
+                <UserAvatar avatarId={profile.avatarId} displayName={profile.displayName} size="sm" />
                 <ChevronDown className="w-3.5 h-3.5 text-[var(--text-secondary)] shrink-0" />
               </button>
             ) : (
@@ -106,10 +117,13 @@ export function Navbar({
             {/* Mobile Floating Dropdown Menu */}
             {dropdownOpen && (
               <div className="absolute right-0 top-11 w-56 bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in space-y-1">
-                <div className="p-3 border-b border-[var(--surface-border)] space-y-0.5">
-                  <p className="text-xs font-extrabold text-[var(--text-primary)] truncate">{profile.displayName}</p>
-                  <p className="text-[11px] text-[var(--text-secondary)] truncate">@{profile.username}</p>
-                  <p className="text-[10px] text-[var(--text-muted)] truncate">{userEmail}</p>
+                <div className="p-3 border-b border-[var(--surface-border)] flex items-center gap-3">
+                  <UserAvatar avatarId={profile.avatarId} displayName={profile.displayName} size="md" />
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="text-xs font-extrabold text-[var(--text-primary)] truncate">{profile.displayName}</p>
+                    <p className="text-[11px] text-[var(--text-secondary)] truncate">@{profile.username}</p>
+                    <p className="text-[10px] text-[var(--text-muted)] truncate">{userEmail}</p>
+                  </div>
                 </div>
 
                 <button
@@ -213,11 +227,9 @@ export function Navbar({
               <button
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="h-9 px-3 rounded-full bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] transition flex items-center justify-center gap-2 shadow-sm"
+                className="h-9 px-2.5 rounded-full bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
-                <Avatar className="w-6 h-6 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-black text-[11px] flex items-center justify-center shrink-0">
-                  {profile.displayName[0]}
-                </Avatar>
+                <UserAvatar avatarId={profile.avatarId} displayName={profile.displayName} size="sm" />
                 <span className="text-xs font-bold text-[var(--text-primary)] max-w-[80px] truncate">
                   {profile.displayName}
                 </span>
@@ -227,10 +239,13 @@ export function Navbar({
               {/* Desktop Floating Dropdown Overlay */}
               {dropdownOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in space-y-1">
-                  <div className="p-3 border-b border-[var(--surface-border)] space-y-0.5">
-                    <p className="text-xs font-extrabold text-[var(--text-primary)] truncate">{profile.displayName}</p>
-                    <p className="text-[11px] text-[var(--text-secondary)] truncate">@{profile.username}</p>
-                    <p className="text-[10px] text-[var(--text-muted)] truncate">{userEmail}</p>
+                  <div className="p-3 border-b border-[var(--surface-border)] flex items-center gap-3">
+                    <UserAvatar avatarId={profile.avatarId} displayName={profile.displayName} size="md" />
+                    <div className="space-y-0.5 min-w-0">
+                      <p className="text-xs font-extrabold text-[var(--text-primary)] truncate">{profile.displayName}</p>
+                      <p className="text-[11px] text-[var(--text-secondary)] truncate">@{profile.username}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] truncate">{userEmail}</p>
+                    </div>
                   </div>
 
                   <button
