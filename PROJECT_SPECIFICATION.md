@@ -69,6 +69,14 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
+## 🔒 Unique Handle Enforcer & Google Auth Profile Completion
+- **Mandatory Profile Completion (`CompleteProfileModal`)**: When a user logs in via Google Auth or Email, if their profile handle (`@username`) is unconfigured, the app automatically presents a high-focus profile setup modal.
+- **Google Metadata Integration**: Automatically pre-fills the user's Full Name from Google Auth (`user_metadata.full_name` / `name`) while prompting them to select a custom `@username` handle, age, and character avatar persona.
+- **Real-Time Handle Uniqueness Check (`checkUsernameAvailable`)**: Queries the Supabase `profiles` table in real time with debounced input, displaying instant status (*"✓ Handle Available"* or *"⚠️ Handle Taken"*). Enforced strictly across Sign Up, Google Onboarding, and Account Settings.
+- **Zero Fallback Reversion**: Ensures profile details persist directly to Supabase (`profiles`), preventing accounts from ever reverting to `"Guest"` or `"guest"`.
+
+---
+
 ## 🤖 Expandable TMDB Algorithmic Discovery Stream
 - **Dynamic Pagination**: Includes an **`Explore More Titles`** button that fetches next pages dynamically from the TMDB API (`page=2`, `page=3`) and appends results without page reload.
 - **7 Curated Collections**: *Top Rated & Masterpieces*, *Trending Now*, *Rom-Coms & Feel-Good*, *High-Stakes Thrillers*, *Mind-Bending Sci-Fi*, *Crowd Comedies*, *Award Winners & Dramas*.

@@ -12,6 +12,7 @@ import { RecommendModal } from "@/components/RecommendModal";
 import { AccountModal } from "@/components/AccountModal";
 import { MovieDetailModal } from "@/components/MovieDetailModal";
 import { AuthModal } from "@/components/AuthModal";
+import { CompleteProfileModal } from "@/components/CompleteProfileModal";
 import { CookieConsentModal } from "@/components/CookieConsentModal";
 import { InstallPwaModal } from "@/components/InstallPwaModal";
 import { InviteModal } from "@/components/InviteModal";
@@ -66,6 +67,7 @@ export default function Home() {
 
   // Modal States
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [completeProfileModalOpen, setCompleteProfileModalOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [installPwaModalOpen, setInstallPwaModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -162,46 +164,65 @@ export default function Home() {
       }
     }
 
-    // 1. Initial session check and data fetch
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-        setUserEmail(session.user.email ?? null);
-
-        // Fetch user profile from Supabase
-        const dbProfile = await fetchUserProfile(session.user.id);
-        if (dbProfile) {
-          setProfile({
-            displayName: dbProfile.display_name,
-            username: dbProfile.username,
-            avatarId: dbProfile.avatar_character_id,
-            age: dbProfile.age ? String(dbProfile.age) : "24",
-          });
-        } else {
-          // Initialize new profile in Supabase
-          const meta = session.user.user_metadata || {};
-          const newProfile = {
-            id: session.user.id,
-            username: meta.username || (session.user.email?.split("@")[0] || "user"),
-            display_name: meta.display_name || "User",
-            avatar_character_id: meta.avatar_id || "tony_stark",
-            age: meta.age || "24",
-          };
-          setProfile({
-            displayName: newProfile.display_name,
-            username: newProfile.username,
-            avatarId: newProfile.avatar_character_id,
-            age: newProfile.age,
-          });
-          await upsertUserProfile(newProfile);
+    const syncUserSession = async (session: any) => {
+      if (!session?.user) {
+        setUserId(null);
+        if (!IS_MOCK_MODE) {
+          setUserEmail(null);
+          setWatchlist([]);
         }
-
-        // Fetch live watchlist
-        const dbWatchlist = await fetchLiveWatchlist(session.user.id);
-        if (dbWatchlist.length > 0) {
-          setWatchlist(dbWatchlist);
-        }
+        return;
       }
+
+      setUserId(session.user.id);
+      setUserEmail(session.user.email ?? null);
+
+      const dbProfile = await fetchUserProfile(session.user.id);
+      const meta = session.user.user_metadata || {};
+
+      if (dbProfile && dbProfile.username && dbProfile.username !== "guest" && dbProfile.username !== "user") {
+        setProfile({
+          displayName: dbProfile.display_name,
+          username: dbProfile.username,
+          avatarId: dbProfile.avatar_character_id || "tony_stark",
+          age: dbProfile.age ? String(dbProfile.age) : "24",
+        });
+      } else if (meta.username && meta.username !== "guest" && meta.username !== "user") {
+        const newProf = {
+          displayName: meta.display_name || meta.full_name || meta.name || session.user.email?.split("@")[0] || "User",
+          username: meta.username,
+          avatarId: meta.avatar_id || "tony_stark",
+          age: String(meta.age || "24"),
+        };
+        setProfile(newProf);
+        await upsertUserProfile({
+          id: session.user.id,
+          username: newProf.username,
+          display_name: newProf.displayName,
+          avatar_character_id: newProf.avatarId,
+          age: newProf.age,
+        });
+      } else {
+        // Missing profile or username handle (e.g. Google Auth!)
+        const gName = meta.full_name || meta.name || meta.display_name || session.user.email?.split("@")[0] || "User";
+        setProfile({
+          displayName: gName,
+          username: session.user.email?.split("@")[0] || "user",
+          avatarId: meta.avatar_id || "tony_stark",
+          age: "24",
+        });
+        setCompleteProfileModalOpen(true);
+      }
+
+      const dbWatchlist = await fetchLiveWatchlist(session.user.id);
+      if (dbWatchlist.length > 0) {
+        setWatchlist(dbWatchlist);
+      }
+    };
+
+    // 1. Initial session check and data fetch
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      syncUserSession(session);
     });
 
     // 2. Load live recommendations for all users
@@ -232,30 +253,8 @@ export default function Home() {
     // 4. Auth State change subscription
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-        setUserEmail(session.user.email ?? null);
-        const dbProfile = await fetchUserProfile(session.user.id);
-        if (dbProfile) {
-          setProfile({
-            displayName: dbProfile.display_name,
-            username: dbProfile.username,
-            avatarId: dbProfile.avatar_character_id,
-            age: dbProfile.age ? String(dbProfile.age) : "24",
-          });
-        }
-        const dbWatchlist = await fetchLiveWatchlist(session.user.id);
-        if (dbWatchlist.length > 0) {
-          setWatchlist(dbWatchlist);
-        }
-      } else {
-        setUserId(null);
-        if (!IS_MOCK_MODE) {
-          setUserEmail(null);
-          setWatchlist([]);
-        }
-      }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncUserSession(session);
     });
 
     return () => {
@@ -568,6 +567,32 @@ export default function Home() {
         }}
       />
 
+      <CompleteProfileModal
+        isOpen={completeProfileModalOpen}
+        userId={userId || ""}
+        initialDisplayName={profile.displayName !== "Guest" ? profile.displayName : ""}
+        initialEmail={userEmail || ""}
+        onComplete={async (completed) => {
+          const newProf = {
+            displayName: completed.displayName,
+            username: completed.username,
+            avatarId: completed.avatarId,
+            age: completed.age,
+          };
+          setProfile(newProf);
+          if (userId) {
+            await upsertUserProfile({
+              id: userId,
+              username: newProf.username,
+              display_name: newProf.displayName,
+              avatar_character_id: newProf.avatarId,
+              age: newProf.age,
+            });
+          }
+          setCompleteProfileModalOpen(false);
+        }}
+      />
+
       <TrailerModal
         isOpen={trailerModal.isOpen}
         onClose={() => setTrailerModal({ isOpen: false, title: "", youtubeKey: null })}
@@ -587,6 +612,7 @@ export default function Home() {
         isOpen={accountModalOpen}
         onClose={() => setAccountModalOpen(false)}
         userEmail={userEmail}
+        currentUserId={userId || undefined}
         currentAvatarId={profile.avatarId}
         currentDisplayName={profile.displayName}
         currentUsername={profile.username}

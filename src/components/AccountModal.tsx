@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button, IconButton, Avatar, Alert } from "@usefragments/ui";
 import { supabase } from "@/lib/supabase";
 import { getAvatarById } from "@/constants/avatars";
+import { checkUsernameAvailable } from "@/lib/sync";
 import {
   X,
   Check,
@@ -25,6 +26,7 @@ interface AccountModalProps {
   isOpen: boolean;
   onClose: () => void;
   userEmail: string | null;
+  currentUserId?: string;
   currentAvatarId: string;
   currentDisplayName: string;
   currentUsername: string;
@@ -37,6 +39,7 @@ export function AccountModal({
   isOpen,
   onClose,
   userEmail,
+  currentUserId,
   currentAvatarId,
   currentDisplayName,
   currentUsername,
@@ -68,14 +71,30 @@ export function AccountModal({
 
   if (!isOpen) return null;
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSecurityError(null);
+    setSecurityNotice(null);
+
+    const cleanUsername = username.trim().toLowerCase();
+    if (!cleanUsername) {
+      setSecurityError("Username handle cannot be empty.");
+      return;
+    }
+
+    const isAvailable = await checkUsernameAvailable(cleanUsername, currentUserId);
+    if (!isAvailable) {
+      setSecurityError(`The handle @${cleanUsername} is already taken by another user.`);
+      return;
+    }
+
     onSaveProfile({
       avatarId: selectedAvatarId,
-      displayName: displayName.trim() || "Tony Stark",
-      username: username.trim() || "ironman",
+      displayName: displayName.trim() || "Cinephile",
+      username: cleanUsername,
       age: age.trim() || "24",
     });
+    setSecurityNotice("Profile saved successfully!");
     onClose();
   };
 

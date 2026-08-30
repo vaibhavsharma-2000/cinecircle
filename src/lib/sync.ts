@@ -1,6 +1,38 @@
 import { supabase, Recommendation, WatchlistItem, FriendItem, UserProfile } from "./supabase";
 
 /**
+ * Check if a username is available in Supabase profiles table
+ */
+export async function checkUsernameAvailable(
+  username: string,
+  excludeUserId?: string
+): Promise<boolean> {
+  const cleanUsername = username.trim().toLowerCase();
+  if (!cleanUsername) return false;
+
+  try {
+    let query = supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", cleanUsername);
+
+    if (excludeUserId) {
+      query = query.neq("id", excludeUserId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error("Error checking username availability:", error);
+      return true;
+    }
+    return !data || data.length === 0;
+  } catch (err) {
+    console.error("Error checking username availability:", err);
+    return true;
+  }
+}
+
+/**
  * Fetch a user profile by user UUID from Supabase profiles table
  */
 export async function fetchUserProfile(userId: string): Promise<UserProfile | null> {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, Button, IconButton, Avatar, Alert } from "@usefragments/ui";
 import { supabase } from "@/lib/supabase";
 import { getAvatarById } from "@/constants/avatars";
+import { checkUsernameAvailable } from "@/lib/sync";
 import { X, Lock, Mail, UserCheck, LogIn, AlertCircle, Eye, EyeOff, CheckCircle2, Sparkles } from "lucide-react";
 import { AvatarPickerModal } from "./AvatarPickerModal";
 
@@ -84,26 +85,29 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (password !== confirmPassword) {
-      setErrorMsg("Passwords do not match. Please verify your passwords.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorMsg("Password must be at least 6 characters long.");
+    const cleanUsername = username.trim().toLowerCase();
+    if (!cleanUsername) {
+      setErrorMsg("Please enter a username.");
       return;
     }
 
     setLoading(true);
 
     try {
+      const isAvailable = await checkUsernameAvailable(cleanUsername);
+      if (!isAvailable) {
+        setErrorMsg(`The username @${cleanUsername} is already taken. Please choose another username.`);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             display_name: displayName.trim() || email.split("@")[0],
-            username: username.trim().toLowerCase() || email.split("@")[0],
+            username: cleanUsername,
             age: age.trim(),
             avatar_id: selectedAvatarId,
           },
