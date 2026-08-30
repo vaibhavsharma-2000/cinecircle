@@ -62,16 +62,19 @@ export function DiscoverView({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  const hasActiveCustomFilters = Boolean(
+    customFilters &&
+      ((customFilters.contentType && customFilters.contentType !== "all") ||
+        customFilters.genreIds.length > 0 ||
+        (customFilters.minRating && customFilters.minRating > 0) ||
+        (customFilters.decade && customFilters.decade !== "all"))
+  );
+
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
       setPage(1);
-      if (
-        customFilters &&
-        (customFilters.genreIds.length > 0 ||
-          (customFilters.minRating && customFilters.minRating > 0) ||
-          (customFilters.decade && customFilters.decade !== "all"))
-      ) {
+      if (hasActiveCustomFilters && customFilters) {
         const res = await discoverMoviesWithFilters({ ...customFilters, page: 1 });
         setTmdbMovies(res.results);
       } else {
@@ -81,19 +84,14 @@ export function DiscoverView({
       setIsLoading(false);
     }
     loadData();
-  }, [selectedCategory, customFilters]);
+  }, [selectedCategory, customFilters, hasActiveCustomFilters]);
 
   const handleLoadMoreTMDB = async () => {
     setIsLoadingMore(true);
     const nextPage = page + 1;
     let moreMovies: MovieItem[] = [];
 
-    if (
-      customFilters &&
-      (customFilters.genreIds.length > 0 ||
-        (customFilters.minRating && customFilters.minRating > 0) ||
-        (customFilters.decade && customFilters.decade !== "all"))
-    ) {
+    if (hasActiveCustomFilters && customFilters) {
       const res = await discoverMoviesWithFilters({ ...customFilters, page: nextPage });
       moreMovies = res.results;
     } else {
@@ -124,13 +122,6 @@ export function DiscoverView({
 
   const activeCategoryObj =
     DISCOVERY_CATEGORIES.find((c) => c.id === selectedCategory) || DISCOVERY_CATEGORIES[0];
-
-  const hasActiveCustomFilters = Boolean(
-    customFilters &&
-      (customFilters.genreIds.length > 0 ||
-        (customFilters.minRating && customFilters.minRating > 0) ||
-        (customFilters.decade && customFilters.decade !== "all"))
-  );
 
   return (
     <div className="space-y-16 animate-in fade-in duration-300">
@@ -352,6 +343,14 @@ export function DiscoverView({
                 <SlidersHorizontal className="w-3.5 h-3.5" /> Active Discovery Filters:
               </span>
 
+              {customFilters.contentType && customFilters.contentType !== "all" && (
+                <span className="px-2.5 py-1 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] text-xs font-black flex items-center gap-1 shadow-sm">
+                  {customFilters.contentType === "movie" && "🎬 Feature Movies"}
+                  {customFilters.contentType === "tv" && "📺 TV Series"}
+                  {customFilters.contentType === "documentary" && "📽️ Documentaries"}
+                </span>
+              )}
+
               {customFilters.genreIds.map((gId) => {
                 const gObj = MOVIE_GENRES.find((g) => g.id === gId);
                 return (
@@ -397,7 +396,13 @@ export function DiscoverView({
         <div className="flex items-center justify-between border-b border-[var(--surface-border)] pb-4">
           <div>
             <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
-              {hasActiveCustomFilters ? "Custom Genre Discovery" : activeCategoryObj.label}
+              {hasActiveCustomFilters
+                ? customFilters?.contentType === "tv"
+                  ? "TV Series & Shows Discovery"
+                  : customFilters?.contentType === "documentary"
+                  ? "Documentaries & Non-Fiction"
+                  : "Custom Genre Discovery"
+                : activeCategoryObj.label}
             </h3>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
               {tmdbMovies.length} titles loaded from TMDB

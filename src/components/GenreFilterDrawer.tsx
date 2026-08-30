@@ -3,7 +3,18 @@
 import { useState } from "react";
 import { Button, IconButton, Badge } from "@usefragments/ui";
 import { MOVIE_GENRES, FilterOptions } from "@/lib/tmdb";
-import { X, SlidersHorizontal, Sparkles, Star, Calendar, RotateCcw, Check } from "lucide-react";
+import {
+  X,
+  SlidersHorizontal,
+  Sparkles,
+  Star,
+  Calendar,
+  RotateCcw,
+  Check,
+  Film,
+  Tv,
+  Video,
+} from "lucide-react";
 
 interface GenreFilterDrawerProps {
   isOpen: boolean;
@@ -18,6 +29,9 @@ export function GenreFilterDrawer({
   currentFilters,
   onApplyFilters,
 }: GenreFilterDrawerProps) {
+  const [contentType, setContentType] = useState<"all" | "movie" | "tv" | "documentary">(
+    currentFilters.contentType || "all"
+  );
   const [selectedGenreIds, setSelectedGenreIds] = useState<number[]>(currentFilters.genreIds || []);
   const [minRating, setMinRating] = useState<number>(currentFilters.minRating || 0);
   const [decade, setDecade] = useState<string>(currentFilters.decade || "all");
@@ -34,6 +48,7 @@ export function GenreFilterDrawer({
   };
 
   const handleReset = () => {
+    setContentType("all");
     setSelectedGenreIds([]);
     setMinRating(0);
     setDecade("all");
@@ -42,6 +57,7 @@ export function GenreFilterDrawer({
 
   const handleApply = () => {
     onApplyFilters({
+      contentType,
       genreIds: selectedGenreIds,
       minRating,
       decade,
@@ -63,7 +79,7 @@ export function GenreFilterDrawer({
             </div>
             <div>
               <h3 className="font-extrabold text-base text-[var(--text-primary)]">Discovery Studio</h3>
-              <p className="text-xs text-[var(--text-secondary)]">Filter TMDB by custom genre combinations</p>
+              <p className="text-xs text-[var(--text-secondary)]">Filter TMDB by media format and genres</p>
             </div>
           </div>
 
@@ -78,11 +94,45 @@ export function GenreFilterDrawer({
         {/* Scrollable Filters Body */}
         <div className="p-6 overflow-y-auto flex-1 space-y-7 pr-4 scrollbar-thin">
           
-          {/* 1. Multi-Genre Pill Cloud */}
+          {/* 1. Content Format Selector */}
           <div className="space-y-3">
+            <label className="text-xs font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-1.5">
+              <Film className="w-3.5 h-3.5 text-[var(--brand-accent)]" /> 1. Format & Media Type
+            </label>
+
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: "all", label: "All Media", icon: "🌟" },
+                { id: "movie", label: "Movies", icon: "🎬" },
+                { id: "tv", label: "TV Series", icon: "📺" },
+                { id: "documentary", label: "Documentaries", icon: "📽️" },
+              ].map((f) => {
+                const isSelected = contentType === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setContentType(f.id as any)}
+                    className={`p-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition border ${
+                      isSelected
+                        ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] border-[var(--brand-accent)] shadow-sm"
+                        : "bg-[var(--canvas)] border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-white/30"
+                    }`}
+                  >
+                    <span>{f.icon}</span>
+                    <span>{f.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 ml-auto stroke-[3]" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. Multi-Genre Pill Cloud */}
+          <div className="space-y-3 pt-4 border-t border-[var(--surface-border)]">
             <div className="flex items-center justify-between">
               <label className="text-xs font-black uppercase tracking-wider text-[var(--text-primary)]">
-                1. Select Genres to Combine
+                2. Select Genres to Combine
               </label>
               {selectedGenreIds.length > 0 && (
                 <span className="text-[10px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
@@ -117,10 +167,10 @@ export function GenreFilterDrawer({
             </div>
           </div>
 
-          {/* 2. Minimum Rating Threshold */}
+          {/* 3. Minimum Rating Threshold */}
           <div className="space-y-3 pt-4 border-t border-[var(--surface-border)]">
             <label className="text-xs font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-1.5">
-              <Star className="w-3.5 h-3.5 text-amber-400 fill-current" /> 2. Quality & Rating Filter
+              <Star className="w-3.5 h-3.5 text-amber-400 fill-current" /> 3. Quality & Rating Filter
             </label>
 
             <div className="grid grid-cols-2 gap-2">
@@ -146,10 +196,10 @@ export function GenreFilterDrawer({
             </div>
           </div>
 
-          {/* 3. Release Era */}
+          {/* 4. Release Era */}
           <div className="space-y-3 pt-4 border-t border-[var(--surface-border)]">
             <label className="text-xs font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[var(--brand-accent)]" /> 3. Release Era
+              <Calendar className="w-3.5 h-3.5 text-[var(--brand-accent)]" /> 4. Release Era
             </label>
 
             <div className="grid grid-cols-3 gap-2">
@@ -176,10 +226,10 @@ export function GenreFilterDrawer({
             </div>
           </div>
 
-          {/* 4. Sort By */}
+          {/* 5. Sort By */}
           <div className="space-y-3 pt-4 border-t border-[var(--surface-border)]">
             <label className="text-xs font-black uppercase tracking-wider text-[var(--text-primary)]">
-              4. Order Results By
+              5. Order Results By
             </label>
 
             <div className="grid grid-cols-3 gap-2">

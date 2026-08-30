@@ -89,11 +89,12 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 ## 🎛️ Multi-Genre Discovery Studio & Filter Drawer
 - **Filter by Genres Trigger Button**: Prominently placed on the **Discover** tab next to Curated Collections, with real-time active filter count indicators.
 - **Slide-Over Drawer (`GenreFilterDrawer`)**:
-  - Multi-select genre cloud (`🚀 Sci-Fi`, `🔪 Thriller`, `😂 Comedy`, `❤️ Romance`, `⚡ Action`, `👻 Horror`, `🎭 Drama`, etc.) supporting arbitrary combinations.
-  - Quality thresholds: Any Rating, ★ 7.0+, ★ 7.5+, ★ 8.0+ Masterpieces (`vote_count.gte=100`).
-  - Release era selectors: All Time, 2020s Modern, 2010s, 2000s, 90s Classics.
-  - Sort ordering: Most Popular, Highest Rated, Latest Releases.
-- **Active Custom Filter Feedback Banner**: Displays active genre tags and criteria above the discovery grid with 1-click "Adjust Filters" and "Clear" actions.
+  - **Content Format & Media Types**: Filter between 🌟 *All Media*, 🎬 *Feature Movies*, 📺 *TV Series & Shows*, and 📽️ *Documentaries & Docuseries*.
+  - **Multi-select genre cloud**: Supports combining arbitrary genres (`🚀 Sci-Fi`, `🔪 Thriller`, `😂 Comedy`, `❤️ Romance`, `⚡ Action`, `👻 Horror`, `🎭 Drama`, etc.) with automatic TV genre ID mapping.
+  - **Quality thresholds**: Any Rating, ★ 7.0+, ★ 7.5+, ★ 8.0+ Masterpieces (`vote_count.gte=100`).
+  - **Release era selectors**: All Time, 2020s Modern, 2010s, 2000s, 90s Classics.
+  - **Sort ordering**: Most Popular, Highest Rated, Latest Releases.
+- **Active Custom Filter Feedback Banner**: Displays active media format pill, genre tags, and criteria above the discovery grid with 1-click "Adjust Filters" and "Clear" actions.
 - **Infinite Pagination**: "Explore More Titles" dynamically fetches subsequent pages from TMDB matching the combined filter parameters.
 
 ---

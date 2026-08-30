@@ -346,6 +346,7 @@ export const MOVIE_GENRES: GenreOption[] = [
 ];
 
 export interface FilterOptions {
+  contentType?: "all" | "movie" | "tv" | "documentary";
   genreIds: number[];
   minRating?: number;
   decade?: string;
@@ -359,66 +360,160 @@ export async function discoverMoviesWithFilters(
   filters: FilterOptions
 ): Promise<{ results: MovieItem[]; totalPages: number; totalResults: number }> {
   try {
-    const params = new URLSearchParams({
-      api_key: TMDB_API_KEY,
-      language: "en-US",
-      include_adult: "false",
-      page: String(filters.page || 1),
-      sort_by: filters.sortBy || "popularity.desc",
-    });
+    const contentType = filters.contentType || "all";
+    const page = filters.page || 1;
+    const sortBy = filters.sortBy || "popularity.desc";
 
-    if (filters.genreIds && filters.genreIds.length > 0) {
-      params.append("with_genres", filters.genreIds.join(","));
-    }
+    const buildParams = (isTv: boolean) => {
+      const p = new URLSearchParams({
+        api_key: TMDB_API_KEY,
+        language: "en-US",
+        include_adult: "false",
+        page: String(page),
+        sort_by: isTv && sortBy === "primary_release_date.desc" ? "first_air_date.desc" : sortBy,
+      });
 
-    if (filters.minRating && filters.minRating > 0) {
-      params.append("vote_average.gte", String(filters.minRating));
-      params.append("vote_count.gte", "100");
-    } else {
-      params.append("vote_count.gte", "50");
-    }
-
-    if (filters.decade && filters.decade !== "all") {
-      if (filters.decade === "2020s") {
-        params.append("primary_release_date.gte", "2020-01-01");
-      } else if (filters.decade === "2010s") {
-        params.append("primary_release_date.gte", "2010-01-01");
-        params.append("primary_release_date.lte", "2019-12-31");
-      } else if (filters.decade === "2000s") {
-        params.append("primary_release_date.gte", "2000-01-01");
-        params.append("primary_release_date.lte", "2009-12-31");
-      } else if (filters.decade === "90s") {
-        params.append("primary_release_date.gte", "1990-01-01");
-        params.append("primary_release_date.lte", "1999-12-31");
+      let genres = [...filters.genreIds];
+      if (contentType === "documentary" && !genres.includes(99)) {
+        genres.push(99);
       }
-    }
 
-    if (filters.providerId && filters.watchRegion) {
-      params.append("with_watch_providers", String(filters.providerId));
-      params.append("watch_region", filters.watchRegion);
-    }
+      if (isTv) {
+        genres = genres.map((id) => {
+          if (id === 878) return 10765;
+          if (id === 28 || id === 12) return 10759;
+          return id;
+        });
+      }
 
-    const res = await fetch(`${TMDB_BASE_URL}/discover/movie?${params.toString()}`);
-    if (!res.ok) return { results: [], totalPages: 0, totalResults: 0 };
-    const data = await res.json();
+      if (genres.length > 0) {
+        p.append("with_genres", genres.join(","));
+      }
 
-    const results: MovieItem[] = (data.results || []).map((item: any) => ({
-      id: item.id,
-      title: item.title || item.name,
-      overview: item.overview || "",
-      poster_path: item.poster_path,
-      backdrop_path: item.backdrop_path,
-      release_date: item.release_date || item.first_air_date,
-      vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
-      vote_count: item.vote_count || 0,
-      media_type: "movie",
-    }));
+      if (filters.minRating && filters.minRating > 0) {
+        p.append("vote_average.gte", String(filters.minRating));
+        p.append("vote_count.gte", isTv ? "30" : "100");
+      } else {
+        p.append("vote_count.gte", isTv ? "15" : "50");
+      }
 
-    return {
-      results,
-      totalPages: data.total_pages || 1,
-      totalResults: data.total_results || 0,
+      if (filters.decade && filters.decade !== "all") {
+        const dateKey = isTv ? "first_air_date" : "primary_release_date";
+        if (filters.decade === "2020s") {
+          p.append(`${dateKey}.gte`, "2020-01-01");
+        } else if (filters.decade === "2010s") {
+          p.append(`${dateKey}.gte`, "2010-01-01");
+          p.append(`${dateKey}.lte`, "2019-12-31");
+        } else if (filters.decade === "2000s") {
+          p.append(`${dateKey}.gte`, "2000-01-01");
+          p.append(`${dateKey}.lte`, "2009-12-31");
+        } else if (filters.decade === "90s") {
+          p.append(`${dateKey}.gte`, "1990-01-01");
+          p.append(`${dateKey}.lte`, "1999-12-31");
+        }
+      }
+
+      if (filters.providerId && filters.watchRegion) {
+        p.append("with_watch_providers", String(filters.providerId));
+        p.append("watch_region", filters.watchRegion);
+      }
+
+      return p;
     };
+
+    if (contentType === "tv") {
+      const res = await fetch(`${TMDB_BASE_URL}/discover/tv?${buildParams(true).toString()}`);
+      if (!res.ok) return { results: [], totalPages: 0, totalResults: 0 };
+      const data = await res.json();
+      const results: MovieItem[] = (data.results || []).map((item: any) => ({
+        id: item.id,
+        title: item.name || item.title || "Untitled",
+        overview: item.overview || "",
+        poster_path: item.poster_path,
+        backdrop_path: item.backdrop_path,
+        release_date: item.first_air_date || item.release_date,
+        first_air_date: item.first_air_date,
+        vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
+        vote_count: item.vote_count || 0,
+        media_type: "tv" as const,
+      }));
+      return { results, totalPages: data.total_pages || 1, totalResults: data.total_results || 0 };
+    }
+
+    if (contentType === "movie") {
+      const res = await fetch(`${TMDB_BASE_URL}/discover/movie?${buildParams(false).toString()}`);
+      if (!res.ok) return { results: [], totalPages: 0, totalResults: 0 };
+      const data = await res.json();
+      const results: MovieItem[] = (data.results || []).map((item: any) => ({
+        id: item.id,
+        title: item.title || item.name || "Untitled",
+        overview: item.overview || "",
+        poster_path: item.poster_path,
+        backdrop_path: item.backdrop_path,
+        release_date: item.release_date || item.first_air_date,
+        vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
+        vote_count: item.vote_count || 0,
+        media_type: "movie" as const,
+      }));
+      return { results, totalPages: data.total_pages || 1, totalResults: data.total_results || 0 };
+    }
+
+    // contentType === "all" or "documentary": fetch both
+    const [movieRes, tvRes] = await Promise.all([
+      fetch(`${TMDB_BASE_URL}/discover/movie?${buildParams(false).toString()}`),
+      fetch(`${TMDB_BASE_URL}/discover/tv?${buildParams(true).toString()}`),
+    ]);
+
+    const combined: MovieItem[] = [];
+    let totalPages = 1;
+    let totalResults = 0;
+
+    if (movieRes.ok) {
+      const mData = await movieRes.json();
+      totalResults += mData.total_results || 0;
+      totalPages = Math.max(totalPages, mData.total_pages || 1);
+      combined.push(
+        ...(mData.results || []).map((item: any) => ({
+          id: item.id,
+          title: item.title || item.name,
+          overview: item.overview || "",
+          poster_path: item.poster_path,
+          backdrop_path: item.backdrop_path,
+          release_date: item.release_date || item.first_air_date,
+          vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
+          vote_count: item.vote_count || 0,
+          media_type: "movie" as const,
+        }))
+      );
+    }
+
+    if (tvRes.ok) {
+      const tData = await tvRes.json();
+      totalResults += tData.total_results || 0;
+      totalPages = Math.max(totalPages, tData.total_pages || 1);
+      combined.push(
+        ...(tData.results || []).map((item: any) => ({
+          id: item.id,
+          title: item.name || item.title,
+          overview: item.overview || "",
+          poster_path: item.poster_path,
+          backdrop_path: item.backdrop_path,
+          release_date: item.first_air_date || item.release_date,
+          first_air_date: item.first_air_date,
+          vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
+          vote_count: item.vote_count || 0,
+          media_type: "tv" as const,
+        }))
+      );
+    }
+
+    if (sortBy === "vote_average.desc") {
+      combined.sort((a, b) => b.vote_average - a.vote_average);
+    } else {
+      combined.sort((a, b) => b.vote_count - a.vote_count);
+    }
+
+    return { results: combined.slice(0, 20), totalPages, totalResults };
   } catch (error) {
     console.error("Error discovering movies with filters:", error);
     return { results: [], totalPages: 0, totalResults: 0 };
