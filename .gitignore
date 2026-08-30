@@ -1,0 +1,57 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Next.js build output
+/.next/
+/out/
+/build/
+/dist/
+
+# Local environment variables
+.env*.local
+.env
+!.env.example
+
+# Logs & Debugging
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE, AI Agents & Tooling
+.skills/
+skills/
+scratch/
+.gemini/
+.antigravity/
+.agent/
+.cortex/
+.cursor/
+.windsurf/
+.claude/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Vercel
+.vercel
+
+# Temporary / Cache directories
+.cache
+.turbo
+*.tmp

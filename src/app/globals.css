@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* True Modern Minimalist Theme (Linear / Vercel Style) */
+:root {
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  
+  /* DARK MODE: Pitch Black Seamless */
+  --canvas: #000000;
+  --surface-card: #000000;
+  --surface-hover: #0a0a0a;
+  --surface-border: #222222;
+  --brand-accent: #ffffff;
+  --brand-accent-text: #000000;
+  --brand-accent-hover: #f5f5f5;
+  --star-accent: #f59e0b;
+  --text-primary: #ffffff;
+  --text-secondary: #888888;
+  --text-muted: #555555;
+}
+
+/* LIGHT MODE: Pure White Seamless */
+.light {
+  --canvas: #ffffff;
+  --surface-card: #ffffff;
+  --surface-hover: #fafafa;
+  --surface-border: #eaeaea;
+  --brand-accent: #000000;
+  --brand-accent-text: #ffffff;
+  --brand-accent-hover: #333333;
+  --star-accent: #f59e0b;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Minimalist Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
