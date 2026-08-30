@@ -181,7 +181,7 @@ export function CookieConsentModal({ onPreferencesSaved }: CookieConsentModalPro
                   </label>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                  Saves your dark/light mode preference, selected character avatar, and active tab state so your experience remains seamless across visits.
+                  Saves your dark/light mode preference, chosen streaming region (<code className="text-[var(--brand-accent)]">cinecircle_streaming_country</code>: 🇩🇪 Germany, 🇮🇳 India, 🇨🇦 Canada, 🇺🇸 USA, 🇬🇧 UK, 🇦🇺 Australia), Crunchyroll character avatar persona (<code className="text-[var(--brand-accent)]">avatar_character_id</code>), and active tab state so your experience remains seamless across visits.
                 </p>
               </div>
 
@@ -203,7 +203,7 @@ export function CookieConsentModal({ onPreferencesSaved }: CookieConsentModalPro
                   </label>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                  Allows anonymous tracking of discovery genre collections to tune movie recommendation recommendations for your friend circle.
+                  Remembers your multi-genre filter selections (Feature Films, TV Shows, Documentaries) and watchlist sorting criteria to tailor recommendations.
                 </p>
               </div>
 

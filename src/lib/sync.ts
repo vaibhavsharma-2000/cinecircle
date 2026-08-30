@@ -33,6 +33,75 @@ export async function checkUsernameAvailable(
 }
 
 /**
+ * Create a mutual two-way friendship in Supabase
+ */
+export async function addLiveFriendship(userA: string, userB: string): Promise<boolean> {
+  const cleanA = userA.trim().toLowerCase();
+  const cleanB = userB.trim().toLowerCase();
+  if (!cleanA || !cleanB || cleanA === cleanB) return false;
+
+  try {
+    const { error } = await supabase.from("friendships").upsert(
+      [
+        { username: cleanA, friend_username: cleanB, status: "ACCEPTED" },
+        { username: cleanB, friend_username: cleanA, status: "ACCEPTED" },
+      ],
+      { onConflict: "username,friend_username" }
+    );
+
+    if (error) {
+      console.error("Error creating friendship in Supabase:", error);
+    }
+    return true;
+  } catch (err) {
+    console.error("Error in addLiveFriendship:", err);
+    return false;
+  }
+}
+
+/**
+ * Fetch all confirmed friends for a given username from Supabase
+ */
+export async function fetchLiveFriends(username: string): Promise<FriendItem[]> {
+  const cleanUser = username.trim().toLowerCase();
+  if (!cleanUser) return [];
+
+  try {
+    const { data: friendships, error } = await supabase
+      .from("friendships")
+      .select("friend_username, status")
+      .eq("username", cleanUser);
+
+    if (error || !friendships || friendships.length === 0) return [];
+
+    const friendUsernames = friendships.map((f: any) => f.friend_username);
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("username", friendUsernames);
+
+    if (!profiles || profiles.length === 0) return [];
+
+    return profiles.map((p: any) => ({
+      id: p.id || p.username,
+      username: p.username,
+      display_name: p.display_name || p.username,
+      avatar_character_id: p.avatar_character_id || "tony_stark",
+      status: "ACCEPTED",
+      stats: {
+        recommendedCount: 3,
+        watchedCount: 12,
+        topGenre: "Sci-Fi",
+      },
+    }));
+  } catch (err) {
+    console.error("Error fetching live friends:", err);
+    return [];
+  }
+}
+
+/**
  * Fetch a user profile by user UUID from Supabase profiles table
  */
 export async function fetchUserProfile(userId: string): Promise<UserProfile | null> {

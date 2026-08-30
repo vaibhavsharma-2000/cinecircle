@@ -30,6 +30,8 @@ import {
 import {
   fetchUserProfile,
   upsertUserProfile,
+  addLiveFriendship,
+  fetchLiveFriends,
   fetchLiveRecommendations,
   createLiveRecommendation,
   deleteLiveRecommendation,
@@ -180,7 +182,9 @@ export default function Home() {
       const dbProfile = await fetchUserProfile(session.user.id);
       const meta = session.user.user_metadata || {};
 
+      let activeUsername = "";
       if (dbProfile && dbProfile.username && dbProfile.username !== "guest" && dbProfile.username !== "user") {
+        activeUsername = dbProfile.username;
         setProfile({
           displayName: dbProfile.display_name,
           username: dbProfile.username,
@@ -188,6 +192,7 @@ export default function Home() {
           age: dbProfile.age ? String(dbProfile.age) : "24",
         });
       } else if (meta.username && meta.username !== "guest" && meta.username !== "user") {
+        activeUsername = meta.username;
         const newProf = {
           displayName: meta.display_name || meta.full_name || meta.name || session.user.email?.split("@")[0] || "User",
           username: meta.username,
@@ -212,6 +217,24 @@ export default function Home() {
           age: "24",
         });
         setCompleteProfileModalOpen(true);
+      }
+
+      // Mutual Reciprocal Friend Syncing for Invite Links
+      if (invitedBy && activeUsername && invitedBy.toLowerCase() !== activeUsername.toLowerCase()) {
+        await addLiveFriendship(activeUsername, invitedBy);
+      }
+
+      // Fetch live friends from Supabase for current user
+      if (activeUsername) {
+        const dbFriends = await fetchLiveFriends(activeUsername);
+        if (dbFriends.length > 0) {
+          setFriends((prev) => {
+            const map = new Map<string, FriendItem>();
+            prev.forEach((f) => map.set(f.username.toLowerCase(), f));
+            dbFriends.forEach((f) => map.set(f.username.toLowerCase(), f));
+            return Array.from(map.values());
+          });
+        }
       }
 
       const dbWatchlist = await fetchLiveWatchlist(session.user.id);
