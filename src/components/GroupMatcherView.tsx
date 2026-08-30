@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Card, Button, Badge, Avatar, EmptyState } from "@usefragments/ui";
 import { FriendItem, WatchlistItem } from "@/lib/supabase";
 import { getTMDBImageUrl, getMovieTrailerKey } from "@/lib/tmdb";
-import { Sparkles, Users, Play, Flame } from "lucide-react";
+import { Sparkles, Users, Play, Flame, Dices } from "lucide-react";
+import { WatchRouletteModal } from "./WatchRouletteModal";
 
 interface GroupMatcherViewProps {
   friends: FriendItem[];
@@ -19,6 +20,7 @@ export function GroupMatcherView({
 }: GroupMatcherViewProps) {
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [matches, setMatches] = useState<WatchlistItem[] | null>(null);
+  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
 
   const toggleFriend = (id: string) => {
     if (selectedFriendIds.includes(id)) {
@@ -87,12 +89,26 @@ export function GroupMatcherView({
           })}
         </div>
 
-        <Button
-          onClick={handleCalculateMatch}
-          className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-black text-xs rounded-xl shadow-xl transition flex items-center justify-center gap-2"
-        >
-          <Sparkles className="w-4 h-4 fill-current" /> Calculate Movie Night Matches
-        </Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <Button
+            onClick={handleCalculateMatch}
+            className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-black text-xs rounded-xl shadow-xl transition flex items-center justify-center gap-2"
+          >
+            <Sparkles className="w-4 h-4 fill-current" /> Calculate Group Matches
+          </Button>
+
+          <Button
+            onClick={() => {
+              if (!matches || matches.length === 0) {
+                handleCalculateMatch();
+              }
+              setIsRouletteOpen(true);
+            }}
+            className="w-full h-12 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-black text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Dices className="w-4 h-4" /> Spin Watch Roulette 🎰
+          </Button>
+        </div>
       </Card>
 
       {/* Step 2: Match Results */}
@@ -102,7 +118,14 @@ export function GroupMatcherView({
             <h2 className="text-xl font-extrabold text-[var(--text-primary)] flex items-center gap-2">
               <Flame className="w-5 h-5 text-[var(--star-accent)]" /> Mutual Group Matches ({matches.length})
             </h2>
-            <span className="text-xs text-[var(--text-secondary)]">High-overlap recommendations</span>
+            {matches.length > 0 && (
+              <Button
+                onClick={() => setIsRouletteOpen(true)}
+                className="h-8 px-3 rounded-lg bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold text-[11px] flex items-center gap-1.5 shadow cursor-pointer"
+              >
+                <Dices className="w-3.5 h-3.5" /> Roulette Pick
+              </Button>
+            )}
           </div>
 
           {matches.length === 0 ? (
@@ -154,6 +177,18 @@ export function GroupMatcherView({
           )}
         </section>
       )}
+
+      {/* Watch Roulette Modal */}
+      <WatchRouletteModal
+        isOpen={isRouletteOpen}
+        onClose={() => setIsRouletteOpen(false)}
+        movies={
+          matches && matches.length > 0
+            ? matches
+            : watchlist.filter((w) => w.status === "WANT_TO_WATCH")
+        }
+        onOpenTrailer={onOpenTrailer}
+      />
     </div>
   );
 }

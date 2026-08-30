@@ -62,6 +62,12 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
+## 🎰 Group Watch Decision Engine & Watch Roulette
+- **Group Consensus Overlap**: Calculates mutual watchlist intersections between selected circle members to solve "What should we watch tonight?".
+- **Watch Roulette Feature (`WatchRouletteModal`)**: Interactive casino/film-reel randomizer with quadratic easing velocity animation (fast shuffle gradually slowing over 3.5s). Lands dramatically on the winning consensus film with celebratory particle confetti, direct **"Watch Trailer"** action, and **"Spin Again 🎲"** re-roll capability.
+
+---
+
 ## 🌿 Git Branching & Environment Isolation Architecture
 - **Environment Flag Driven**: Codebase is 100% identical between `main` and `staging`. Toggled dynamically via `NEXT_PUBLIC_ENABLE_MOCK_DATA`:
   - **Staging / Dev Mode (`NEXT_PUBLIC_ENABLE_MOCK_DATA="true"`)**: Preloads mock circle members (*Alex, Maya, Sam*), demo recommendations, and testing user profile (`tony.stark@avengers.io`) for rapid UI validation.
