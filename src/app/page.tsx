@@ -524,9 +524,13 @@ export default function Home() {
         {activeTab === "friends" && (
           <FriendsView
             friends={friends}
+            watchlist={watchlist}
+            friendRecommendations={friendRecommendations}
+            currentUserDisplayName={profile.displayName}
             onAddFriend={handleAddFriend}
             onRemoveFriend={handleRemoveFriend}
             onOpenInvite={() => setInviteModalOpen(true)}
+            onOpenRecommend={() => setRecommendModal({ isOpen: true, movie: null })}
           />
         )}
       </main>

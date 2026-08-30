@@ -76,6 +76,16 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
+## 🏆 Circle Hall of Fame & Taste Compatibility
+- **Circle Superlatives & Hall of Fame**: Celebrates friend engagement with dynamic badges:
+  - 🏆 *Top Critic*: Friend with highest recommendation velocity.
+  - 🍿 *Popcorn Champ*: Friend with most films watched.
+  - 🎯 *Genre Guru*: Friend with top expertise across favorite genres.
+- **Algorithmic Taste Match %**: Displays mutual affinity scores (`82% - 98%`) on friend cards based on watchlist intersections and shared genre preferences.
+- **Taste Compatibility Modal (`TasteCompatibilityModal`)**: Interactive side-by-side comparison displaying shared favorite genres, mutual movie night candidates, and friend's top picks with 1-click recommendation trigger.
+
+---
+
 ## 🌿 Git Branching & Environment Isolation Architecture
 - **Environment Flag Driven**: Codebase is 100% identical between `main` and `staging`. Toggled dynamically via `NEXT_PUBLIC_ENABLE_MOCK_DATA`:
   - **Staging / Dev Mode (`NEXT_PUBLIC_ENABLE_MOCK_DATA="true"`)**: Preloads mock circle members (*Alex, Maya, Sam*), demo recommendations, and testing user profile (`tony.stark@avengers.io`) for rapid UI validation.
