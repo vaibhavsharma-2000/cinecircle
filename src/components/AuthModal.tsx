@@ -271,13 +271,16 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
               {/* FORM: SIGN IN */}
               {mode === "SIGN_IN" && (
-                <form onSubmit={handleSignInSubmit} className="space-y-3.5">
+                <form onSubmit={handleSignInSubmit} method="post" action="#" autoComplete="on" className="space-y-3.5">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-[var(--text-secondary)]">Email Address</label>
+                    <label htmlFor="login-email" className="text-xs font-bold text-[var(--text-secondary)]">Email Address</label>
                     <div className="relative flex items-center">
                       <Mail className="w-4 h-4 text-[var(--text-secondary)] absolute left-3.5 pointer-events-none" />
                       <input
+                        id="login-email"
+                        name="email"
                         type="email"
+                        autoComplete="username email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -288,11 +291,14 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-[var(--text-secondary)]">Password</label>
+                    <label htmlFor="login-password" className="text-xs font-bold text-[var(--text-secondary)]">Password</label>
                     <div className="relative flex items-center">
                       <Lock className="w-4 h-4 text-[var(--text-secondary)] absolute left-3.5 pointer-events-none" />
                       <input
+                        id="login-password"
+                        name="password"
                         type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
                         required
                         minLength={6}
                         value={password}
@@ -313,7 +319,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2"
+                    className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <LogIn className="w-4 h-4" />
                     {loading ? "Signing in..." : "Sign In"}
@@ -323,12 +329,15 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
               {/* FORM: REGISTER */}
               {mode === "SIGN_UP" && (
-                <form onSubmit={handleSignUpSubmit} className="space-y-3.5">
+                <form onSubmit={handleSignUpSubmit} method="post" action="#" autoComplete="on" className="space-y-3.5">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-[var(--text-secondary)]">Full Name</label>
+                      <label htmlFor="signup-name" className="text-xs font-bold text-[var(--text-secondary)]">Full Name</label>
                       <input
+                        id="signup-name"
+                        name="name"
                         type="text"
+                        autoComplete="name"
                         required
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
@@ -338,9 +347,12 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-[var(--text-secondary)]">Username</label>
+                      <label htmlFor="signup-username" className="text-xs font-bold text-[var(--text-secondary)]">Username</label>
                       <input
+                        id="signup-username"
+                        name="username"
                         type="text"
+                        autoComplete="username"
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -351,8 +363,10 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-[var(--text-secondary)]">Age</label>
+                    <label htmlFor="signup-age" className="text-xs font-bold text-[var(--text-secondary)]">Age</label>
                     <input
+                      id="signup-age"
+                      name="age"
                       type="number"
                       min={12}
                       max={120}
@@ -363,7 +377,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                       className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl px-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition leading-tight flex items-center"
                     />
                   </div>
-                         {/* Avatar Selection Card */}
+
+                  {/* Avatar Selection Card */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-[var(--text-secondary)]">Your Profile Avatar</label>
                     <div className="p-3 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl flex items-center justify-between gap-3 shadow-sm">
@@ -397,11 +412,14 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
                   {/* Email Field */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-[var(--text-secondary)]">Email Address</label>
+                    <label htmlFor="signup-email" className="text-xs font-bold text-[var(--text-secondary)]">Email Address</label>
                     <div className="relative flex items-center">
                       <Mail className="w-4 h-4 text-[var(--text-secondary)] absolute left-3.5 pointer-events-none" />
                       <input
+                        id="signup-email"
+                        name="email"
                         type="email"
+                        autoComplete="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -413,12 +431,16 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
                   {/* Password Field with Show/Hide */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-[var(--text-secondary)]">Password</label>
+                    <label htmlFor="signup-password" className="text-xs font-bold text-[var(--text-secondary)]">Password</label>
                     <div className="relative flex items-center">
                       <Lock className="w-4 h-4 text-[var(--text-secondary)] absolute left-3.5 pointer-events-none" />
                       <input
+                        id="signup-password"
+                        name="password"
                         type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
                         required
+                        minLength={6}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -436,12 +458,16 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
                   {/* Confirm Password Field */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-[var(--text-secondary)]">Confirm Password</label>
+                    <label htmlFor="signup-confirm-password" className="text-xs font-bold text-[var(--text-secondary)]">Confirm Password</label>
                     <div className="relative flex items-center">
                       <Lock className="w-4 h-4 text-[var(--text-secondary)] absolute left-3.5 pointer-events-none" />
                       <input
+                        id="signup-confirm-password"
+                        name="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
+                        autoComplete="new-password"
                         required
+                        minLength={6}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"

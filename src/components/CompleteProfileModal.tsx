@@ -141,13 +141,16 @@ export function CompleteProfileModal({
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} method="post" action="#" autoComplete="on" className="space-y-4">
             
             {/* Display Name */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Display Name</label>
+              <label htmlFor="complete-display-name" className="text-xs font-bold text-[var(--text-secondary)]">Display Name</label>
               <input
+                id="complete-display-name"
+                name="name"
                 type="text"
+                autoComplete="name"
                 required
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
@@ -159,7 +162,7 @@ export function CompleteProfileModal({
             {/* Username / Handle with Uniqueness Check */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Choose Unique Handle (@username)</label>
+                <label htmlFor="complete-username" className="text-xs font-bold text-[var(--text-secondary)]">Choose Unique Handle (@username)</label>
                 {isCheckingUsername && (
                   <span className="text-[10px] text-[var(--text-muted)] animate-pulse">Checking...</span>
                 )}
@@ -178,7 +181,10 @@ export function CompleteProfileModal({
               <div className="relative">
                 <span className="absolute left-3.5 top-3 text-xs font-black text-[var(--text-muted)]">@</span>
                 <input
+                  id="complete-username"
+                  name="username"
                   type="text"
+                  autoComplete="username"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
@@ -196,8 +202,10 @@ export function CompleteProfileModal({
 
             {/* Age */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Age</label>
+              <label htmlFor="complete-age" className="text-xs font-bold text-[var(--text-secondary)]">Age</label>
               <input
+                id="complete-age"
+                name="age"
                 type="number"
                 min={12}
                 max={120}

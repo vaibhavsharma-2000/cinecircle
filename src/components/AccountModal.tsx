@@ -220,12 +220,15 @@ export function AccountModal({
 
           {/* PROFILE TAB */}
           {activeTab === "PROFILE" && (
-            <form onSubmit={handleSaveProfile} className="space-y-5">
+            <form onSubmit={handleSaveProfile} method="post" action="#" autoComplete="on" className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--text-secondary)]">Display Name</label>
+                  <label htmlFor="account-display-name" className="text-xs font-bold text-[var(--text-secondary)]">Display Name</label>
                   <input
+                    id="account-display-name"
+                    name="name"
                     type="text"
+                    autoComplete="name"
                     required
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
@@ -234,9 +237,12 @@ export function AccountModal({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--text-secondary)]">Username</label>
+                  <label htmlFor="account-username" className="text-xs font-bold text-[var(--text-secondary)]">Username</label>
                   <input
+                    id="account-username"
+                    name="username"
                     type="text"
+                    autoComplete="username"
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -247,9 +253,12 @@ export function AccountModal({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--text-secondary)]">Email</label>
+                  <label htmlFor="account-email" className="text-xs font-bold text-[var(--text-secondary)]">Email</label>
                   <input
-                    type="text"
+                    id="account-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
                     disabled
                     value={userEmail || "Not signed in"}
                     className="w-full h-11 bg-[var(--canvas)]/50 border border-[var(--surface-border)] text-xs rounded-xl px-4 text-[var(--text-muted)] cursor-not-allowed leading-tight flex items-center"
@@ -257,8 +266,10 @@ export function AccountModal({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--text-secondary)]">Age</label>
+                  <label htmlFor="account-age" className="text-xs font-bold text-[var(--text-secondary)]">Age</label>
                   <input
+                    id="account-age"
+                    name="age"
                     type="number"
                     min={12}
                     max={120}
@@ -351,12 +362,27 @@ export function AccountModal({
                 </div>
 
                 {passwordMethod === "DIRECT" ? (
-                  <form onSubmit={handleDirectPasswordChange} className="space-y-3 pt-1">
+                  <form onSubmit={handleDirectPasswordChange} method="post" action="#" autoComplete="on" className="space-y-3 pt-1">
+                    {/* Hidden username to link password update to the active account for browser keychain/managers */}
+                    <input
+                      type="text"
+                      name="username"
+                      autoComplete="username"
+                      value={userEmail || ""}
+                      readOnly
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    />
+
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-[var(--text-secondary)]">New Password</label>
+                      <label htmlFor="account-new-password" className="text-[11px] font-bold text-[var(--text-secondary)]">New Password</label>
                       <div className="relative flex items-center">
                         <input
+                          id="account-new-password"
+                          name="new-password"
                           type={showPassword ? "text" : "password"}
+                          autoComplete="new-password"
                           required
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
@@ -374,10 +400,13 @@ export function AccountModal({
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-[var(--text-secondary)]">Confirm New Password</label>
+                      <label htmlFor="account-confirm-password" className="text-[11px] font-bold text-[var(--text-secondary)]">Confirm New Password</label>
                       <div className="relative flex items-center">
                         <input
+                          id="account-confirm-password"
+                          name="confirm-password"
                           type={showConfirmPassword ? "text" : "password"}
+                          autoComplete="new-password"
                           required
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}

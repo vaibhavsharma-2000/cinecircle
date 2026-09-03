@@ -33,6 +33,11 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
   - 🔑 **Account Settings**:
     - **Password Management**: Switch between two clear methods: **Enter New Password Directly** (`updateUser`) or **Send Password Reset Email Link** (`resetPasswordForEmail`).
     - **Danger Zone**: Integrated Account Deletion section with double confirmation dialog to permanently remove user account and data.
+- **Browser Autofill & Credential Management Heuristics**:
+  - All authentication and credential forms (`AuthModal`, `CompleteProfileModal`, `AccountModal`) adhere to WHATWG / HTML5 Credential Management standards (`method="post"`, `autoComplete="on"`, `action="#"`).
+  - Standardized explicit element identifiers (`id`) and corresponding `<label htmlFor="...">` associations.
+  - Granular `autoComplete` attributes: `autoComplete="username email"` / `autoComplete="email"` for user identity, `autoComplete="current-password"` for login authentication, `autoComplete="new-password"` for account registration and password updates, `autoComplete="name"` for full name, and `autoComplete="username"` for circle handles.
+  - Direct password update forms include hidden contextually-linked `name="username"` inputs so native browser keychains and credential managers (macOS Keychain, Chrome Passwords, 1Password, Bitwarden) reliably identify the active account and prompt to save or update credentials.
 
 ---
 
