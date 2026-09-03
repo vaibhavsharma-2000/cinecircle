@@ -1,47 +1,42 @@
 "use client";
 
-import { getAvatarById } from "@/constants/avatars";
+import Avvvatars from "avvvatars-react";
 
 interface UserAvatarProps {
   avatarId?: string;
   displayName?: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   className?: string;
 }
 
 export function UserAvatar({
-  avatarId = "tony_stark",
+  avatarId,
   displayName = "User",
   size = "md",
   className = "",
 }: UserAvatarProps) {
-  const avatar = getAvatarById(avatarId);
+  const sizeMap = {
+    sm: 24,
+    md: 36,
+    lg: 48,
+    xl: 64,
+    "2xl": 80,
+  };
 
-  const sizeClasses = {
-    sm: "w-6 h-6 text-[10px]",
-    md: "w-9 h-9 text-xs",
-    lg: "w-12 h-12 text-sm",
-    xl: "w-20 h-20 text-xl",
-  }[size];
+  const numericSize = sizeMap[size] || 36;
+  const seed = (avatarId && avatarId.trim()) || displayName || "cinecircle";
 
   return (
     <div
-      className={`relative rounded-full overflow-hidden border border-white/20 bg-[var(--surface-card)] shrink-0 shadow-sm ${sizeClasses} ${className}`}
+      className={`inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden shadow-sm transition-transform ${className}`}
+      style={{ width: numericSize, height: numericSize }}
     >
-      {avatar.imageUrl ? (
-        <img
-          src={avatar.imageUrl}
-          alt={avatar.name || displayName}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            // Fallback to initial if image fails to load
-            (e.target as HTMLElement).style.display = "none";
-          }}
-        />
-      ) : null}
-      <div className="w-full h-full flex items-center justify-center font-black text-[var(--text-primary)] bg-[var(--brand-accent)] text-[var(--brand-accent-text)]">
-        {avatar.emoji || displayName[0] || "U"}
-      </div>
+      <Avvvatars
+        value={seed}
+        style="shape"
+        size={numericSize}
+        shadow={false}
+      />
     </div>
   );
 }

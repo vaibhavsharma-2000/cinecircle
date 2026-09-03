@@ -4,7 +4,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   {
     id: "rec_1",
     sender_name: "Alex",
-    sender_avatar: "luke_skywalker",
+    sender_avatar: "aurora",
     recipient: "You",
     tmdb_id: 693134,
     media_type: "movie",
@@ -21,7 +21,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   {
     id: "rec_2",
     sender_name: "Maya",
-    sender_avatar: "wednesday_addams",
+    sender_avatar: "nebula",
     recipient: "All Friends",
     tmdb_id: 95396,
     media_type: "tv",
@@ -38,7 +38,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   {
     id: "rec_3",
     sender_name: "Sam",
-    sender_avatar: "michael_scott",
+    sender_avatar: "ember",
     recipient: "All Friends",
     tmdb_id: 666243,
     media_type: "movie",
@@ -55,7 +55,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   {
     id: "rec_4",
     sender_name: "Alex",
-    sender_avatar: "luke_skywalker",
+    sender_avatar: "aurora",
     recipient: "All Friends",
     tmdb_id: 872585,
     media_type: "movie",
@@ -72,7 +72,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   {
     id: "rec_5",
     sender_name: "Sam",
-    sender_avatar: "michael_scott",
+    sender_avatar: "ember",
     recipient: "Maya",
     tmdb_id: 1072790,
     media_type: "movie",
@@ -89,7 +89,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   {
     id: "rec_6",
     sender_name: "Maya",
-    sender_avatar: "wednesday_addams",
+    sender_avatar: "nebula",
     recipient: "You",
     tmdb_id: 136315,
     media_type: "tv",
@@ -150,7 +150,7 @@ export const MOCK_FRIENDS: FriendItem[] = [
     id: "alex_1",
     username: "alex_films",
     display_name: "Alex",
-    avatar_character_id: "luke_skywalker",
+    avatar_character_id: "aurora",
     status: "ACCEPTED",
     stats: { recommendedCount: 14, watchedCount: 48, topGenre: "Sci-Fi" },
   },
@@ -158,7 +158,7 @@ export const MOCK_FRIENDS: FriendItem[] = [
     id: "maya_2",
     username: "maya_cine",
     display_name: "Maya",
-    avatar_character_id: "wednesday_addams",
+    avatar_character_id: "nebula",
     status: "ACCEPTED",
     stats: { recommendedCount: 9, watchedCount: 36, topGenre: "Thriller" },
   },
@@ -166,7 +166,7 @@ export const MOCK_FRIENDS: FriendItem[] = [
     id: "sam_3",
     username: "sam_popcorn",
     display_name: "Sam",
-    avatar_character_id: "michael_scott",
+    avatar_character_id: "ember",
     status: "ACCEPTED",
     stats: { recommendedCount: 18, watchedCount: 62, topGenre: "Comedy" },
   },
@@ -175,7 +175,7 @@ export const MOCK_FRIENDS: FriendItem[] = [
 export const MOCK_DEMO_PROFILE = {
   displayName: "Tony Stark",
   username: "ironman",
-  avatarId: "tony_stark",
+  avatarId: "solaris",
   age: "24",
 };
 

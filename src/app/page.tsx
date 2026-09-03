@@ -19,6 +19,7 @@ import { InviteModal } from "@/components/InviteModal";
 import { FriendLibraryModal } from "@/components/FriendLibraryModal";
 import { MovieItem } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem, FriendItem, supabase } from "@/lib/supabase";
+import { DEFAULT_AVATAR_ID } from "@/constants/avatars";
 
 import {
   MOCK_RECOMMENDATIONS,
@@ -70,7 +71,7 @@ export default function Home() {
       : {
           displayName: "Guest",
           username: "guest",
-          avatarId: "tony_stark",
+          avatarId: DEFAULT_AVATAR_ID,
           age: "24",
         }
   );
@@ -200,7 +201,7 @@ export default function Home() {
         setProfile({
           displayName: dbProfile.display_name,
           username: dbProfile.username,
-          avatarId: dbProfile.avatar_character_id || "tony_stark",
+          avatarId: dbProfile.avatar_character_id || DEFAULT_AVATAR_ID,
           age: dbProfile.age ? String(dbProfile.age) : "24",
         });
       } else if (meta.username && meta.username !== "guest" && meta.username !== "user") {
@@ -208,7 +209,7 @@ export default function Home() {
         const newProf = {
           displayName: meta.display_name || meta.full_name || meta.name || session.user.email?.split("@")[0] || "User",
           username: meta.username,
-          avatarId: meta.avatar_id || "tony_stark",
+          avatarId: meta.avatar_id || DEFAULT_AVATAR_ID,
           age: String(meta.age || "24"),
         };
         setProfile(newProf);
@@ -225,7 +226,7 @@ export default function Home() {
         setProfile({
           displayName: gName,
           username: session.user.email?.split("@")[0] || "user",
-          avatarId: meta.avatar_id || "tony_stark",
+          avatarId: meta.avatar_id || DEFAULT_AVATAR_ID,
           age: "24",
         });
         setCompleteProfileModalOpen(true);
@@ -840,7 +841,7 @@ export default function Home() {
           setProfile({
             displayName: "Guest",
             username: "guest",
-            avatarId: "tony_stark",
+            avatarId: DEFAULT_AVATAR_ID,
             age: "24",
           });
         }}

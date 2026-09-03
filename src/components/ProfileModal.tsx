@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button, IconButton, Input } from "@usefragments/ui";
-import { getAvatarById } from "@/constants/avatars";
 import { X, Check, Sparkles } from "lucide-react";
 import { AvatarPickerModal } from "./AvatarPickerModal";
 import { UserAvatar } from "./UserAvatar";
@@ -96,24 +95,24 @@ export function ProfileModal({
               />
             </div>
 
-            {/* Character Avatar Selection Card */}
+            {/* Avatar Selection Card */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Your Character Persona</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Your Profile Avatar</label>
               <div className="p-3 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl flex items-center justify-between gap-3 shadow-sm">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[var(--brand-accent)] shadow shrink-0">
-                    <img
-                      src={getAvatarById(selectedAvatarId).imageUrl}
-                      alt={getAvatarById(selectedAvatarId).name}
-                      className="w-full h-full object-cover"
+                  <div className="rounded-full ring-2 ring-[var(--brand-accent)] shadow shrink-0 overflow-hidden">
+                    <UserAvatar
+                      avatarId={selectedAvatarId}
+                      displayName={username || displayName || "You"}
+                      size="lg"
                     />
                   </div>
                   <div className="min-w-0">
                     <h4 className="font-extrabold text-xs text-[var(--text-primary)] truncate">
-                      {getAvatarById(selectedAvatarId).name}
+                      @{username || currentUsername || "username"}
                     </h4>
                     <p className="text-[10px] text-[var(--text-secondary)] truncate">
-                      {getAvatarById(selectedAvatarId).showMovie}
+                      {displayName || currentDisplayName}
                     </p>
                   </div>
                 </div>
@@ -123,7 +122,7 @@ export function ProfileModal({
                   onClick={() => setIsAvatarPickerOpen(true)}
                   className="h-9 px-3.5 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] border border-[var(--surface-border)] font-bold text-xs rounded-xl transition shrink-0 flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Browse Vault
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Choose Avatar
                 </Button>
               </div>
             </div>
@@ -139,12 +138,13 @@ export function ProfileModal({
         </div>
       </div>
 
-      {/* Crunchyroll-Style Character Avatar Picker Modal */}
+      {/* Avvvatars Picker Modal */}
       <AvatarPickerModal
         isOpen={isAvatarPickerOpen}
         onClose={() => setIsAvatarPickerOpen(false)}
         selectedAvatarId={selectedAvatarId}
         onSelectAvatar={(avatarId) => setSelectedAvatarId(avatarId)}
+        username={username || currentUsername || "username"}
       />
     </>
   );

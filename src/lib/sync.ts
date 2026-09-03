@@ -1,4 +1,5 @@
 import { supabase, Recommendation, WatchlistItem, FriendItem, UserProfile } from "./supabase";
+import { DEFAULT_AVATAR_ID } from "@/constants/avatars";
 
 /**
  * Check if a username is available in Supabase profiles table
@@ -167,7 +168,7 @@ export async function fetchIncomingFriendRequests(currentUserId: string): Promis
         senderId: row.user_id,
         senderUsername: prof?.username || "user",
         senderDisplayName: prof?.display_name || prof?.username || "A Cinephile",
-        senderAvatarId: prof?.avatar_character_id || "tony_stark",
+        senderAvatarId: prof?.avatar_character_id || DEFAULT_AVATAR_ID,
         createdAt: row.created_at,
       };
     });
@@ -206,7 +207,7 @@ export async function fetchOutgoingFriendRequests(currentUserId: string): Promis
         recipientId: row.friend_id,
         recipientUsername: prof?.username || "user",
         recipientDisplayName: prof?.display_name || prof?.username || "User",
-        recipientAvatarId: prof?.avatar_character_id || "tony_stark",
+        recipientAvatarId: prof?.avatar_character_id || DEFAULT_AVATAR_ID,
         createdAt: row.created_at,
       };
     });
@@ -319,7 +320,7 @@ export async function fetchLiveFriends(userIdOrUsername: string): Promise<Friend
       id: p.id,
       username: p.username,
       display_name: p.display_name || p.username,
-      avatar_character_id: p.avatar_character_id || "tony_stark",
+      avatar_character_id: p.avatar_character_id || DEFAULT_AVATAR_ID,
       status: "ACCEPTED",
       stats: {
         recommendedCount: 2,
@@ -406,7 +407,7 @@ export async function fetchLiveRecommendations(): Promise<Recommendation[]> {
     return data.map((row: any) => ({
       id: String(row.id),
       sender_name: row.sender_name || "Friend",
-      sender_avatar: row.sender_avatar || "tony_stark",
+      sender_avatar: row.sender_avatar || DEFAULT_AVATAR_ID,
       recipient: row.recipient || "All Friends",
       tmdb_id: row.tmdb_id,
       media_type: (row.media_type as "movie" | "tv") || "movie",
@@ -660,7 +661,7 @@ export function subscribeToRecommendations(
         const rec: Recommendation = {
           id: String(row.id),
           sender_name: row.sender_name || "Friend",
-          sender_avatar: row.sender_avatar || "tony_stark",
+          sender_avatar: row.sender_avatar || DEFAULT_AVATAR_ID,
           recipient: row.recipient || "All Friends",
           tmdb_id: row.tmdb_id,
           media_type: (row.media_type as "movie" | "tv") || "movie",

@@ -3,15 +3,23 @@
 import { useState } from "react";
 import { Card, Button, IconButton, Avatar, Alert } from "@usefragments/ui";
 import { supabase } from "@/lib/supabase";
-import { getAvatarById } from "@/constants/avatars";
+import { DEFAULT_AVATAR_ID } from "@/constants/avatars";
+import { UserAvatar } from "./UserAvatar";
+import { AvatarPickerModal } from "./AvatarPickerModal";
 import { checkUsernameAvailable } from "@/lib/sync";
 import { X, Lock, Mail, UserCheck, LogIn, AlertCircle, Eye, EyeOff, CheckCircle2, Sparkles } from "lucide-react";
-import { AvatarPickerModal } from "./AvatarPickerModal";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAuthSuccess: (user: { email: string; displayName: string; username: string; avatarId: string; age?: string }) => void;
+  onAuthSuccess: (user: {
+    id?: string;
+    email: string;
+    displayName: string;
+    username: string;
+    avatarId: string;
+    age?: string;
+  }) => void;
 }
 
 export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
@@ -24,7 +32,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [age, setAge] = useState("");
-  const [selectedAvatarId, setSelectedAvatarId] = useState("tony_stark");
+  const [selectedAvatarId, setSelectedAvatarId] = useState(DEFAULT_AVATAR_ID);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
 
   // UX Toggles
@@ -66,6 +74,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
       if (data.user) {
         const meta = data.user.user_metadata || {};
         onAuthSuccess({
+          id: data.user.id,
           email: data.user.email || email,
           displayName: meta.display_name || email.split("@")[0],
           username: meta.username || email.split("@")[0],
@@ -354,25 +363,24 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                       className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl px-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition leading-tight flex items-center"
                     />
                   </div>
-
-                  {/* Avatar Selection Hero Card */}
+                         {/* Avatar Selection Card */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[var(--text-secondary)]">Your CineCircle Character Persona</label>
+                    <label className="text-xs font-bold text-[var(--text-secondary)]">Your Profile Avatar</label>
                     <div className="p-3 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl flex items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[var(--brand-accent)] shadow shrink-0">
-                          <img
-                            src={getAvatarById(selectedAvatarId).imageUrl}
-                            alt={getAvatarById(selectedAvatarId).name}
-                            className="w-full h-full object-cover"
+                        <div className="rounded-full ring-2 ring-[var(--brand-accent)] shadow shrink-0 overflow-hidden">
+                          <UserAvatar
+                            avatarId={selectedAvatarId}
+                            displayName={username || displayName || "You"}
+                            size="lg"
                           />
                         </div>
                         <div className="min-w-0">
                           <h4 className="font-extrabold text-xs text-[var(--text-primary)] truncate">
-                            {getAvatarById(selectedAvatarId).name}
+                            @{username.trim() || "your_username"}
                           </h4>
                           <p className="text-[10px] text-[var(--text-secondary)] truncate">
-                            {getAvatarById(selectedAvatarId).showMovie}
+                            {displayName.trim() || "CineCircle Member"}
                           </p>
                         </div>
                       </div>
@@ -382,7 +390,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                         onClick={() => setIsAvatarPickerOpen(true)}
                         className="h-9 px-3.5 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] border border-[var(--surface-border)] font-bold text-xs rounded-xl transition shrink-0 flex items-center gap-1.5 cursor-pointer shadow-sm"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Browse Vault
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Choose Avatar
                       </Button>
                     </div>
                   </div>
@@ -398,12 +406,12 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="your.email@example.com"
-                        className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition leading-tight flex items-center"
+                        className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl pl-10 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition flex items-center leading-tight"
                       />
                     </div>
                   </div>
 
-                  {/* Password Fields */}
+                  {/* Password Field with Show/Hide */}
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-[var(--text-secondary)]">Password</label>
                     <div className="relative flex items-center">
@@ -411,22 +419,22 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                       <input
                         type={showPassword ? "text" : "password"}
                         required
-                        minLength={6}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="At least 6 characters"
-                        className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl pl-10 pr-10 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition leading-tight flex items-center"
+                        placeholder="••••••••"
+                        className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl pl-10 pr-10 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition flex items-center leading-tight"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+                        className="absolute right-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
 
+                  {/* Confirm Password Field */}
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-[var(--text-secondary)]">Confirm Password</label>
                     <div className="relative flex items-center">
@@ -434,16 +442,15 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                       <input
                         type={showConfirmPassword ? "text" : "password"}
                         required
-                        minLength={6}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter password"
-                        className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl pl-10 pr-10 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition leading-tight flex items-center"
+                        placeholder="••••••••"
+                        className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl pl-10 pr-10 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition flex items-center leading-tight"
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+                        className="absolute right-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
                       >
                         {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -453,10 +460,10 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2"
+                    className="w-full h-12 bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01]"
                   >
-                    <UserCheck className="w-4 h-4" />
-                    {loading ? "Creating Account..." : "Create Account & Send Verification"}
+                    <UserCheck className="w-4 h-4 stroke-[3]" />
+                    {loading ? "Creating Account..." : "Create CineCircle Account"}
                   </Button>
                 </form>
               )}
@@ -478,12 +485,13 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
         </Card>
       </div>
 
-      {/* Crunchyroll-Style Character Avatar Picker Modal */}
+      {/* Avvvatars Picker Modal */}
       <AvatarPickerModal
         isOpen={isAvatarPickerOpen}
         onClose={() => setIsAvatarPickerOpen(false)}
         selectedAvatarId={selectedAvatarId}
         onSelectAvatar={(avatarId) => setSelectedAvatarId(avatarId)}
+        username={username || "username"}
       />
     </>
   );

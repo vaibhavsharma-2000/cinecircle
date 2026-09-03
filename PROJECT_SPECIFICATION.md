@@ -99,16 +99,14 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
-## 🎨 Crunchyroll-Style Character Avatar Vault & Persona Picker
-- **Character Avatar Vault (`AvatarPickerModal`)**: Overhauls avatar selection into a rich, full-screen interactive character portrait browser inspired by Crunchyroll.
-- **100% Open & Permissively Licensed Assets**: All character portrait images are sourced exclusively from verified free and open license sources:
-  - *Creative Commons Attribution (CC-BY / CC-BY-SA)* & *Public Domain* via Wikimedia Commons (cosplay/character portraits).
-  - *Unsplash Free Commercial License* (cinema aesthetic photography).
-  - *DiceBear Open-Source Vector Library (CC0 / MIT License)* (crisp SVG anime & sci-fi vector avatars).
-- **Categorized Franchise Catalog**: 30+ high-resolution character portraits categorized into 6 themes (*🔥 Popular*, *🦸 Superheroes*, *🚀 Sci-Fi & Fantasy*, *📺 Cult TV Shows*, *🎨 Anime & Animation*, *🎭 Cinema Classics*).
-- **Search & Live Filtering**: Real-time search bar to quickly find character icons by name, actor, or show/movie title (e.g. *Iron Man*, *Wednesday Addams*, *Batman*, *Miles Morales*, *Goku*, *Jinx*).
-- **Live Preview Card & License Tag**: Displays selected character portrait hero card in sign-up (`AuthModal`), account settings (`AccountModal`), and profile edit (`ProfileModal`) with character name, franchise title, iconic quotes, and explicit license provenance tag.
-- **Universal `<UserAvatar />` Component**: Reusable avatar component rendering high-res character portraits across top navigation bar (`Navbar`), friend cards (`FriendsView`), and compatibility modals with graceful fallbacks.
+## 🎨 Dynamic Geometric Avvvatars System (`avvvatars-react`)
+- **Integration of [Avvvatars](https://github.com/nusu/avvvatars)**: Powered by `avvvatars-react`, providing clean, deterministic, modern geometric SVG avatars derived from seed values across 40 color palettes and 60 algorithmic shapes.
+- **Pure Visual Avatars (Zero Fictional Names)**:
+  - In avatar selection grids (`AvatarPickerModal`, `AuthModal`, `CompleteProfileModal`, `AccountModal`), avatars are presented purely as visual pictures with no character names, no fictional franchises, and no quotes.
+  - Alongside the avatar, the user's `@username` (or display name) is displayed exclusively as the identity.
+- **Universal Vector `<UserAvatar />`**: Reusable component rendering high-resolution, vector-crisp SVG shapes across navigation (`Navbar`), friend cards (`FriendsView`), friend library browsing (`FriendLibraryModal`), and request notifications without external image network calls or broken URLs.
+- **Curated Shape Presets**: 42 curated aesthetic presets allowing users to customize their visual persona in 1 click during Sign Up, Profile Setup, and Account Settings.
+- **Database & Existing Users Migration**: Live Supabase `profiles` and `recommendations` migrated to Avvvatar seeds (`solaris`, `aurora`, `nebula`, `zenith`, etc.), seamlessly replacing old movie character identifiers.
 
 ---
 

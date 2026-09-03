@@ -366,7 +366,7 @@ export function FriendsView({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <UserAvatar
-                      avatarId={friend.avatar_character_id || (friend as any).avatar_id || "tony_stark"}
+                      avatarId={friend.avatar_character_id || (friend as any).avatar_id || "solaris"}
                       displayName={friend.display_name}
                       size="lg"
                     />
