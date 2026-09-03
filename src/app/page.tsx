@@ -121,8 +121,16 @@ export default function Home() {
 
   // LocalStorage state persistence across browser tab closes
   useEffect(() => {
-    // Purge old un-scoped watchlist cache that leaked across accounts
-    localStorage.removeItem(`${STORAGE_PREFIX}watchlist`);
+    // Purge any stale watchlist cache that could leak across accounts
+    if (typeof window !== "undefined") {
+      try {
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith("cinecircle_") && key.includes("watchlist")) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch (e) {}
+    }
 
     const cachedProfile = localStorage.getItem(`${STORAGE_PREFIX}user_profile`);
     if (cachedProfile) {
@@ -148,12 +156,6 @@ export default function Home() {
       localStorage.removeItem(`${STORAGE_PREFIX}user_profile`);
     }
   }, [userEmail, profile]);
-
-  useEffect(() => {
-    if (userId) {
-      localStorage.setItem(`${STORAGE_PREFIX}watchlist_${userId}`, JSON.stringify(watchlist));
-    }
-  }, [watchlist, userId]);
 
   // Live Supabase Auth, Invite Handling, & Multi-User Data Synchronization
   useEffect(() => {
@@ -207,11 +209,21 @@ export default function Home() {
         return;
       }
 
+      // Immediately wipe previous user's watchlist from memory when account switches
       setUserId(session.user.id);
       setUserEmail(session.user.email ?? null);
+      setWatchlist([]);
 
-      const dbProfile = await fetchUserProfile(session.user.id);
       const meta = session.user.user_metadata || {};
+
+      // Fetch user profile, requests, friends, and user's database watchlist concurrently
+      const [dbProfile, incRequests, outgRequests, dbFriends, dbWatchlist] = await Promise.all([
+        fetchUserProfile(session.user.id),
+        fetchIncomingFriendRequests(session.user.id),
+        fetchOutgoingFriendRequests(session.user.id),
+        fetchLiveFriends(session.user.id),
+        fetchLiveWatchlist(session.user.id),
+      ]);
 
       let activeUsername = "";
       if (dbProfile && dbProfile.username && dbProfile.username !== "guest" && dbProfile.username !== "user") {
@@ -255,20 +267,9 @@ export default function Home() {
         await addLiveFriendship(activeUsername, invitedBy);
       }
 
-      // Fetch pending incoming & outgoing friend requests
-      const [incRequests, outgRequests] = await Promise.all([
-        fetchIncomingFriendRequests(session.user.id),
-        fetchOutgoingFriendRequests(session.user.id),
-      ]);
       setIncomingRequests(incRequests);
       setOutgoingRequests(outgRequests);
-
-      // Fetch live friends from Supabase for current user
-      const dbFriends = await fetchLiveFriends(session.user.id);
       setFriends(dbFriends.length > 0 ? dbFriends : (IS_MOCK_MODE ? MOCK_FRIENDS : []));
-
-      // Fetch live watchlist from Supabase for current user (authoritative source of truth)
-      const dbWatchlist = await fetchLiveWatchlist(session.user.id);
       setWatchlist(dbWatchlist);
     };
 
@@ -765,7 +766,13 @@ export default function Home() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
-        onAuthSuccess={(userData) => {
+        onAuthSuccess={async (userData: any) => {
+          if (userData.id && userData.id !== userId) {
+            setUserId(userData.id);
+            setWatchlist([]);
+            const live = await fetchLiveWatchlist(userData.id);
+            setWatchlist(live);
+          }
           setUserEmail(userData.email);
           setProfile({
             displayName: userData.displayName,
