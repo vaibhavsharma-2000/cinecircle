@@ -32,26 +32,250 @@ export async function checkUsernameAvailable(
   }
 }
 
+export interface FriendRequestItem {
+  id: string;
+  senderId: string;
+  senderUsername: string;
+  senderDisplayName: string;
+  senderAvatarId: string;
+  createdAt: string;
+}
+
+export interface OutgoingFriendRequestItem {
+  id: string;
+  recipientId: string;
+  recipientUsername: string;
+  recipientDisplayName: string;
+  recipientAvatarId: string;
+  createdAt: string;
+}
+
 /**
- * Create a mutual two-way friendship in Supabase
+ * Find user profile by username handle (case-insensitive)
  */
-export async function addLiveFriendship(userA: string, userB: string): Promise<boolean> {
-  const cleanA = userA.trim().toLowerCase();
-  const cleanB = userB.trim().toLowerCase();
-  if (!cleanA || !cleanB || cleanA === cleanB) return false;
+export async function findProfileByUsername(username: string): Promise<UserProfile | null> {
+  const clean = username.trim().replace(/^@/, "").toLowerCase();
+  if (!clean) return null;
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .ilike("username", clean)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data as UserProfile;
+  } catch (err) {
+    console.error("Error finding profile by username:", err);
+    return null;
+  }
+}
+
+/**
+ * Send a friend request to a user by username handle
+ */
+export async function sendFriendRequest(
+  requesterId: string,
+  targetUsername: string
+): Promise<{ success: boolean; error?: string; message?: string }> {
+  const clean = targetUsername.trim().replace(/^@/, "").toLowerCase();
+  if (!clean) return { success: false, error: "Please enter a username" };
+
+  // 1. Verify target user exists in Supabase profiles
+  const target = await findProfileByUsername(clean);
+  if (!target) {
+    return { success: false, error: `No CineCircle user found with handle @${clean}` };
+  }
+
+  // 2. Prevent self-friending
+  if (target.id === requesterId) {
+    return { success: false, error: "You cannot send a friend request to yourself!" };
+  }
 
   try {
-    const { error } = await supabase.from("friendships").upsert(
-      [
-        { username: cleanA, friend_username: cleanB, status: "ACCEPTED" },
-        { username: cleanB, friend_username: cleanA, status: "ACCEPTED" },
-      ],
-      { onConflict: "username,friend_username" }
-    );
+    // 3. Check existing relationship
+    const { data: existing } = await supabase
+      .from("friendships")
+      .select("*")
+      .or(
+        `and(user_id.eq.${requesterId},friend_id.eq.${target.id}),and(user_id.eq.${target.id},friend_id.eq.${requesterId})`
+      );
+
+    if (existing && existing.length > 0) {
+      const direct = existing.find((f: any) => f.user_id === requesterId && f.friend_id === target.id);
+      const reverse = existing.find((f: any) => f.user_id === target.id && f.friend_id === requesterId);
+
+      if (direct?.status === "ACCEPTED" || reverse?.status === "ACCEPTED") {
+        return { success: false, error: `@${target.username} is already in your circle!` };
+      }
+      if (direct?.status === "PENDING") {
+        return { success: false, error: `Friend request to @${target.username} is already pending approval.` };
+      }
+      if (reverse?.status === "PENDING") {
+        await acceptFriendRequest(reverse.id, target.id, requesterId);
+        return { success: true, message: `Mutual connection accepted! You and @${target.username} are now friends!` };
+      }
+    }
+
+    // 4. Insert pending request
+    const { error } = await supabase.from("friendships").insert([
+      {
+        user_id: requesterId,
+        friend_id: target.id,
+        status: "PENDING",
+      },
+    ]);
 
     if (error) {
-      console.error("Error creating friendship in Supabase:", error);
+      console.error("Error sending friend request:", error);
+      return { success: false, error: error.message || "Failed to send friend request" };
     }
+
+    return { success: true, message: `Friend request sent to @${target.username}! Awaiting their approval.` };
+  } catch (err: any) {
+    console.error("Error in sendFriendRequest:", err);
+    return { success: false, error: err?.message || "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Fetch pending incoming friend requests for current user
+ */
+export async function fetchIncomingFriendRequests(currentUserId: string): Promise<FriendRequestItem[]> {
+  if (!currentUserId) return [];
+  try {
+    const { data, error } = await supabase
+      .from("friendships")
+      .select("id, user_id, created_at")
+      .eq("friend_id", currentUserId)
+      .eq("status", "PENDING");
+
+    if (error || !data || data.length === 0) return [];
+
+    const senderIds = data.map((row: any) => row.user_id);
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("id", senderIds);
+
+    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+
+    return data.map((row: any) => {
+      const prof = profileMap.get(row.user_id);
+      return {
+        id: row.id,
+        senderId: row.user_id,
+        senderUsername: prof?.username || "user",
+        senderDisplayName: prof?.display_name || prof?.username || "A Cinephile",
+        senderAvatarId: prof?.avatar_character_id || "tony_stark",
+        createdAt: row.created_at,
+      };
+    });
+  } catch (err) {
+    console.error("Error fetching incoming friend requests:", err);
+    return [];
+  }
+}
+
+/**
+ * Fetch pending outgoing friend requests sent by current user
+ */
+export async function fetchOutgoingFriendRequests(currentUserId: string): Promise<OutgoingFriendRequestItem[]> {
+  if (!currentUserId) return [];
+  try {
+    const { data, error } = await supabase
+      .from("friendships")
+      .select("id, friend_id, created_at")
+      .eq("user_id", currentUserId)
+      .eq("status", "PENDING");
+
+    if (error || !data || data.length === 0) return [];
+
+    const recipientIds = data.map((row: any) => row.friend_id);
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("id", recipientIds);
+
+    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+
+    return data.map((row: any) => {
+      const prof = profileMap.get(row.friend_id);
+      return {
+        id: row.id,
+        recipientId: row.friend_id,
+        recipientUsername: prof?.username || "user",
+        recipientDisplayName: prof?.display_name || prof?.username || "User",
+        recipientAvatarId: prof?.avatar_character_id || "tony_stark",
+        createdAt: row.created_at,
+      };
+    });
+  } catch (err) {
+    console.error("Error fetching outgoing friend requests:", err);
+    return [];
+  }
+}
+
+/**
+ * Accept / Approve an incoming friend request
+ */
+export async function acceptFriendRequest(
+  requestId: string,
+  requesterId: string,
+  currentUserId: string
+): Promise<boolean> {
+  try {
+    // 1. Update original row to ACCEPTED
+    await supabase.from("friendships").update({ status: "ACCEPTED" }).eq("id", requestId);
+
+    // 2. Ensure reciprocal row exists so both users see each other
+    await supabase.from("friendships").upsert(
+      [
+        { user_id: currentUserId, friend_id: requesterId, status: "ACCEPTED" },
+        { user_id: requesterId, friend_id: currentUserId, status: "ACCEPTED" },
+      ],
+      { onConflict: "user_id,friend_id" }
+    );
+
+    return true;
+  } catch (err) {
+    console.error("Error accepting friend request:", err);
+    return false;
+  }
+}
+
+/**
+ * Decline / Disapprove a friend request
+ */
+export async function declineFriendRequest(requestId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("friendships").delete().eq("id", requestId);
+    return !error;
+  } catch (err) {
+    console.error("Error declining friend request:", err);
+    return false;
+  }
+}
+
+/**
+ * Create a mutual two-way friendship in Supabase (e.g. for invite links)
+ */
+export async function addLiveFriendship(userAIdOrUsername: string, userBIdOrUsername: string): Promise<boolean> {
+  try {
+    const [profA, profB] = await Promise.all([
+      userAIdOrUsername.includes("-") ? fetchUserProfile(userAIdOrUsername) : findProfileByUsername(userAIdOrUsername),
+      userBIdOrUsername.includes("-") ? fetchUserProfile(userBIdOrUsername) : findProfileByUsername(userBIdOrUsername),
+    ]);
+
+    if (!profA || !profB || profA.id === profB.id) return false;
+
+    await supabase.from("friendships").upsert(
+      [
+        { user_id: profA.id, friend_id: profB.id, status: "ACCEPTED" },
+        { user_id: profB.id, friend_id: profA.id, status: "ACCEPTED" },
+      ],
+      { onConflict: "user_id,friend_id" }
+    );
     return true;
   } catch (err) {
     console.error("Error in addLiveFriendship:", err);
@@ -60,45 +284,60 @@ export async function addLiveFriendship(userA: string, userB: string): Promise<b
 }
 
 /**
- * Fetch all confirmed friends for a given username from Supabase
+ * Fetch all confirmed friends for a given user ID or username from Supabase
  */
-export async function fetchLiveFriends(username: string): Promise<FriendItem[]> {
-  const cleanUser = username.trim().toLowerCase();
-  if (!cleanUser) return [];
+export async function fetchLiveFriends(userIdOrUsername: string): Promise<FriendItem[]> {
+  const clean = userIdOrUsername.trim().toLowerCase();
+  if (!clean) return [];
 
   try {
+    let targetUserId = clean;
+    if (!clean.includes("-")) {
+      const p = await findProfileByUsername(clean);
+      if (!p) return [];
+      targetUserId = p.id;
+    }
+
     const { data: friendships, error } = await supabase
       .from("friendships")
-      .select("friend_username, status")
-      .eq("username", cleanUser);
+      .select("friend_id, status")
+      .eq("user_id", targetUserId)
+      .eq("status", "ACCEPTED");
 
     if (error || !friendships || friendships.length === 0) return [];
 
-    const friendUsernames = friendships.map((f: any) => f.friend_username);
+    const friendIds = friendships.map((f: any) => f.friend_id);
 
     const { data: profiles } = await supabase
       .from("profiles")
       .select("*")
-      .in("username", friendUsernames);
+      .in("id", friendIds);
 
     if (!profiles || profiles.length === 0) return [];
 
     return profiles.map((p: any) => ({
-      id: p.id || p.username,
+      id: p.id,
       username: p.username,
       display_name: p.display_name || p.username,
       avatar_character_id: p.avatar_character_id || "tony_stark",
       status: "ACCEPTED",
       stats: {
-        recommendedCount: 3,
-        watchedCount: 12,
-        topGenre: "Sci-Fi",
+        recommendedCount: 2,
+        watchedCount: 8,
+        topGenre: "Cinema",
       },
     }));
   } catch (err) {
     console.error("Error fetching live friends:", err);
     return [];
   }
+}
+
+/**
+ * Fetch a friend's shared watchlist
+ */
+export async function fetchFriendWatchlist(friendUserId: string): Promise<WatchlistItem[]> {
+  return fetchLiveWatchlist(friendUserId);
 }
 
 /**

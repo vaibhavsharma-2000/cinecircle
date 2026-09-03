@@ -30,6 +30,7 @@ interface NavbarProps {
   userEmail: string | null;
   watchlistCount: number;
   friendsCount: number;
+  incomingRequestsCount?: number;
   isDarkMode: boolean;
   onToggleTheme: () => void;
   onOpenInstallPwa?: () => void;
@@ -46,6 +47,7 @@ export function Navbar({
   userEmail,
   watchlistCount,
   friendsCount,
+  incomingRequestsCount = 0,
   isDarkMode,
   onToggleTheme,
   onOpenInstallPwa,
@@ -57,9 +59,15 @@ export function Navbar({
   const tabs = [
     { id: "discover", label: "Discover", icon: Film },
     { id: "recommendations", label: "Recommendations", icon: Sparkles },
-    { id: "watchlist", label: "My Library", icon: Bookmark, badge: watchlistCount },
+    { id: "watchlist", label: "My Library", icon: Bookmark, badge: watchlistCount > 0 ? String(watchlistCount) : undefined },
     { id: "matcher", label: "Group Matcher", icon: Sparkles },
-    { id: "friends", label: "Friends", icon: Users, badge: friendsCount },
+    {
+      id: "friends",
+      label: "Friends",
+      icon: Users,
+      badge: incomingRequestsCount > 0 ? `! ${incomingRequestsCount}` : friendsCount > 0 ? String(friendsCount) : undefined,
+      isAlert: incomingRequestsCount > 0,
+    },
   ];
 
   // Close dropdown when clicking outside
@@ -207,10 +215,16 @@ export function Navbar({
               >
                 <IconComp className={`w-3.5 h-3.5 ${isSelected ? "text-[var(--brand-accent-text)]" : "text-[var(--text-secondary)]"}`} />
                 <span className="truncate">{tab.label}</span>
-                {tab.badge !== undefined && tab.badge > 0 && (
-                  <Badge className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                    isSelected ? "bg-black/20 text-[var(--brand-accent-text)]" : "bg-[var(--canvas)] text-[var(--text-primary)]"
-                  }`}>
+                {Boolean(tab.badge) && (
+                  <Badge
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                      tab.isAlert
+                        ? "bg-amber-400 text-slate-950 font-black shadow animate-pulse"
+                        : isSelected
+                        ? "bg-black/20 text-[var(--brand-accent-text)]"
+                        : "bg-[var(--canvas)] text-[var(--text-primary)]"
+                    }`}
+                  >
                     {tab.badge}
                   </Badge>
                 )}

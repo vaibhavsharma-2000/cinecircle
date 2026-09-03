@@ -27,8 +27,10 @@ import {
   X,
   Bookmark,
   Check,
+  Globe,
 } from "lucide-react";
 import { GenreFilterDrawer } from "./GenreFilterDrawer";
+import { FriendItem } from "@/lib/supabase";
 
 interface DiscoverViewProps {
   onOpenMovieDetail: (movie: MovieItem, rec?: Recommendation) => void;
@@ -39,6 +41,9 @@ interface DiscoverViewProps {
   onViewAllRecommendations: () => void;
   watchlist: WatchlistItem[];
   friendRecommendations: Recommendation[];
+  friends?: FriendItem[];
+  currentUserDisplayName?: string;
+  currentUsername?: string;
 }
 
 export function DiscoverView({
@@ -50,11 +55,14 @@ export function DiscoverView({
   onViewAllRecommendations,
   watchlist,
   friendRecommendations,
+  friends = [],
+  currentUserDisplayName = "Guest",
+  currentUsername = "guest",
 }: DiscoverViewProps) {
   const [selectedCategory, setSelectedCategory] = useState("critics");
   const [isGenreDrawerOpen, setIsGenreDrawerOpen] = useState(false);
   const [customFilters, setCustomFilters] = useState<FilterOptions | null>(null);
-  const [recFilter, setRecFilter] = useState<"ALL" | "DIRECT">("ALL");
+  const [recFilter, setRecFilter] = useState<"CIRCLE" | "GLOBAL" | "DIRECT">("GLOBAL");
   const [showAllRecs, setShowAllRecs] = useState(false);
   const [deletingRec, setDeletingRec] = useState<Recommendation | null>(null);
 
@@ -109,16 +117,52 @@ export function DiscoverView({
     setIsLoadingMore(false);
   };
 
-  const directToMeCount = friendRecommendations.filter(
-    (r) => r.recipient === "You" || r.recipient === "Tony Stark"
-  ).length;
+  const isDirectRec = (r: Recommendation) => {
+    if (r.recipient === "Global" || r.recipient === "All Friends") return false;
+    if (r.recipient === "You") return true;
+    if (currentUserDisplayName && r.recipient.toLowerCase() === currentUserDisplayName.toLowerCase()) return true;
+    if (currentUsername && r.recipient.toLowerCase() === currentUsername.toLowerCase()) return true;
+    return false;
+  };
 
-  const displayedRecsAll = friendRecommendations.filter((r) => {
-    if (recFilter === "DIRECT") {
-      return r.recipient === "You" || r.recipient === "Tony Stark";
-    }
-    return true;
-  });
+  const isCircleRec = (r: Recommendation) => {
+    if (isDirectRec(r)) return true;
+    if (r.recipient !== "All Friends") return false;
+
+    // Check if sender is in friends list
+    const isFriendSender = friends.some(
+      (f) =>
+        f.display_name.toLowerCase() === r.sender_name.toLowerCase() ||
+        f.username.toLowerCase() === r.sender_name.toLowerCase()
+    );
+    // Or if sender is current user
+    const isSelfSender =
+      currentUserDisplayName &&
+      r.sender_name.toLowerCase() === currentUserDisplayName.toLowerCase();
+
+    return Boolean(isFriendSender || isSelfSender);
+  };
+
+  const isGlobalRec = (r: Recommendation) => {
+    return r.recipient === "Global";
+  };
+
+  const circleRecs = friendRecommendations.filter(isCircleRec);
+  const globalRecs = friendRecommendations.filter(isGlobalRec);
+  const directRecs = friendRecommendations.filter(isDirectRec);
+
+  // Default filter: Circle if user has circle recs, otherwise Global
+  const activeFilter =
+    recFilter === "CIRCLE" && circleRecs.length === 0 && globalRecs.length > 0
+      ? "GLOBAL"
+      : recFilter;
+
+  const displayedRecsAll =
+    activeFilter === "CIRCLE"
+      ? circleRecs
+      : activeFilter === "DIRECT"
+      ? directRecs
+      : globalRecs;
 
   const visibleRecs = showAllRecs ? displayedRecsAll : displayedRecsAll.slice(0, 3);
 
@@ -128,39 +172,69 @@ export function DiscoverView({
   return (
     <div className="space-y-16 animate-in fade-in duration-300">
       
-      {/* Section 1: From Your Friends */}
+      {/* Section 1: Community & Circle Recommendations */}
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--surface-border)] pb-5">
           <div className="space-y-1">
             <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] tracking-tight flex items-center gap-3">
-              <Users className="w-7 h-7 text-[var(--text-primary)]" /> From Your Friends
+              {activeFilter === "CIRCLE" ? (
+                <>
+                  <Users className="w-7 h-7 text-[var(--text-primary)]" /> From Your Circle
+                </>
+              ) : activeFilter === "DIRECT" ? (
+                <>
+                  <Target className="w-7 h-7 text-[var(--brand-accent)]" /> Sent Directly to You
+                </>
+              ) : (
+                <>
+                  <Globe className="w-7 h-7 text-[var(--brand-accent)]" /> Global Community Picks
+                </>
+              )}
             </h2>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
-              Hand-picked recommendations and reviews from your trusted circle
+              {activeFilter === "CIRCLE"
+                ? "Private reviews and recommendations shared within your circle"
+                : activeFilter === "DIRECT"
+                ? "Special picks recommended specifically for your movie night"
+                : "Hand-picked film and series recommendations from the CineCircle community"}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-[var(--surface-card)] p-1.5 rounded-full border border-[var(--surface-border)] text-xs self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 bg-[var(--surface-card)] p-1.5 rounded-full border border-[var(--surface-border)] text-xs self-start sm:self-auto flex-wrap">
             <Button
-              onClick={() => setRecFilter("ALL")}
-              className={`px-4 h-9 rounded-full font-bold transition ${
-                recFilter === "ALL"
+              onClick={() => setRecFilter("GLOBAL")}
+              className={`px-3.5 h-8 rounded-full font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeFilter === "GLOBAL"
                   ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
               }`}
             >
-              All Picks ({friendRecommendations.length})
+              <Globe className="w-3.5 h-3.5" /> Global ({globalRecs.length})
             </Button>
+
             <Button
-              onClick={() => setRecFilter("DIRECT")}
-              className={`px-4 h-9 rounded-full font-bold flex items-center gap-1.5 transition ${
-                recFilter === "DIRECT"
-                  ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow font-extrabold"
-                  : "text-[var(--text-primary)] hover:opacity-80"
+              onClick={() => setRecFilter("CIRCLE")}
+              className={`px-3.5 h-8 rounded-full font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeFilter === "CIRCLE"
+                  ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
               }`}
             >
-              <Target className="w-3.5 h-3.5" /> Sent to You ({directToMeCount})
+              <Users className="w-3.5 h-3.5" /> Circle ({circleRecs.length})
             </Button>
+
+            {directRecs.length > 0 && (
+              <Button
+                onClick={() => setRecFilter("DIRECT")}
+                className={`px-3.5 h-8 rounded-full font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                  activeFilter === "DIRECT"
+                    ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow font-extrabold"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
+                }`}
+              >
+                <Target className="w-3.5 h-3.5" /> For You ({directRecs.length})
+              </Button>
+            )}
           </div>
         </div>
 

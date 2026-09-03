@@ -16,6 +16,7 @@ import { CompleteProfileModal } from "@/components/CompleteProfileModal";
 import { CookieConsentModal } from "@/components/CookieConsentModal";
 import { InstallPwaModal } from "@/components/InstallPwaModal";
 import { InviteModal } from "@/components/InviteModal";
+import { FriendLibraryModal } from "@/components/FriendLibraryModal";
 import { MovieItem } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem, FriendItem, supabase } from "@/lib/supabase";
 
@@ -40,6 +41,13 @@ import {
   removeLiveWatchlistItem,
   updateLiveWatchlistItem,
   subscribeToRecommendations,
+  sendFriendRequest,
+  fetchIncomingFriendRequests,
+  fetchOutgoingFriendRequests,
+  acceptFriendRequest,
+  declineFriendRequest,
+  FriendRequestItem,
+  OutgoingFriendRequestItem,
 } from "@/lib/sync";
 
 // Environment check: Staging / Dev uses mock data; Production starts completely clean
@@ -105,6 +113,10 @@ export default function Home() {
     isOpen: false,
     movie: null,
   });
+
+  const [incomingRequests, setIncomingRequests] = useState<FriendRequestItem[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<OutgoingFriendRequestItem[]>([]);
+  const [selectedFriendForLibrary, setSelectedFriendForLibrary] = useState<FriendItem | null>(null);
 
   // LocalStorage state persistence across browser tab closes
   useEffect(() => {
@@ -224,17 +236,18 @@ export default function Home() {
         await addLiveFriendship(activeUsername, invitedBy);
       }
 
+      // Fetch pending incoming & outgoing friend requests
+      const [incRequests, outgRequests] = await Promise.all([
+        fetchIncomingFriendRequests(session.user.id),
+        fetchOutgoingFriendRequests(session.user.id),
+      ]);
+      setIncomingRequests(incRequests);
+      setOutgoingRequests(outgRequests);
+
       // Fetch live friends from Supabase for current user
-      if (activeUsername) {
-        const dbFriends = await fetchLiveFriends(activeUsername);
-        if (dbFriends.length > 0) {
-          setFriends((prev) => {
-            const map = new Map<string, FriendItem>();
-            prev.forEach((f) => map.set(f.username.toLowerCase(), f));
-            dbFriends.forEach((f) => map.set(f.username.toLowerCase(), f));
-            return Array.from(map.values());
-          });
-        }
+      const dbFriends = await fetchLiveFriends(session.user.id);
+      if (dbFriends.length > 0) {
+        setFriends(dbFriends);
       }
 
       const dbWatchlist = await fetchLiveWatchlist(session.user.id);
@@ -273,7 +286,33 @@ export default function Home() {
       }
     );
 
-    // 4. Auth State change subscription
+    // 4. Realtime subscription for friendship changes and incoming requests
+    const friendshipsChannel = supabase
+      .channel("live_friendships_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "friendships" },
+        async () => {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session?.user?.id) {
+            const [inc, outg, updatedFriends] = await Promise.all([
+              fetchIncomingFriendRequests(session.user.id),
+              fetchOutgoingFriendRequests(session.user.id),
+              fetchLiveFriends(session.user.id),
+            ]);
+            setIncomingRequests(inc);
+            setOutgoingRequests(outg);
+            if (updatedFriends.length > 0) {
+              setFriends(updatedFriends);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // 5. Auth State change subscription
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -283,6 +322,7 @@ export default function Home() {
     return () => {
       subscription.unsubscribe();
       unsubRecs();
+      friendshipsChannel.unsubscribe();
     };
   }, []);
 
@@ -300,8 +340,11 @@ export default function Home() {
     await supabase.auth.signOut();
     setUserId(null);
     setUserEmail(null);
+    setIncomingRequests([]);
+    setOutgoingRequests([]);
     if (!IS_MOCK_MODE) {
       setWatchlist([]);
+      setFriends([]);
       setProfile({
         displayName: "Guest",
         username: "guest",
@@ -311,16 +354,24 @@ export default function Home() {
     }
   };
 
-  // Movie Details Click Handler
+  // Movie Details Click Handler - dynamically preserves movie vs tv series
   const handleOpenMovieDetail = (
     movie: MovieItem,
     recommendation?: Recommendation
   ) => {
+    const resolvedMediaType: "movie" | "tv" =
+      recommendation?.media_type ||
+      movie.media_type ||
+      (movie.first_air_date ? "tv" : "movie");
+
     setDetailModal({
       isOpen: true,
       movieId: movie.id,
-      mediaType: movie.media_type || "movie",
-      initialMovie: movie,
+      mediaType: resolvedMediaType,
+      initialMovie: {
+        ...movie,
+        media_type: resolvedMediaType,
+      },
       recommendationNote: recommendation?.note,
       recommendedBy: recommendation?.sender_name,
       ratingStars: recommendation?.rating_stars,
@@ -445,23 +496,30 @@ export default function Home() {
     tmdbId: number;
     title: string;
     posterPath: string | null;
+    backdropPath?: string | null;
+    mediaType: "movie" | "tv";
+    releaseYear?: string;
     ratingStars: number;
     note: string;
     tags: string[];
     recipient: string;
+    guestName?: string;
   }) => {
+    const senderName = data.guestName || profile.displayName;
+    const senderAvatar = data.guestName ? "goku" : profile.avatarId;
     const tempId = `rec_${Date.now()}`;
     const newRec: Recommendation = {
       id: tempId,
-      sender_name: profile.displayName,
-      sender_avatar: profile.avatarId,
+      sender_name: senderName,
+      sender_avatar: senderAvatar,
       recipient: data.recipient,
       tmdb_id: data.tmdbId,
-      media_type: "movie",
+      media_type: data.mediaType,
       title: data.title,
       poster_path: data.posterPath,
-      release_year: "2024",
-      genre: "Film",
+      backdrop_path: data.backdropPath || null,
+      release_year: data.releaseYear || "2024",
+      genre: data.mediaType === "tv" ? "TV Series" : "Film",
       rating_stars: data.ratingStars,
       note: data.note,
       tags: data.tags,
@@ -471,13 +529,16 @@ export default function Home() {
 
     const saved = await createLiveRecommendation({
       senderId: userId || undefined,
-      senderName: profile.displayName,
-      senderAvatar: profile.avatarId,
+      senderName,
+      senderAvatar,
       recipient: data.recipient,
       tmdbId: data.tmdbId,
-      mediaType: "movie",
+      mediaType: data.mediaType,
       title: data.title,
       posterPath: data.posterPath,
+      backdropPath: data.backdropPath || null,
+      releaseYear: data.releaseYear || "2024",
+      genre: data.mediaType === "tv" ? "TV Series" : "Film",
       ratingStars: data.ratingStars,
       note: data.note,
       tags: data.tags,
@@ -495,21 +556,48 @@ export default function Home() {
     await deleteLiveRecommendation(id);
   };
 
-  // Friends Handlers
-  const handleAddFriend = (username: string) => {
-    const newFriend: FriendItem = {
-      id: `friend_${Date.now()}`,
-      username: username.replace(/^@/, ""),
-      display_name: username.replace(/^@/, "").replace(/^[a-z]/, (c) => c.toUpperCase()),
-      avatar_character_id: "barbie",
-      status: "ACCEPTED",
-      stats: { recommendedCount: 0, watchedCount: 0, topGenre: "Drama" },
-    };
-    setFriends((prev) => [...prev, newFriend]);
+  // Friend Request & Circle Handlers
+  const handleSendFriendRequest = async (targetUsername: string) => {
+    if (!userId) {
+      setAuthModalOpen(true);
+      return { success: false, error: "Please sign in to send friend requests" };
+    }
+    const res = await sendFriendRequest(userId, targetUsername);
+    if (res.success) {
+      const outg = await fetchOutgoingFriendRequests(userId);
+      setOutgoingRequests(outg);
+    }
+    return res;
   };
 
-  const handleRemoveFriend = (id: string) => {
+  const handleAcceptFriendRequest = async (requestId: string, requesterId: string) => {
+    if (!userId) return;
+    await acceptFriendRequest(requestId, requesterId, userId);
+    const [inc, updatedFriends] = await Promise.all([
+      fetchIncomingFriendRequests(userId),
+      fetchLiveFriends(userId),
+    ]);
+    setIncomingRequests(inc);
+    if (updatedFriends.length > 0) {
+      setFriends(updatedFriends);
+    }
+  };
+
+  const handleDeclineFriendRequest = async (requestId: string) => {
+    if (!userId) return;
+    await declineFriendRequest(requestId);
+    const inc = await fetchIncomingFriendRequests(userId);
+    setIncomingRequests(inc);
+  };
+
+  const handleRemoveFriend = async (id: string) => {
     setFriends((prev) => prev.filter((f) => f.id !== id));
+    if (userId) {
+      await supabase
+        .from("friendships")
+        .delete()
+        .or(`and(user_id.eq.${userId},friend_id.eq.${id}),and(user_id.eq.${id},friend_id.eq.${userId})`);
+    }
   };
 
   return (
@@ -526,6 +614,7 @@ export default function Home() {
         userEmail={userEmail}
         watchlistCount={watchlist.filter((w) => w.status === "WANT_TO_WATCH").length}
         friendsCount={friends.length}
+        incomingRequestsCount={incomingRequests.length}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
         onOpenInstallPwa={() => setInstallPwaModalOpen(true)}
@@ -563,6 +652,9 @@ export default function Home() {
             onViewAllRecommendations={() => setActiveTab("recommendations")}
             watchlist={watchlist}
             friendRecommendations={friendRecommendations}
+            friends={friends}
+            currentUserDisplayName={profile.displayName}
+            currentUsername={profile.username}
           />
         )}
 
@@ -570,6 +662,9 @@ export default function Home() {
           <RecommendationsView
             friendRecommendations={friendRecommendations}
             watchlist={watchlist}
+            friends={friends}
+            currentUserDisplayName={profile.displayName}
+            currentUsername={profile.username}
             onOpenMovieDetail={handleOpenMovieDetail}
             onToggleWatchlist={handleToggleWatchlist}
             onDeleteRecommendation={handleDeleteRecommendation}
@@ -610,10 +705,15 @@ export default function Home() {
             watchlist={watchlist}
             friendRecommendations={friendRecommendations}
             currentUserDisplayName={profile.displayName}
-            onAddFriend={handleAddFriend}
+            incomingRequests={incomingRequests}
+            outgoingRequests={outgoingRequests}
+            onSendFriendRequest={handleSendFriendRequest}
+            onAcceptFriendRequest={handleAcceptFriendRequest}
+            onDeclineFriendRequest={handleDeclineFriendRequest}
             onRemoveFriend={handleRemoveFriend}
             onOpenInvite={() => setInviteModalOpen(true)}
             onOpenRecommend={() => setRecommendModal({ isOpen: true, movie: null })}
+            onOpenFriendLibrary={(friend) => setSelectedFriendForLibrary(friend)}
           />
         )}
       </main>
@@ -690,7 +790,18 @@ export default function Home() {
         onClose={() => setRecommendModal({ isOpen: false, movie: null })}
         movie={recommendModal.movie}
         friends={friends}
+        currentUserDisplayName={profile.displayName}
+        isGuest={!userId || profile.displayName === "Guest"}
         onRecommend={handlePublishRecommendation}
+      />
+
+      <FriendLibraryModal
+        isOpen={selectedFriendForLibrary !== null}
+        onClose={() => setSelectedFriendForLibrary(null)}
+        friend={selectedFriendForLibrary}
+        myWatchlist={watchlist}
+        onToggleMyWatchlist={handleToggleWatchlist}
+        onOpenMovieDetail={handleOpenMovieDetail}
       />
 
       <AccountModal

@@ -57,6 +57,31 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
+## 👥 Social Circle Architecture: Requests, Audience Privacy & Library Sharing
+- **Audience Privacy Segmentation ("All Friends" vs "Global Community" vs "Direct to You")**:
+  - **🔒 All Friends (Circle Only)**: Recommendations shared to "All Friends" are strictly private to the user's confirmed inner circle and the sender themselves. They never leak to arbitrary non-friends or unauthenticated visitors.
+  - **🌍 Global Community (Public)**: Public community recommendations visible across CineCircle for general discovery.
+  - **🎯 Direct to Friend**: High-trust 1-on-1 recommendations targeted exclusively to a specific friend handle.
+  - **Guest User Contributions**: Unauthenticated visitors can type a moniker/name and post recommendations directly to the "Global" community feed without needing to create an account first.
+- **Friend Request Engine & Handle Validation (`PENDING` -> `ACCEPTED` / Disapprove)**:
+  - **Username Validation**: Validates existence against Supabase `profiles` in real time. Returns informative errors if a handle does not exist or if a user attempts to add themselves.
+  - **Real Request Flow**: Replaces instant auto-acceptance with an explicit two-way handshake (`status: 'PENDING'`).
+  - **Notification Badges & Realtime Requests Queue**:
+    - Navbar features a live alert badge (`Friends (! 1)`) indicating pending incoming requests.
+    - `FriendsView` features an **Incoming Friend Requests** alert banner displaying the requester's character avatar, display name, handle, with explicit **Approve ✓** (creates reciprocal `ACCEPTED` friendship) and **Disapprove ✕** (rejects and deletes request) buttons.
+    - Realtime WebSocket listener (`postgres_changes` on `friendships`) automatically updates friend lists and request queues instantly without requiring page refreshes.
+- **Friend Library Inspection & Watchlist Sharing Controls (`FriendLibraryModal`)**:
+  - **View Friend Library**: Clicking **"View Library 📚"** on any friend card opens `FriendLibraryModal` showing that friend's saved library (*All Titles*, *Want to Watch*, *Currently Watching*, and *Watched & Rated* with their star scores).
+  - **1-Click Library Import**: Allows users to quickly save any film or TV show from their friend's library directly into their own library with 1 click.
+  - **Privacy Toggles & Tickmarks**:
+    - Global circle switch: *"Allow Circle Friends to View My Library"* (persisted in local settings).
+    - Per-friend permission tickmarks on each friend card allowing fine-grained control over which friends can browse your library.
+- **Dynamic Media Type Matching (Movie vs TV Series Bug Fix)**:
+  - All recommendations dynamically preserve and propagate `media_type` (`"movie" | "tv"`).
+  - Resolves TMDB ID collisions between movies and TV series (such as Attack on Titan, TMDB TV ID 1429), ensuring `MovieDetailModal` reliably fetches the correct series synopsis, seasons, and episodes instead of a mismatched film.
+
+---
+
 ## 📚 My Library System & 3-Tier Watch Status Tracking
 - **"My Library" Primary Tab (`WatchlistView`)**: Evolved the Watchlist view into a full-featured personal media library featuring 5 interactive sub-tabs:
   - 🌟 **All Titles**: Overview of every saved, in-progress, and completed movie or TV series.
