@@ -3,6 +3,7 @@
 import { Card, Badge, Avatar, Button, IconButton } from "@usefragments/ui";
 import { getTMDBImageUrl } from "@/lib/tmdb";
 import { Star, Sparkles, Bookmark, Check, Target } from "lucide-react";
+import { UserAvatar } from "./UserAvatar";
 
 interface MovieCardProps {
   id: number;
@@ -41,7 +42,7 @@ export function MovieCard({
   onWatchlistClick,
   isSaved = false,
 }: MovieCardProps) {
-  const isDirectForYou = recipient === "You" || recipient === "Tony Stark";
+  const isDirectForYou = recipient === "You" || recipient === "ironman" || recipient === "Tony Stark";
 
   return (
     <Card
@@ -90,9 +91,11 @@ export function MovieCard({
           {friendNote && (
             <div className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--surface-border)] space-y-1 mt-1">
               <div className="flex items-center gap-1.5 text-xs text-[var(--text-primary)] font-extrabold">
-                <Avatar className="w-5 h-5 text-[10px] bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-black flex items-center justify-center rounded-full">
-                  {friendName ? friendName[0] : "F"}
-                </Avatar>
+                <UserAvatar
+                  avatarId={friendAvatarId}
+                  displayName={friendName || "Friend"}
+                  size="xs"
+                />
                 <span>{friendName} says:</span>
               </div>
               <p className="text-xs text-[var(--text-primary)] italic line-clamp-2 leading-relaxed">

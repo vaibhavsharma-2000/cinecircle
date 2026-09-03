@@ -40,7 +40,7 @@ export function ProfileModal({
     e.preventDefault();
     onSave({
       avatarId: selectedAvatarId,
-      displayName: displayName.trim() || "Tony Stark",
+      displayName: displayName.trim() || "ironman",
       username: username.trim() || "ironman",
     });
     onClose();

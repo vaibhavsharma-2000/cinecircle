@@ -7,6 +7,7 @@ import { getTMDBImageUrl, getMovieTrailerKey } from "@/lib/tmdb";
 import { MovieItem } from "@/lib/tmdb";
 import { Sparkles, Users, Play, Flame, Dices, Bookmark, Check } from "lucide-react";
 import { WatchRouletteModal } from "./WatchRouletteModal";
+import { UserAvatar } from "./UserAvatar";
 
 interface GroupMatcherViewProps {
   friends: FriendItem[];
@@ -80,11 +81,11 @@ export function GroupMatcherView({
                     : "bg-[var(--canvas)] border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 }`}
               >
-                <Avatar className={`w-9 h-9 rounded-full font-black text-xs flex items-center justify-center ${
-                  isSelected ? "bg-black/20 text-[var(--brand-accent-text)]" : "bg-[var(--brand-accent)] text-[var(--brand-accent-text)]"
-                }`}>
-                  {friend.display_name[0]}
-                </Avatar>
+                <UserAvatar
+                  avatarId={friend.avatar_character_id || (friend as any).avatar_id}
+                  displayName={friend.display_name}
+                  size="md"
+                />
                 <div>
                   <span className="font-extrabold text-xs block">{friend.display_name}</span>
                   <span className={`text-[10px] font-medium block ${isSelected ? "opacity-80" : "text-[var(--text-muted)]"}`}>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, Badge, Button, EmptyState } from "@usefragments/ui";
 import { MovieItem, getTMDBImageUrl } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem, FriendItem } from "@/lib/supabase";
+import { UserAvatar } from "./UserAvatar";
 import { Users, Target, Trash2, Globe, Sparkles } from "lucide-react";
 
 interface RecommendationsViewProps {
@@ -176,9 +177,11 @@ export function RecommendationsView({
                   <div className="flex-1 flex flex-col justify-center space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] flex-wrap">
-                        <span className="w-6 h-6 shrink-0 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] flex items-center justify-center text-[10px]">
-                          {rec.sender_name[0]}
-                        </span>
+                        <UserAvatar
+                          avatarId={rec.sender_avatar}
+                          displayName={rec.sender_name}
+                          size="sm"
+                        />
                         <span className="text-[var(--text-primary)]">{rec.sender_name}</span>
                         <span>recommended</span>
                         <span className="text-[var(--text-primary)] font-extrabold">{rec.title}</span>

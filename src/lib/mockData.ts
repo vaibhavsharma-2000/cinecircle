@@ -3,7 +3,7 @@ import { Recommendation, WatchlistItem, FriendItem } from "./supabase";
 export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   {
     id: "rec_1",
-    sender_name: "Alex",
+    sender_name: "alex_films",
     sender_avatar: "aurora",
     recipient: "You",
     tmdb_id: 693134,
@@ -14,13 +14,13 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     release_year: "2024",
     genre: "Sci-Fi / Epic",
     rating_stars: 5.0,
-    note: "Tony, you loved Blade Runner 2049, you will be blown away by the IMAX sound and scale of this!",
+    note: "You will be blown away by the IMAX sound and scale of this masterpiece!",
     tags: ["Mindbender", "MustWatchTogether"],
     created_at: "2024-03-01",
   },
   {
     id: "rec_2",
-    sender_name: "Maya",
+    sender_name: "maya_cine",
     sender_avatar: "nebula",
     recipient: "All Friends",
     tmdb_id: 95396,
@@ -37,7 +37,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   },
   {
     id: "rec_3",
-    sender_name: "Sam",
+    sender_name: "sam_popcorn",
     sender_avatar: "ember",
     recipient: "All Friends",
     tmdb_id: 666243,
@@ -54,7 +54,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   },
   {
     id: "rec_4",
-    sender_name: "Alex",
+    sender_name: "alex_films",
     sender_avatar: "aurora",
     recipient: "All Friends",
     tmdb_id: 872585,
@@ -71,9 +71,9 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   },
   {
     id: "rec_5",
-    sender_name: "Sam",
+    sender_name: "sam_popcorn",
     sender_avatar: "ember",
-    recipient: "Maya",
+    recipient: "maya_cine",
     tmdb_id: 1072790,
     media_type: "movie",
     title: "Anyone But You",
@@ -88,7 +88,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
   },
   {
     id: "rec_6",
-    sender_name: "Maya",
+    sender_name: "maya_cine",
     sender_avatar: "nebula",
     recipient: "You",
     tmdb_id: 136315,
@@ -99,7 +99,7 @@ export const MOCK_RECOMMENDATIONS: Recommendation[] = [
     release_year: "2022",
     genre: "TV Series • Drama",
     rating_stars: 5.0,
-    note: "Tony! Episode 7 'Fishes' is the most intense television hour of the decade. Watch immediately!",
+    note: "Episode 7 'Fishes' is the most intense television hour of the decade. Watch immediately!",
     tags: ["CinematicMasterpiece", "MustWatchTogether"],
     created_at: "2024-02-15",
   },
@@ -149,7 +149,7 @@ export const MOCK_FRIENDS: FriendItem[] = [
   {
     id: "alex_1",
     username: "alex_films",
-    display_name: "Alex",
+    display_name: "alex_films",
     avatar_character_id: "aurora",
     status: "ACCEPTED",
     stats: { recommendedCount: 14, watchedCount: 48, topGenre: "Sci-Fi" },
@@ -157,7 +157,7 @@ export const MOCK_FRIENDS: FriendItem[] = [
   {
     id: "maya_2",
     username: "maya_cine",
-    display_name: "Maya",
+    display_name: "maya_cine",
     avatar_character_id: "nebula",
     status: "ACCEPTED",
     stats: { recommendedCount: 9, watchedCount: 36, topGenre: "Thriller" },
@@ -165,7 +165,7 @@ export const MOCK_FRIENDS: FriendItem[] = [
   {
     id: "sam_3",
     username: "sam_popcorn",
-    display_name: "Sam",
+    display_name: "sam_popcorn",
     avatar_character_id: "ember",
     status: "ACCEPTED",
     stats: { recommendedCount: 18, watchedCount: 62, topGenre: "Comedy" },
@@ -173,7 +173,7 @@ export const MOCK_FRIENDS: FriendItem[] = [
 ];
 
 export const MOCK_DEMO_PROFILE = {
-  displayName: "Tony Stark",
+  displayName: "ironman",
   username: "ironman",
   avatarId: "solaris",
   age: "24",

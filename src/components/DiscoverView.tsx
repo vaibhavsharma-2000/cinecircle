@@ -14,6 +14,7 @@ import {
 } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem } from "@/lib/supabase";
 import { MovieCard } from "./MovieCard";
+import { UserAvatar } from "./UserAvatar";
 import {
   Sparkles,
   Users,
@@ -279,9 +280,11 @@ export function DiscoverView({
                     <div className="flex-1 flex flex-col justify-center space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
-                          <span className="w-6 h-6 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] flex items-center justify-center text-[10px]">
-                            {rec.sender_name[0]}
-                          </span>
+                          <UserAvatar
+                            avatarId={rec.sender_avatar}
+                            displayName={rec.sender_name}
+                            size="sm"
+                          />
                           <span className="text-[var(--text-primary)]">{rec.sender_name}</span>
                           <span>recommended</span>
                           <span className="text-[var(--text-primary)] font-extrabold">{rec.title}</span>

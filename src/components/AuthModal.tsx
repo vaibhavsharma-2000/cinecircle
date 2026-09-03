@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, Button, IconButton, Avatar, Alert } from "@usefragments/ui";
 import { supabase } from "@/lib/supabase";
-import { DEFAULT_AVATAR_ID } from "@/constants/avatars";
+import { DEFAULT_AVATAR_ID, AVVVATAR_PRESETS } from "@/constants/avatars";
 import { UserAvatar } from "./UserAvatar";
 import { AvatarPickerModal } from "./AvatarPickerModal";
 import { checkUsernameAvailable } from "@/lib/sync";
@@ -12,6 +12,7 @@ import { X, Lock, Mail, UserCheck, LogIn, AlertCircle, Eye, EyeOff, CheckCircle2
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialMode?: "SIGN_IN" | "SIGN_UP";
   onAuthSuccess: (user: {
     id?: string;
     email: string;
@@ -22,8 +23,8 @@ interface AuthModalProps {
   }) => void;
 }
 
-export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
-  const [mode, setMode] = useState<"SIGN_IN" | "SIGN_UP" | "VERIFY_NOTICE">("SIGN_IN");
+export function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = "SIGN_IN" }: AuthModalProps) {
+  const [mode, setMode] = useState<"SIGN_IN" | "SIGN_UP" | "VERIFY_NOTICE">(initialMode);
   
   // Form State
   const [email, setEmail] = useState("");
@@ -43,7 +44,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
   // Cleanly reset form state whenever modal opens or closes
   const resetForm = () => {
-    setMode("SIGN_IN");
+    setMode(initialMode);
     setEmail("");
     setPassword("");
     setConfirmPassword("");
@@ -61,7 +62,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
     if (isOpen) {
       resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, initialMode]);
 
   const handleClose = () => {
     resetForm();
@@ -213,6 +214,34 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
               <X className="w-4 h-4" />
             </IconButton>
           </div>
+
+          {/* Mode Switcher Tabs */}
+          {mode !== "VERIFY_NOTICE" && (
+            <div className="grid grid-cols-2 p-1 bg-[var(--canvas)] rounded-xl border border-[var(--surface-border)] gap-1">
+              <button
+                type="button"
+                onClick={() => setMode("SIGN_IN")}
+                className={`h-9 rounded-lg text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mode === "SIGN_IN"
+                    ? "bg-[var(--surface-card)] text-[var(--text-primary)] shadow-sm border border-[var(--surface-border)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                <LogIn className="w-3.5 h-3.5" /> Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("SIGN_UP")}
+                className={`h-9 rounded-lg text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mode === "SIGN_UP"
+                    ? "bg-[var(--surface-card)] text-[var(--text-primary)] shadow-sm border border-[var(--surface-border)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5" /> Create Account
+              </button>
+            </div>
+          )}
 
           {/* Error Alert */}
           {errorMsg && (
@@ -412,11 +441,21 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                   </div>
 
                   {/* Avatar Selection Card */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[var(--text-secondary)]">Your Profile Avatar</label>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-[var(--text-secondary)]">Your Profile Avatar</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsAvatarPickerOpen(true)}
+                        className="text-[11px] font-bold text-[var(--brand-accent)] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Sparkles className="w-3 h-3" /> Browse All ({AVVVATAR_PRESETS.length})
+                      </button>
+                    </div>
+
                     <div className="p-3 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl flex items-center justify-between gap-3 shadow-sm">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="rounded-full ring-2 ring-[var(--brand-accent)] shadow shrink-0 overflow-hidden">
+                        <div className="rounded-full ring-2 ring-[var(--brand-accent)] ring-offset-2 ring-offset-[var(--canvas)] shadow shrink-0 overflow-hidden">
                           <UserAvatar
                             avatarId={selectedAvatarId}
                             displayName={username || displayName || "You"}
@@ -438,8 +477,35 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                         onClick={() => setIsAvatarPickerOpen(true)}
                         className="h-9 px-3.5 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] border border-[var(--surface-border)] font-bold text-xs rounded-xl transition shrink-0 flex items-center gap-1.5 cursor-pointer shadow-sm"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Choose Avatar
+                        Change
                       </Button>
+                    </div>
+
+                    {/* Inline Quick Avvvatars Carousel */}
+                    <div className="space-y-1 pt-1">
+                      <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                        Quick Pick Style
+                      </span>
+                      <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+                        {AVVVATAR_PRESETS.slice(0, 10).map((preset) => {
+                          const isSelected = selectedAvatarId === preset;
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => setSelectedAvatarId(preset)}
+                              title={preset}
+                              className={`shrink-0 rounded-full p-0.5 transition-all cursor-pointer ${
+                                isSelected
+                                  ? "ring-2 ring-[var(--brand-accent)] ring-offset-2 ring-offset-[var(--surface-card)] scale-110"
+                                  : "opacity-70 hover:opacity-100 hover:scale-105"
+                              }`}
+                            >
+                              <UserAvatar avatarId={preset} size="md" />
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
 

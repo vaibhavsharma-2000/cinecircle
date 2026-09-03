@@ -114,9 +114,11 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 - **Pure Visual Avatars (Zero Fictional Names)**:
   - In avatar selection grids (`AvatarPickerModal`, `AuthModal`, `CompleteProfileModal`, `AccountModal`), avatars are presented purely as visual pictures with no character names, no fictional franchises, and no quotes.
   - Alongside the avatar, the user's `@username` (or display name) is displayed exclusively as the identity.
-- **Universal Vector `<UserAvatar />`**: Reusable component rendering high-resolution, vector-crisp SVG shapes across navigation (`Navbar`), friend cards (`FriendsView`), friend library browsing (`FriendLibraryModal`), and request notifications without external image network calls or broken URLs.
-- **Curated Shape Presets**: 42 curated aesthetic presets allowing users to customize their visual persona in 1 click during Sign Up, Profile Setup, and Account Settings.
-- **Database & Existing Users Migration**: Live Supabase `profiles` and `recommendations` migrated to Avvvatar seeds (`solaris`, `aurora`, `nebula`, `zenith`, etc.), seamlessly replacing old movie character identifiers.
+- **Universal Vector `<UserAvatar />`**: Reusable component rendering high-resolution, vector-crisp SVG shapes across navigation (`Navbar`), friend cards (`FriendsView`), friend library browsing (`FriendLibraryModal`), recommendation feeds (`DiscoverView`, `RecommendationsView`), group matcher selection (`GroupMatcherView`), movie card friend review badges (`MovieCard`), and movie detail review headers (`MovieDetailModal`) without external image network calls or broken URLs.
+- **Inline Quick-Pick Carousel**: Embedded directly in `AuthModal` (Sign Up tab) and `AccountModal` (Profile tab), allowing users to immediately see and pick from 10 popular Avvvatar styles in 1 click, alongside a "Browse All" button triggering the full 42-preset `AvatarPickerModal`.
+- **Top Tab Switcher in Auth Modal**: Instant toggle tabs (`[Sign In] [Create Account]`) at the top of `AuthModal` so users can switch to the signup view and inspect avatars immediately.
+- **Auto-Migration of Legacy Profiles**: Client automatically migrates legacy fictional character profile caches in `localStorage` to modern seeds (`solaris`, `aurora`, `nebula`, `zenith`).
+- **Database & Existing Users Migration**: Live Supabase `profiles`, `auth.users`, and `recommendations` migrated to Avvvatar seeds (`solaris`, `aurora`, `nebula`, `zenith`, etc.), seamlessly replacing old movie character identifiers.
 
 ---
 
@@ -173,9 +175,9 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ## 🌿 Git Branching & Environment Isolation Architecture
 - **Environment Flag Driven**: Codebase is 100% identical between `main` and `staging`. Toggled dynamically via `NEXT_PUBLIC_ENABLE_MOCK_DATA`:
-  - **Staging / Dev Mode (`NEXT_PUBLIC_ENABLE_MOCK_DATA="true"`)**: Preloads mock circle members (*Alex, Maya, Sam*), demo recommendations, and pre-seeded live Supabase test accounts for rapid multi-user validation:
-    - **Test User 1**: `tony.stark@avengers.io` | `@ironman` | Password: `password123` (Avatar: *Tony Stark*)
-    - **Test User 2**: `alex@avengers.io` | `@alex_films` | Password: `password123` (Avatar: *Luke Skywalker*)
+  - **Staging / Dev Mode (`NEXT_PUBLIC_ENABLE_MOCK_DATA="true"`)**: Preloads mock circle members (*alex_films, maya_cine, sam_popcorn*), demo recommendations, and pre-seeded live Supabase test accounts for rapid multi-user validation:
+    - **Test User 1**: `tony.stark@avengers.io` | `@ironman` | Password: `password123` (Avatar: *solaris*)
+    - **Test User 2**: `alex@avengers.io` | `@alex_films` | Password: `password123` (Avatar: *zenith*)
   - **Production Mode (`NEXT_PUBLIC_ENABLE_MOCK_DATA="false"`)**: Clean state with zero mock data. Real authentication sessions and direct Supabase database querying only.
 - **Branching Workflow**:
   - `main`: Production release branch linked to production Vercel deployment (`NEXT_PUBLIC_ENABLE_MOCK_DATA="false"`). Direct commits strictly forbidden.

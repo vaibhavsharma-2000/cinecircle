@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Badge, Button, IconButton } from "@usefragments/ui";
+import { UserAvatar } from "./UserAvatar";
 import {
   MovieItem,
   getMovieDetails,
@@ -289,11 +290,14 @@ export function MovieDetailModal({
           {/* Friend Review Quote & Thread if recommended */}
           {recommendationNote && (
             <div className="p-4 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl space-y-4">
-              <div className="space-y-1">
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-[var(--text-primary)] block">
-                  Friend Review by {recommendedBy}:
-                </span>
-                <p className="text-xs sm:text-sm text-[var(--text-primary)] italic leading-relaxed">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <UserAvatar displayName={recommendedBy} size="sm" />
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-[var(--text-primary)]">
+                    Friend Review by {recommendedBy}:
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-[var(--text-primary)] italic leading-relaxed pl-2 border-l-2 border-[var(--surface-border)]">
                   "{recommendationNote}"
                 </p>
               </div>

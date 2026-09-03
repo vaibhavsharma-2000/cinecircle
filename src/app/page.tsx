@@ -135,7 +135,18 @@ export default function Home() {
     const cachedProfile = localStorage.getItem(`${STORAGE_PREFIX}user_profile`);
     if (cachedProfile) {
       try {
-        setProfile(JSON.parse(cachedProfile));
+        const parsed = JSON.parse(cachedProfile);
+        const legacyAvatarIds = [
+          "tony_stark", "deadpool", "batman", "barbie", "spider_man",
+          "wednesday", "oppenheimer", "luke_skywalker", "walter_white",
+          "john_wick", "neo", "harley_quinn", "jack_sparrow", "eleven"
+        ];
+        if (parsed.displayName === "Tony Stark" || legacyAvatarIds.includes(parsed.avatarId)) {
+          parsed.avatarId = "solaris";
+          if (parsed.displayName === "Tony Stark") parsed.displayName = "ironman";
+          localStorage.setItem(`${STORAGE_PREFIX}user_profile`, JSON.stringify(parsed));
+        }
+        setProfile(parsed);
       } catch (e) {}
     }
     const cachedEmail = localStorage.getItem(`${STORAGE_PREFIX}user_email`);
@@ -174,7 +185,7 @@ export default function Home() {
               id: `friend_invite_${Date.now()}`,
               username: cleanInviter,
               display_name: cleanInviter.charAt(0).toUpperCase() + cleanInviter.slice(1),
-              avatar_character_id: "barbie",
+              avatar_character_id: "aurora",
               status: "ACCEPTED",
               stats: { recommendedCount: 1, watchedCount: 8, topGenre: "Drama" },
             },

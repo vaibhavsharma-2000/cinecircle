@@ -5,7 +5,7 @@ import Avvvatars from "avvvatars-react";
 interface UserAvatarProps {
   avatarId?: string;
   displayName?: string;
-  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
   className?: string;
 }
 
@@ -16,6 +16,7 @@ export function UserAvatar({
   className = "",
 }: UserAvatarProps) {
   const sizeMap = {
+    xs: 20,
     sm: 24,
     md: 36,
     lg: 48,
@@ -23,7 +24,7 @@ export function UserAvatar({
     "2xl": 80,
   };
 
-  const numericSize = sizeMap[size] || 36;
+  const numericSize = sizeMap[size as keyof typeof sizeMap] || 36;
   const seed = (avatarId && avatarId.trim()) || displayName || "cinecircle";
 
   return (
