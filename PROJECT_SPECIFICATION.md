@@ -38,6 +38,11 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
   - Standardized explicit element identifiers (`id`) and corresponding `<label htmlFor="...">` associations.
   - Granular `autoComplete` attributes: `autoComplete="username email"` / `autoComplete="email"` for user identity, `autoComplete="current-password"` for login authentication, `autoComplete="new-password"` for account registration and password updates, `autoComplete="name"` for full name, and `autoComplete="username"` for circle handles.
   - Direct password update forms include hidden contextually-linked `name="username"` inputs so native browser keychains and credential managers (macOS Keychain, Chrome Passwords, 1Password, Bitwarden) reliably identify the active account and prompt to save or update credentials.
+- **Authentication Modal Lifecycle & Clean Slate Reset**:
+  - `AuthModal` automatically performs a complete state purge (`resetForm`) upon modal close, dismissal, and reopening via `useEffect([isOpen])`.
+  - Clears half-typed fields (`email`, `password`, `confirmPassword`, `displayName`, `username`, `age`), toggles password visibility back to hidden, clears stale error alerts (`errorMsg = null`), and returns mode to default `"SIGN_IN"`.
+  - Prevents sensitive plain text credentials or invalid validation messages from lingering in memory or in the DOM across reopenings.
+  - Universal backdrop overlay dismiss: Clicking outside modal cards (`fixed inset-0` with `cursor-pointer` and inner `e.stopPropagation()`) across `AuthModal`, `AccountModal`, `AvatarPickerModal`, `MovieDetailModal`, `FriendLibraryModal`, `RecommendModal`, and `WatchRouletteModal` smoothly dismisses the overlay.
 
 ---
 

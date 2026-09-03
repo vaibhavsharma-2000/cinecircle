@@ -52,8 +52,14 @@ export function FriendLibraryModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-200 cursor-pointer"
+      onClick={onClose}
+    >
+      <div 
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        className="relative w-full max-w-4xl bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col cursor-default"
+      >
         
         {/* Header Bar */}
         <div className="p-6 border-b border-[var(--surface-border)] flex items-center justify-between gap-4 bg-[var(--canvas)]/40">

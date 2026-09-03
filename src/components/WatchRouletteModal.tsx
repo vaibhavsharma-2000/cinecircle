@@ -127,7 +127,10 @@ export function WatchRouletteModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200 cursor-pointer"
+      onClick={onClose}
+    >
       
       {/* Decorative Celebration Confetti Particles */}
       {showConfetti && (
@@ -156,7 +159,10 @@ export function WatchRouletteModal({
         </div>
       )}
 
-      <div className="relative w-full max-w-md bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 shadow-2xl space-y-5 text-center overflow-hidden z-20 max-h-[90vh] flex flex-col">
+      <div 
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        className="relative w-full max-w-md bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 shadow-2xl space-y-5 text-center overflow-hidden z-20 max-h-[90vh] flex flex-col cursor-default"
+      >
         
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-[var(--surface-border)] pb-3">

@@ -32,8 +32,14 @@ export function AvatarPickerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-3xl p-6 shadow-2xl space-y-5 max-h-[85vh] flex flex-col">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200 cursor-pointer"
+      onClick={onClose}
+    >
+      <div 
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        className="relative w-full max-w-xl bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-3xl p-6 shadow-2xl space-y-5 max-h-[85vh] flex flex-col cursor-default"
+      >
         
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-[var(--surface-border)] pb-4 shrink-0">

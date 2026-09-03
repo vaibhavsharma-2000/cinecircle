@@ -232,8 +232,14 @@ export function MovieDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-200 cursor-pointer"
+      onClick={onClose}
+    >
+      <div 
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        className="relative w-full max-w-2xl bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col cursor-default"
+      >
         
         {/* Top Widescreen Backdrop Banner */}
         <div className="relative aspect-[21/9] bg-black/60 overflow-hidden shrink-0">

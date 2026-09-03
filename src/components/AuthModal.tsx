@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, Button, IconButton, Avatar, Alert } from "@usefragments/ui";
 import { supabase } from "@/lib/supabase";
 import { DEFAULT_AVATAR_ID } from "@/constants/avatars";
@@ -40,6 +40,33 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Cleanly reset form state whenever modal opens or closes
+  const resetForm = () => {
+    setMode("SIGN_IN");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setDisplayName("");
+    setUsername("");
+    setAge("");
+    setSelectedAvatarId(DEFAULT_AVATAR_ID);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setLoading(false);
+    setErrorMsg(null);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -81,7 +108,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
           avatarId: meta.avatar_id || selectedAvatarId,
           age: meta.age,
         });
-        onClose();
+        handleClose();
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Invalid login credentials.");
@@ -146,8 +173,14 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
-        <Card className="relative w-full max-w-md bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 cursor-pointer"
+        onClick={handleClose}
+      >
+        <Card 
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          className="relative w-full max-w-md bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto cursor-default"
+        >
           
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--surface-border)] pb-4">
@@ -174,8 +207,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
             </div>
 
             <IconButton
-              onClick={onClose}
-              className="w-9 h-9 rounded-full bg-[var(--canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center transition border border-[var(--surface-border)]"
+              onClick={handleClose}
+              className="w-9 h-9 rounded-full bg-[var(--canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center transition border border-[var(--surface-border)] cursor-pointer"
             >
               <X className="w-4 h-4" />
             </IconButton>
@@ -216,7 +249,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                       avatarId: selectedAvatarId,
                       age,
                     });
-                    onClose();
+                    handleClose();
                   }}
                   className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs rounded-xl shadow transition"
                 >
