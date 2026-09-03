@@ -89,7 +89,12 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
   - 🍿 **Currently Watching**: In-progress TV series and movies with a distinct Amber indicator.
   - ✅ **Watched & Rated**: Completed titles with interactive 1.0–5.0 star user ratings.
   - ✨ **Recommended by You**: Outgoing recommendations you've shared with friends.
-- **Movie Detail Watch Status Tracker (`MovieDetailModal`)**: Replaced binary "Add to Watchlist" button with a 3-tier segmented watch status selector (📌 *Want to Watch*, 🍿 *Watching*, ✅ *Watched* with interactive star rating picker, and ✕ *Remove from Library*).
+- **Interactive Title Expansion & Inline Synopsis Accordion (`WatchlistView`)**:
+  - **Dual Expansion Architecture**:
+    - **Full Movie Details Modal (`MovieDetailModal`)**: Clicking on any movie title or poster artwork immediately opens the comprehensive Movie Detail modal, presenting high-resolution backdrop art, full TMDB synopsis, release metadata, cast, trailer, direct 3-tier watch status changer, and the **"Recommend This Film to a Friend ✨"** CTA.
+    - **Inline Synopsis Accordion ("Synopsis ▾ / Hide ▴")**: Each library card includes an inline synopsis toggle that dynamically fetches and displays the TMDB plot overview right inside the card without navigating away or losing context.
+- **Movie Detail Watch Status Tracker (`MovieDetailModal`)**: Replaced binary "Add to Watchlist" button with a 3-tier segmented watch status selector (📌 *Want to Watch*, 🍿 *Watching*, ✅ *Watched* with interactive star rating picker, and ✕ *Remove from Library*). Includes instant state reset upon modal transitions to prevent stale movie data leaks.
+- **Interactive Watch Roulette Winner Card (`WatchRouletteModal`)**: Winning film in group watch roulette displays full plot overview with 1-click **"Recommend ✨"** CTA, **"Watch Trailer 🎬"**, and direct title/poster click to open `MovieDetailModal`.
 - **Streamlined Movie Card CTA Architecture**: Removed clutter by reserving **"Watch Trailer 🎬"** exclusively for the Movie Detail page. Movie cards across Discover, Feeds, and Group Matcher feature two clear primary actions: **"Recommend ✨"** (opens Recommendation modal) and **"Library 🔖"** (quick save/status toggle).
 
 ---

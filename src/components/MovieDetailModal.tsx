@@ -153,19 +153,33 @@ export function MovieDetailModal({
   };
 
   useEffect(() => {
-    if (!isOpen || !movieId) return;
+    if (!isOpen || !movieId) {
+      setMovie(null);
+      setProviders(null);
+      setCast([]);
+      return;
+    }
+
+    if (initialMovie) {
+      setMovie(initialMovie);
+    }
 
     async function loadData() {
       setIsLoading(true);
-      const [details, watchData, creditsData] = await Promise.all([
-        getMovieDetails(movieId!, mediaType),
-        getWatchProviders(movieId!, mediaType, selectedCountry),
-        getMovieCredits(movieId!, mediaType),
-      ]);
-      if (details) setMovie(details);
-      setProviders(watchData);
-      setCast(creditsData);
-      setIsLoading(false);
+      try {
+        const [details, watchData, creditsData] = await Promise.all([
+          getMovieDetails(movieId!, mediaType),
+          getWatchProviders(movieId!, mediaType, selectedCountry),
+          getMovieCredits(movieId!, mediaType),
+        ]);
+        if (details) setMovie(details);
+        setProviders(watchData);
+        setCast(creditsData);
+      } catch (err) {
+        console.error("Error loading movie details in modal:", err);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     loadData();
@@ -185,7 +199,7 @@ export function MovieDetailModal({
   const currentMovie = movie || initialMovie || {
     id: movieId,
     title: "Movie Details",
-    overview: "Loading synopsis...",
+    overview: "",
     poster_path: null,
     backdrop_path: null,
     vote_average: 8.0,
@@ -197,7 +211,11 @@ export function MovieDetailModal({
   const posterPath = currentMovie.poster_path;
   const backdropPath = currentMovie.backdrop_path;
   const releaseYear = (currentMovie.release_date || currentMovie.first_air_date || "").substring(0, 4);
-  const overview = currentMovie.overview || "No synopsis available for this title.";
+  const overview =
+    currentMovie.overview ||
+    (isLoading
+      ? "Fetching synopsis and details from TMDB..."
+      : "No synopsis available for this title.");
   const voteAverage = currentMovie.vote_average || 8.0;
 
   const currentWatchItem = watchlist.find((w) => w.tmdb_id === movieId);

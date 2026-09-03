@@ -1,10 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Badge, Button, IconButton, EmptyState } from "@usefragments/ui";
+import { Badge, Button, IconButton, EmptyState } from "@usefragments/ui";
 import { WatchlistItem, Recommendation } from "@/lib/supabase";
-import { getTMDBImageUrl, MovieItem } from "@/lib/tmdb";
-import { Star, Check, Trash2, Bookmark, Sparkles, Eye, CheckCircle2, MoreVertical } from "lucide-react";
+import { getTMDBImageUrl, getMovieDetails, MovieItem } from "@/lib/tmdb";
+import {
+  Star,
+  Trash2,
+  Bookmark,
+  Sparkles,
+  Eye,
+  CheckCircle2,
+  ChevronDown,
+  ExternalLink,
+  Maximize2,
+} from "lucide-react";
 
 interface WatchlistViewProps {
   watchlist: WatchlistItem[];
@@ -29,6 +39,8 @@ export function WatchlistView({
 }: WatchlistViewProps) {
   const [filter, setFilter] = useState<"ALL" | "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED" | "RECOMMENDED">("ALL");
   const [ratingModalItem, setRatingModalItem] = useState<WatchlistItem | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  const [overviews, setOverviews] = useState<Record<number, string>>({});
 
   const myRecommendations = friendRecommendations.filter((r) => r.sender_name === currentUserDisplayName);
 
@@ -42,6 +54,23 @@ export function WatchlistView({
     if (filter === "WATCHED") return item.status === "WATCHED";
     return true;
   });
+
+  const toggleExpand = async (item: WatchlistItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const nextState = !expandedIds[item.id];
+    setExpandedIds((prev) => ({ ...prev, [item.id]: nextState }));
+
+    if (nextState && !overviews[item.tmdb_id]) {
+      try {
+        const details = await getMovieDetails(item.tmdb_id, item.media_type);
+        if (details?.overview) {
+          setOverviews((prev) => ({ ...prev, [item.tmdb_id]: details.overview }));
+        }
+      } catch (err) {
+        console.error("Error prefetching overview:", err);
+      }
+    }
+  };
 
   const getStatusBadge = (status: "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED") => {
     switch (status) {
@@ -77,7 +106,7 @@ export function WatchlistView({
         release_date: item.release_year,
         vote_average: item.rating_stars || 8.0,
         vote_count: 100,
-        overview: "",
+        overview: overviews[item.tmdb_id] || "",
       });
     }
   };
@@ -92,7 +121,7 @@ export function WatchlistView({
             <Bookmark className="w-7 h-7 text-[var(--star-accent)]" /> My Library
           </h1>
           <p className="text-xs text-[var(--text-secondary)] mt-1">
-            Your personal catalog of queued, in-progress, and watched movies & series
+            Click any movie title or poster to view synopsis, change watch status, or send recommendations
           </p>
         </div>
 
@@ -164,7 +193,7 @@ export function WatchlistView({
           </div>
           <h3 className="font-extrabold text-[var(--text-primary)] text-base">No titles in this section</h3>
           <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
-            Browse the Discover tab or search for any movie to add titles to your personal library!
+            Browse the Discover tab or search for any movie or TV series to add titles to your personal library!
           </p>
         </EmptyState>
       ) : (
@@ -172,33 +201,35 @@ export function WatchlistView({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
           {filter === "RECOMMENDED" ? (
             myRecommendations.map((item) => (
-              <Card
+              <div
                 key={item.id}
-                onClick={() => {
-                  if (onOpenMovieDetail) {
-                    onOpenMovieDetail({
-                      id: item.tmdb_id,
-                      title: item.title,
-                      poster_path: item.poster_path,
-                      backdrop_path: null,
-                      media_type: item.media_type,
-                      release_date: item.release_year,
-                      vote_average: item.rating_stars,
-                      vote_count: 100,
-                      overview: item.note,
-                    });
-                  }
-                }}
-                className="rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] group hover:border-[var(--brand-accent)] transition duration-300 shadow-xl flex flex-col justify-between cursor-pointer"
+                className="rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] group hover:border-[var(--brand-accent)] transition duration-300 shadow-xl flex flex-col justify-between"
               >
-                {/* Poster Artwork */}
-                <div className="relative aspect-[2/3] bg-black/60 overflow-hidden">
+                {/* Poster Artwork - Clickable */}
+                <div
+                  onClick={() => {
+                    if (onOpenMovieDetail) {
+                      onOpenMovieDetail({
+                        id: item.tmdb_id,
+                        title: item.title,
+                        poster_path: item.poster_path,
+                        backdrop_path: item.backdrop_path || null,
+                        media_type: item.media_type,
+                        release_date: item.release_year,
+                        vote_average: item.rating_stars,
+                        vote_count: 100,
+                        overview: item.note,
+                      });
+                    }
+                  }}
+                  className="relative aspect-[2/3] bg-black/60 overflow-hidden cursor-pointer group/poster"
+                >
                   <img
                     src={getTMDBImageUrl(item.poster_path, "w500")}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    className="w-full h-full object-cover group-hover/poster:scale-105 transition duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface-card)] via-transparent to-transparent opacity-90" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface-card)] via-transparent to-transparent opacity-80" />
 
                   {/* Status Overlay */}
                   <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
@@ -209,24 +240,48 @@ export function WatchlistView({
                       ★ {item.rating_stars.toFixed(1)}
                     </Badge>
                   </div>
+
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/poster:opacity-100 transition bg-black/40 backdrop-blur-xs">
+                    <span className="px-3 py-1.5 rounded-xl bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold text-[11px] shadow-lg flex items-center gap-1">
+                      <Maximize2 className="w-3.5 h-3.5" /> View Details
+                    </span>
+                  </div>
                 </div>
 
                 {/* Card Info */}
                 <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-extrabold text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--text-primary)] transition">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onOpenMovieDetail) {
+                          onOpenMovieDetail({
+                            id: item.tmdb_id,
+                            title: item.title,
+                            poster_path: item.poster_path,
+                            backdrop_path: item.backdrop_path || null,
+                            media_type: item.media_type,
+                            release_date: item.release_year,
+                            vote_average: item.rating_stars,
+                            vote_count: 100,
+                            overview: item.note,
+                          });
+                        }
+                      }}
+                      className="font-extrabold text-sm text-[var(--text-primary)] hover:text-[var(--brand-accent)] hover:underline text-left transition cursor-pointer block w-full truncate"
+                    >
                       {item.title}
-                    </h3>
+                    </button>
                     <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
                       To {item.recipient} • {item.release_year}
                     </p>
                   </div>
 
                   <div className="pt-2 border-t border-[var(--surface-border)]">
-                    <p className="text-xs text-[var(--text-secondary)] italic truncate">&quot;{item.note}&quot;</p>
+                    <p className="text-xs text-[var(--text-secondary)] italic line-clamp-2">&quot;{item.note}&quot;</p>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))
           ) : (
             displayedList.map((item) => {
@@ -239,23 +294,27 @@ export function WatchlistView({
                 release_date: item.release_year,
                 vote_average: item.rating_stars || 8.0,
                 vote_count: 100,
-                overview: "",
+                overview: overviews[item.tmdb_id] || "",
               };
 
+              const isExpanded = !!expandedIds[item.id];
+
               return (
-                <Card
+                <div
                   key={item.id}
-                  onClick={() => handleCardClick(item)}
-                  className="rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] group hover:border-[var(--brand-accent)] transition duration-300 shadow-xl flex flex-col justify-between cursor-pointer"
+                  className="rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] group hover:border-[var(--brand-accent)] transition duration-300 shadow-xl flex flex-col justify-between"
                 >
-                  {/* Poster Artwork */}
-                  <div className="relative aspect-[2/3] bg-black/60 overflow-hidden">
+                  {/* Poster Artwork - Clickable to open full movie details modal */}
+                  <div
+                    onClick={() => handleCardClick(item)}
+                    className="relative aspect-[2/3] bg-black/60 overflow-hidden cursor-pointer group/poster"
+                  >
                     <img
                       src={getTMDBImageUrl(item.poster_path, "w500")}
                       alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      className="w-full h-full object-cover group-hover/poster:scale-105 transition duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface-card)] via-transparent to-transparent opacity-90" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface-card)] via-transparent to-transparent opacity-80 group-hover/poster:opacity-50 transition" />
 
                     {/* Status Badge */}
                     <div className="absolute top-3 left-3 z-10">
@@ -271,17 +330,70 @@ export function WatchlistView({
                         </Badge>
                       </div>
                     )}
+
+                    {/* Hover Visual Action Hint */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/poster:opacity-100 transition bg-black/40 backdrop-blur-xs">
+                      <span className="px-3 py-1.5 rounded-xl bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold text-[11px] shadow-lg flex items-center gap-1">
+                        <Maximize2 className="w-3.5 h-3.5" /> Full Details
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Card Info & Clean CTAs */}
+                  {/* Card Info & Inline Expansion */}
                   <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                     <div>
-                      <h3 className="font-extrabold text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--text-primary)] transition">
-                        {item.title}
-                      </h3>
-                      <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
-                        {item.release_year || "Film"} {item.recommended_by ? `• via ${item.recommended_by}` : ""}
-                      </p>
+                      {/* Movie Title - Clickable directly to open Movie Details modal */}
+                      <button
+                        type="button"
+                        onClick={() => handleCardClick(item)}
+                        className="font-extrabold text-sm text-[var(--text-primary)] hover:text-[var(--brand-accent)] hover:underline text-left transition cursor-pointer flex items-center justify-between w-full group/title"
+                      >
+                        <span className="truncate">{item.title}</span>
+                        <span className="text-[10px] text-[var(--brand-accent)] opacity-0 group-hover/title:opacity-100 transition shrink-0 ml-1">
+                          ↗
+                        </span>
+                      </button>
+
+                      <div className="flex items-center justify-between mt-0.5">
+                        <p className="text-[11px] text-[var(--text-secondary)]">
+                          {item.release_year || "Film"} {item.recommended_by ? `• via ${item.recommended_by}` : ""}
+                        </p>
+
+                        {/* Inline Synopsis Accordion Toggle */}
+                        <button
+                          type="button"
+                          onClick={(e) => toggleExpand(item, e)}
+                          className="text-[11px] font-bold text-[var(--brand-accent)] hover:underline flex items-center gap-0.5 cursor-pointer"
+                        >
+                          <span>{isExpanded ? "Hide" : "Synopsis"}</span>
+                          <ChevronDown
+                            className={`w-3 h-3 transition-transform duration-200 ${
+                              isExpanded ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Inline Expanded Synopsis Panel */}
+                      {isExpanded && (
+                        <div className="mt-2.5 p-2.5 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-xl space-y-2 animate-in fade-in duration-200 text-xs">
+                          <p className="italic text-[11px] text-[var(--text-secondary)] line-clamp-4 leading-relaxed">
+                            {overviews[item.tmdb_id] || "Fetching synopsis from TMDB..."}
+                          </p>
+                          <div className="flex items-center justify-between pt-1 border-t border-[var(--surface-border)]/60 text-[10px]">
+                            <span className="font-extrabold uppercase text-[var(--brand-accent)]">
+                              {item.media_type === "tv" ? "TV Series" : "Movie"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCardClick(item)}
+                              className="font-extrabold text-[var(--brand-accent)] hover:underline flex items-center gap-0.5 cursor-pointer"
+                            >
+                              Open Full Modal <ExternalLink className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2 pt-1 border-t border-[var(--surface-border)]">
@@ -289,11 +401,8 @@ export function WatchlistView({
                       <div className="grid grid-cols-3 gap-1 bg-[var(--canvas)] p-1 rounded-xl border border-[var(--surface-border)]">
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onUpdateStatus(item.id, "WANT_TO_WATCH");
-                          }}
-                          title="Want to Watch"
+                          onClick={() => onUpdateStatus(item.id, "WANT_TO_WATCH")}
+                          title="Mark Want to Watch"
                           className={`py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center transition cursor-pointer ${
                             item.status === "WANT_TO_WATCH"
                               ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow-sm font-extrabold"
@@ -304,11 +413,8 @@ export function WatchlistView({
                         </button>
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onUpdateStatus(item.id, "CURRENTLY_WATCHING");
-                          }}
-                          title="Currently Watching"
+                          onClick={() => onUpdateStatus(item.id, "CURRENTLY_WATCHING")}
+                          title="Mark Currently Watching"
                           className={`py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center transition cursor-pointer ${
                             item.status === "CURRENTLY_WATCHING"
                               ? "bg-amber-500 text-slate-950 shadow-sm font-extrabold"
@@ -319,10 +425,7 @@ export function WatchlistView({
                         </button>
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRatingModalItem(item);
-                          }}
+                          onClick={() => setRatingModalItem(item)}
                           title="Mark Watched & Rate"
                           className={`py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center transition cursor-pointer ${
                             item.status === "WATCHED"
@@ -339,10 +442,7 @@ export function WatchlistView({
                         {onOpenRecommend && (
                           <Button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenRecommend(movieObj);
-                            }}
+                            onClick={() => onOpenRecommend(movieObj)}
                             className="flex-1 h-9 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] text-[var(--text-primary)] font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                           >
                             <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Recommend
@@ -350,10 +450,7 @@ export function WatchlistView({
                         )}
 
                         <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRemove(item.id);
-                          }}
+                          onClick={() => onRemove(item.id)}
                           title="Remove from library"
                           className="w-9 h-9 rounded-xl bg-[var(--canvas)] hover:bg-red-950/60 border border-[var(--surface-border)] hover:border-red-500/40 text-[var(--text-muted)] hover:text-red-400 transition flex items-center justify-center cursor-pointer"
                         >
@@ -362,7 +459,7 @@ export function WatchlistView({
                       </div>
                     </div>
                   </div>
-                </Card>
+                </div>
               );
             })
           )}
@@ -372,9 +469,9 @@ export function WatchlistView({
       {/* Micro Rating Modal when marking as WATCHED */}
       {ratingModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <Card className="relative w-full max-w-sm bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 space-y-5 shadow-2xl">
+          <div className="relative w-full max-w-sm bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 space-y-5 shadow-2xl">
             <h3 className="font-extrabold text-[var(--text-primary)] text-base">Rate &quot;{ratingModalItem.title}&quot;</h3>
-            <p className="text-xs text-[var(--text-secondary)]">How many stars would you give this movie?</p>
+            <p className="text-xs text-[var(--text-secondary)]">How many stars would you give this title?</p>
 
             <div className="flex justify-center gap-2 py-2">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -409,7 +506,7 @@ export function WatchlistView({
                 Cancel
               </Button>
             </div>
-          </Card>
+          </div>
         </div>
       )}
     </div>

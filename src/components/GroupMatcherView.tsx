@@ -159,27 +159,36 @@ export function GroupMatcherView({
                 const isSaved = watchlist.some((w) => w.tmdb_id === item.tmdb_id);
 
                 return (
-                  <Card
+                  <div
                     key={item.id}
-                    onClick={() => onOpenMovieDetail?.(movieObj)}
-                    className="rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] group hover:border-[var(--brand-accent)] transition duration-300 shadow-xl flex flex-col justify-between cursor-pointer"
+                    className="rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] group hover:border-[var(--brand-accent)] transition duration-300 shadow-xl flex flex-col justify-between"
                   >
-                    <div className="relative aspect-[2/3] bg-black/60 overflow-hidden">
+                    {/* Clickable Poster */}
+                    <div
+                      onClick={() => onOpenMovieDetail?.(movieObj)}
+                      className="relative aspect-[2/3] bg-black/60 overflow-hidden cursor-pointer group/poster"
+                    >
                       <img
                         src={getTMDBImageUrl(item.poster_path, "w500")}
                         alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                        className="w-full h-full object-cover group-hover/poster:scale-105 transition duration-500"
                       />
                       <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-black text-[10px] uppercase shadow">
                         ★ 100% Match
                       </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface-card)] via-transparent to-transparent opacity-80" />
                     </div>
 
                     <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                       <div>
-                        <h3 className="font-extrabold text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--text-primary)] transition">
+                        {/* Clickable Title */}
+                        <button
+                          type="button"
+                          onClick={() => onOpenMovieDetail?.(movieObj)}
+                          className="font-extrabold text-sm text-[var(--text-primary)] hover:text-[var(--brand-accent)] hover:underline text-left transition cursor-pointer block truncate w-full"
+                        >
                           {item.title}
-                        </h3>
+                        </button>
                         <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">{item.release_year}</p>
                       </div>
 
@@ -187,10 +196,7 @@ export function GroupMatcherView({
                         {onOpenRecommend && (
                           <Button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenRecommend(movieObj);
-                            }}
+                            onClick={() => onOpenRecommend(movieObj)}
                             className="flex-1 h-10 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] text-xs font-black rounded-xl transition shadow flex items-center justify-center gap-1.5 cursor-pointer"
                           >
                             <Sparkles className="w-3.5 h-3.5 fill-current" /> Recommend
@@ -199,10 +205,7 @@ export function GroupMatcherView({
                         {onToggleWatchlist && (
                           <Button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onToggleWatchlist(movieObj);
-                            }}
+                            onClick={() => onToggleWatchlist(movieObj)}
                             title={isSaved ? "Saved in Library" : "Add to Library"}
                             className={`w-10 h-10 rounded-xl text-xs font-bold border transition flex items-center justify-center p-0 cursor-pointer ${
                               isSaved
@@ -215,7 +218,7 @@ export function GroupMatcherView({
                         )}
                       </div>
                     </div>
-                  </Card>
+                  </div>
                 );
               })}
             </div>
@@ -233,6 +236,8 @@ export function GroupMatcherView({
             : watchlist.filter((w) => w.status === "WANT_TO_WATCH")
         }
         onOpenTrailer={onOpenTrailer}
+        onOpenMovieDetail={onOpenMovieDetail}
+        onOpenRecommend={onOpenRecommend}
       />
     </div>
   );
