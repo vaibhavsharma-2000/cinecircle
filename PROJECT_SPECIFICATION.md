@@ -165,7 +165,9 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ## 🌿 Git Branching & Environment Isolation Architecture
 - **Environment Flag Driven**: Codebase is 100% identical between `main` and `staging`. Toggled dynamically via `NEXT_PUBLIC_ENABLE_MOCK_DATA`:
-  - **Staging / Dev Mode (`NEXT_PUBLIC_ENABLE_MOCK_DATA="true"`)**: Preloads mock circle members (*Alex, Maya, Sam*), demo recommendations, and testing user profile (`tony.stark@avengers.io`) for rapid UI validation.
+  - **Staging / Dev Mode (`NEXT_PUBLIC_ENABLE_MOCK_DATA="true"`)**: Preloads mock circle members (*Alex, Maya, Sam*), demo recommendations, and pre-seeded live Supabase test accounts for rapid multi-user validation:
+    - **Test User 1**: `tony.stark@avengers.io` | `@ironman` | Password: `password123` (Avatar: *Tony Stark*)
+    - **Test User 2**: `alex@avengers.io` | `@alex_films` | Password: `password123` (Avatar: *Luke Skywalker*)
   - **Production Mode (`NEXT_PUBLIC_ENABLE_MOCK_DATA="false"`)**: Clean state with zero mock data. Real authentication sessions and direct Supabase database querying only.
 - **Branching Workflow**:
   - `main`: Production release branch linked to production Vercel deployment (`NEXT_PUBLIC_ENABLE_MOCK_DATA="false"`). Direct commits strictly forbidden.
