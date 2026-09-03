@@ -27,7 +27,7 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ## ⚙️ Account Settings, Security & Session Persistence
 - **Durable Session Persistence**: Supabase Auth configured with `persistSession: true`, `autoRefreshToken: true`, `detectSessionInUrl: true`, and explicit storage key `cinecircle_auth_session`. Users remain logged in even after closing the browser tab or restarting their device.
-- **LocalStorage Fallback Persistence**: Local application state (`cinecircle_user_profile`, `cinecircle_user_email`, `cinecircle_watchlist`) is cached to `localStorage` so testing and demo sessions are preserved seamlessly across browser restarts.
+- **Per-User Scoped LocalStorage & State Isolation**: Application state is isolated per user (`${STORAGE_PREFIX}watchlist_${userId}`, `${STORAGE_PREFIX}user_profile`, etc.) and automatically purged on logout. When an authenticated user logs in, their Supabase watchlist is the authoritative source of truth, preventing cross-account state leakage when switching between test or circle accounts on the same browser.
 - **Reorganized 2-Tab Navigation**:
   - 👤 **Profile Details**: Update Display Name, Circle Handle (@username), Age, and Pop-Culture Character Avatar (*Tony Stark, Wednesday, Luke Skywalker, Michael Scott, Barbie, Batman, Hermione, Miles Morales*).
   - 🔑 **Account Settings**:

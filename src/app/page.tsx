@@ -121,6 +121,9 @@ export default function Home() {
 
   // LocalStorage state persistence across browser tab closes
   useEffect(() => {
+    // Purge old un-scoped watchlist cache that leaked across accounts
+    localStorage.removeItem(`${STORAGE_PREFIX}watchlist`);
+
     const cachedProfile = localStorage.getItem(`${STORAGE_PREFIX}user_profile`);
     if (cachedProfile) {
       try {
@@ -131,12 +134,6 @@ export default function Home() {
     if (cachedEmail) {
       setUserEmail(cachedEmail);
     }
-    const cachedWatchlist = localStorage.getItem(`${STORAGE_PREFIX}watchlist`);
-    if (cachedWatchlist) {
-      try {
-        setWatchlist(JSON.parse(cachedWatchlist));
-      } catch (e) {}
-    }
   }, []);
 
   useEffect(() => {
@@ -145,12 +142,18 @@ export default function Home() {
     } else {
       localStorage.removeItem(`${STORAGE_PREFIX}user_email`);
     }
-    localStorage.setItem(`${STORAGE_PREFIX}user_profile`, JSON.stringify(profile));
+    if (profile && profile.displayName !== "Guest") {
+      localStorage.setItem(`${STORAGE_PREFIX}user_profile`, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem(`${STORAGE_PREFIX}user_profile`);
+    }
   }, [userEmail, profile]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_PREFIX}watchlist`, JSON.stringify(watchlist));
-  }, [watchlist]);
+    if (userId) {
+      localStorage.setItem(`${STORAGE_PREFIX}watchlist_${userId}`, JSON.stringify(watchlist));
+    }
+  }, [watchlist, userId]);
 
   // Live Supabase Auth, Invite Handling, & Multi-User Data Synchronization
   useEffect(() => {
@@ -182,9 +185,24 @@ export default function Home() {
     const syncUserSession = async (session: any) => {
       if (!session?.user) {
         setUserId(null);
-        if (!IS_MOCK_MODE) {
-          setUserEmail(null);
+        setUserEmail(null);
+        setIncomingRequests([]);
+        setOutgoingRequests([]);
+        localStorage.removeItem(`${STORAGE_PREFIX}user_email`);
+        localStorage.removeItem(`${STORAGE_PREFIX}user_profile`);
+        if (IS_MOCK_MODE) {
+          setWatchlist(MOCK_WATCHLIST);
+          setFriends(MOCK_FRIENDS);
+          setProfile(MOCK_DEMO_PROFILE);
+        } else {
           setWatchlist([]);
+          setFriends([]);
+          setProfile({
+            displayName: "Guest",
+            username: "guest",
+            avatarId: DEFAULT_AVATAR_ID,
+            age: "24",
+          });
         }
         return;
       }
@@ -247,14 +265,11 @@ export default function Home() {
 
       // Fetch live friends from Supabase for current user
       const dbFriends = await fetchLiveFriends(session.user.id);
-      if (dbFriends.length > 0) {
-        setFriends(dbFriends);
-      }
+      setFriends(dbFriends.length > 0 ? dbFriends : (IS_MOCK_MODE ? MOCK_FRIENDS : []));
 
+      // Fetch live watchlist from Supabase for current user (authoritative source of truth)
       const dbWatchlist = await fetchLiveWatchlist(session.user.id);
-      if (dbWatchlist.length > 0) {
-        setWatchlist(dbWatchlist);
-      }
+      setWatchlist(dbWatchlist);
     };
 
     // 1. Initial session check and data fetch
@@ -305,9 +320,7 @@ export default function Home() {
             ]);
             setIncomingRequests(inc);
             setOutgoingRequests(outg);
-            if (updatedFriends.length > 0) {
-              setFriends(updatedFriends);
-            }
+            setFriends(updatedFriends.length > 0 ? updatedFriends : (IS_MOCK_MODE ? MOCK_FRIENDS : []));
           }
         }
       )
@@ -339,17 +352,27 @@ export default function Home() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    if (userId) {
+      localStorage.removeItem(`${STORAGE_PREFIX}watchlist_${userId}`);
+    }
+    localStorage.removeItem(`${STORAGE_PREFIX}watchlist`);
+    localStorage.removeItem(`${STORAGE_PREFIX}user_email`);
+    localStorage.removeItem(`${STORAGE_PREFIX}user_profile`);
     setUserId(null);
     setUserEmail(null);
     setIncomingRequests([]);
     setOutgoingRequests([]);
-    if (!IS_MOCK_MODE) {
+    if (IS_MOCK_MODE) {
+      setWatchlist(MOCK_WATCHLIST);
+      setFriends(MOCK_FRIENDS);
+      setProfile(MOCK_DEMO_PROFILE);
+    } else {
       setWatchlist([]);
       setFriends([]);
       setProfile({
         displayName: "Guest",
         username: "guest",
-        avatarId: "tony_stark",
+        avatarId: DEFAULT_AVATAR_ID,
         age: "24",
       });
     }
@@ -834,10 +857,16 @@ export default function Home() {
         }}
         onDeleteAccount={async () => {
           await supabase.auth.signOut();
+          if (userId) {
+            localStorage.removeItem(`${STORAGE_PREFIX}watchlist_${userId}`);
+          }
           localStorage.removeItem(`${STORAGE_PREFIX}user_email`);
           localStorage.removeItem(`${STORAGE_PREFIX}user_profile`);
           localStorage.removeItem(`${STORAGE_PREFIX}watchlist`);
+          setUserId(null);
           setUserEmail(null);
+          setWatchlist([]);
+          setFriends([]);
           setProfile({
             displayName: "Guest",
             username: "guest",
