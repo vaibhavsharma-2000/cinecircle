@@ -171,6 +171,7 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 ---
 
 ## 🤖 Expandable TMDB Algorithmic Discovery Stream
+- **Internal Server-Side TMDB Proxy (`/api/tmdb`)**: Client-side requests are routed through a dedicated Next.js API route (`src/app/api/tmdb/route.ts`), completely bypassing client browser ad-blockers (Brave Shields, uBlock Origin, etc.), regional ISP/DNS blocks, and CORS restrictions. Includes upstream caching with `revalidate: 300` and gentle fallback handling without disruptive client-side error modals.
 - **Dynamic Pagination**: Includes an **`Explore More Titles`** button that fetches next pages dynamically from the TMDB API (`page=2`, `page=3`) and appends results without page reload.
 - **7 Curated Collections**: *Top Rated & Masterpieces*, *Trending Now*, *Rom-Coms & Feel-Good*, *High-Stakes Thrillers*, *Mind-Bending Sci-Fi*, *Crowd Comedies*, *Award Winners & Dramas*.
 

@@ -38,6 +38,46 @@ if (!TMDB_API_KEY && typeof window !== "undefined") {
   console.warn("⚠️ CineCircle: NEXT_PUBLIC_TMDB_API_KEY is not set. TMDB discovery and search features will fail.");
 }
 
+/**
+ * Unified TMDB Request Engine:
+ * When executed in the browser, requests are routed through the internal proxy (/api/tmdb)
+ * to bypass ad-blockers, client ISP/DNS blocking, and CORS errors.
+ * On server-side / static build, requests directly query TMDB.
+ */
+async function fetchTMDB(
+  endpoint: string,
+  params: Record<string, string | number | undefined> | URLSearchParams = {}
+): Promise<any> {
+  const searchParams = new URLSearchParams();
+
+  if (params instanceof URLSearchParams) {
+    params.forEach((val, key) => searchParams.append(key, val));
+  } else {
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== "") {
+        searchParams.append(key, String(val));
+      }
+    });
+  }
+
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+
+  if (typeof window !== "undefined") {
+    searchParams.set("endpoint", cleanEndpoint);
+    const res = await fetch(`/api/tmdb?${searchParams.toString()}`);
+    if (!res.ok) throw new Error(`TMDB Proxy error: ${res.status}`);
+    return await res.json();
+  }
+
+  // Server-side
+  if (!searchParams.has("api_key")) {
+    searchParams.append("api_key", TMDB_API_KEY);
+  }
+  const res = await fetch(`${TMDB_BASE_URL}${cleanEndpoint}?${searchParams.toString()}`);
+  if (!res.ok) throw new Error(`TMDB direct fetch error: ${res.status}`);
+  return await res.json();
+}
+
 export interface GenreCategory {
   id: string;
   label: string;
@@ -137,18 +177,17 @@ export async function searchMovies(query: string): Promise<MovieItem[]> {
   if (!query.trim()) return [];
 
   try {
-    const res = await fetch(
-      `${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(
-        query
-      )}&include_adult=false&language=en-US&page=1`
-    );
-    if (!res.ok) throw new Error("TMDB search failed");
-    const data = await res.json();
+    const data = await fetchTMDB("/search/multi", {
+      query,
+      include_adult: "false",
+      language: "en-US",
+      page: "1",
+    });
     return (data.results || []).filter(
       (item: MovieItem) => item.poster_path && (item.title || item.name)
     );
-  } catch (error) {
-    console.error("Error searching TMDB:", error);
+  } catch (error: any) {
+    console.warn("Notice: TMDB search fallback:", error?.message || error);
     return MOCK_MOVIES.filter((m) =>
       m.title.toLowerCase().includes(query.toLowerCase())
     );
@@ -157,16 +196,12 @@ export async function searchMovies(query: string): Promise<MovieItem[]> {
 
 export async function getTrendingMovies(): Promise<MovieItem[]> {
   try {
-    const res = await fetch(
-      `${TMDB_BASE_URL}/trending/all/week?api_key=${TMDB_API_KEY}&language=en-US`
-    );
-    if (!res.ok) throw new Error("TMDB trending failed");
-    const data = await res.json();
+    const data = await fetchTMDB("/trending/all/week", { language: "en-US" });
     return (data.results || []).filter(
       (item: MovieItem) => item.poster_path && (item.title || item.name)
     );
-  } catch (error) {
-    console.error("Error fetching trending from TMDB:", error);
+  } catch (error: any) {
+    console.warn("Notice: TMDB trending fallback:", error?.message || error);
     return MOCK_MOVIES;
   }
 }
@@ -178,25 +213,22 @@ export async function getMoviesByCategory(
   const category = DISCOVERY_CATEGORIES.find((c) => c.id === categoryId) || DISCOVERY_CATEGORIES[0];
 
   try {
-    const res = await fetch(
-      `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&${category.params}&include_adult=false&language=en-US&page=${page}`
-    );
-    if (!res.ok) throw new Error("TMDB discover failed");
-    const data = await res.json();
+    const params = new URLSearchParams(category.params);
+    params.set("include_adult", "false");
+    params.set("language", "en-US");
+    params.set("page", String(page));
+
+    const data = await fetchTMDB("/discover/movie", params);
     return (data.results || []).filter((item: MovieItem) => item.poster_path);
-  } catch (error) {
-    console.error("Error discovering movies from TMDB:", error);
+  } catch (error: any) {
+    console.warn("Notice: TMDB category discovery fallback:", error?.message || error);
     return MOCK_MOVIES;
   }
 }
 
 export async function getMovieTrailerKey(id: number, mediaType: "movie" | "tv" = "movie"): Promise<string | null> {
   try {
-    const res = await fetch(
-      `${TMDB_BASE_URL}/${mediaType}/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await fetchTMDB(`/${mediaType}/${id}/videos`, { language: "en-US" });
     const videos = data.results || [];
     
     const trailer =
@@ -205,25 +237,21 @@ export async function getMovieTrailerKey(id: number, mediaType: "movie" | "tv" =
       videos[0];
 
     return trailer ? trailer.key : null;
-  } catch (error) {
-    console.error("Error fetching trailer from TMDB:", error);
+  } catch (error: any) {
+    console.warn("Notice: Trailer fetch fallback:", error?.message || error);
     return null;
   }
 }
 
 export async function getMovieDetails(id: number, mediaType: "movie" | "tv" = "movie"): Promise<MovieItem | null> {
   try {
-    const res = await fetch(
-      `${TMDB_BASE_URL}/${mediaType}/${id}?api_key=${TMDB_API_KEY}&language=en-US`
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await fetchTMDB(`/${mediaType}/${id}`, { language: "en-US" });
     return {
       ...data,
       media_type: mediaType,
     };
-  } catch (error) {
-    console.error("Error fetching movie details from TMDB:", error);
+  } catch (error: any) {
+    console.warn("Notice: TMDB movie details fallback:", error?.message || error);
     return MOCK_MOVIES.find((m) => m.id === id) || null;
   }
 }
@@ -234,15 +262,11 @@ export async function getWatchProviders(
   countryCode: string = "US"
 ): Promise<WatchProvidersResult | null> {
   try {
-    const res = await fetch(
-      `${TMDB_BASE_URL}/${mediaType}/${id}/watch/providers?api_key=${TMDB_API_KEY}`
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await fetchTMDB(`/${mediaType}/${id}/watch/providers`);
     const results = data.results || {};
     return results[countryCode] || results["US"] || Object.values(results)[0] || null;
-  } catch (error) {
-    console.error("Error fetching watch providers:", error);
+  } catch (error: any) {
+    console.warn("Notice: Watch providers fetch fallback:", error?.message || error);
     return null;
   }
 }
@@ -266,19 +290,15 @@ export async function getMovieCredits(
   mediaType: "movie" | "tv" = "movie"
 ): Promise<CastMember[]> {
   try {
-    const res = await fetch(
-      `${TMDB_BASE_URL}/${mediaType}/${id}/credits?api_key=${TMDB_API_KEY}&language=en-US`
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await fetchTMDB(`/${mediaType}/${id}/credits`, { language: "en-US" });
     return (data.cast || []).slice(0, 10).map((c: any) => ({
       id: c.id,
       name: c.name,
       character: c.character || "Cast",
       profile_path: c.profile_path,
     }));
-  } catch (error) {
-    console.error("Error fetching credits from TMDB:", error);
+  } catch (error: any) {
+    console.warn("Notice: Credits fetch fallback:", error?.message || error);
     return [];
   }
 }
@@ -287,22 +307,12 @@ export async function getPersonFilmography(
   personId: number
 ): Promise<{ personName: string; credits: MovieItem[] }> {
   try {
-    const [personRes, creditsRes] = await Promise.all([
-      fetch(`${TMDB_BASE_URL}/person/${personId}?api_key=${TMDB_API_KEY}&language=en-US`),
-      fetch(
-        `${TMDB_BASE_URL}/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}&language=en-US`
-      ),
+    const [personData, creditsData] = await Promise.all([
+      fetchTMDB(`/person/${personId}`, { language: "en-US" }).catch(() => ({})),
+      fetchTMDB(`/person/${personId}/combined_credits`, { language: "en-US" }).catch(() => ({ cast: [] })),
     ]);
 
-    let personName = "Actor";
-    if (personRes.ok) {
-      const personData = await personRes.json();
-      personName = personData.name || "Actor";
-    }
-
-    if (!creditsRes.ok) return { personName, credits: [] };
-    const creditsData = await creditsRes.json();
-
+    const personName = personData.name || "Actor";
     const valid: MovieItem[] = (creditsData.cast || [])
       .filter((m: any) => m.poster_path && (m.title || m.name))
       .sort((a: any, b: any) => (b.vote_count || 0) - (a.vote_count || 0))
@@ -320,8 +330,8 @@ export async function getPersonFilmography(
       }));
 
     return { personName, credits: valid };
-  } catch (error) {
-    console.error("Error fetching person filmography from TMDB:", error);
+  } catch (error: any) {
+    console.warn("Notice: Person filmography fallback:", error?.message || error);
     return { personName: "Actor", credits: [] };
   }
 }
@@ -442,9 +452,7 @@ export async function discoverMoviesWithFilters(
     };
 
     if (contentType === "tv") {
-      const res = await fetch(`${TMDB_BASE_URL}/discover/tv?${buildParams(true).toString()}`);
-      if (!res.ok) return { results: [], totalPages: 0, totalResults: 0 };
-      const data = await res.json();
+      const data = await fetchTMDB("/discover/tv", buildParams(true));
       const results: MovieItem[] = (data.results || []).map((item: any) => ({
         id: item.id,
         title: item.name || item.title || "Untitled",
@@ -461,9 +469,7 @@ export async function discoverMoviesWithFilters(
     }
 
     if (contentType === "movie") {
-      const res = await fetch(`${TMDB_BASE_URL}/discover/movie?${buildParams(false).toString()}`);
-      if (!res.ok) return { results: [], totalPages: 0, totalResults: 0 };
-      const data = await res.json();
+      const data = await fetchTMDB("/discover/movie", buildParams(false));
       const results: MovieItem[] = (data.results || []).map((item: any) => ({
         id: item.id,
         title: item.title || item.name || "Untitled",
@@ -479,53 +485,40 @@ export async function discoverMoviesWithFilters(
     }
 
     // contentType === "all" or "documentary": fetch both
-    const [movieRes, tvRes] = await Promise.all([
-      fetch(`${TMDB_BASE_URL}/discover/movie?${buildParams(false).toString()}`),
-      fetch(`${TMDB_BASE_URL}/discover/tv?${buildParams(true).toString()}`),
+    const [mData, tData] = await Promise.all([
+      fetchTMDB("/discover/movie", buildParams(false)).catch(() => ({ results: [], total_pages: 1, total_results: 0 })),
+      fetchTMDB("/discover/tv", buildParams(true)).catch(() => ({ results: [], total_pages: 1, total_results: 0 })),
     ]);
 
     const combined: MovieItem[] = [];
-    let totalPages = 1;
-    let totalResults = 0;
+    let totalPages = Math.max(mData.total_pages || 1, tData.total_pages || 1);
+    let totalResults = (mData.total_results || 0) + (tData.total_results || 0);
 
-    if (movieRes.ok) {
-      const mData = await movieRes.json();
-      totalResults += mData.total_results || 0;
-      totalPages = Math.max(totalPages, mData.total_pages || 1);
-      combined.push(
-        ...(mData.results || []).map((item: any) => ({
-          id: item.id,
-          title: item.title || item.name,
-          overview: item.overview || "",
-          poster_path: item.poster_path,
-          backdrop_path: item.backdrop_path,
-          release_date: item.release_date || item.first_air_date,
-          vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
-          vote_count: item.vote_count || 0,
-          media_type: "movie" as const,
-        }))
-      );
-    }
-
-    if (tvRes.ok) {
-      const tData = await tvRes.json();
-      totalResults += tData.total_results || 0;
-      totalPages = Math.max(totalPages, tData.total_pages || 1);
-      combined.push(
-        ...(tData.results || []).map((item: any) => ({
-          id: item.id,
-          title: item.name || item.title,
-          overview: item.overview || "",
-          poster_path: item.poster_path,
-          backdrop_path: item.backdrop_path,
-          release_date: item.first_air_date || item.release_date,
-          first_air_date: item.first_air_date,
-          vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
-          vote_count: item.vote_count || 0,
-          media_type: "tv" as const,
-        }))
-      );
-    }
+    combined.push(
+      ...(mData.results || []).map((item: any) => ({
+        id: item.id,
+        title: item.title || item.name,
+        overview: item.overview || "",
+        poster_path: item.poster_path,
+        backdrop_path: item.backdrop_path,
+        release_date: item.release_date || item.first_air_date,
+        vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
+        vote_count: item.vote_count || 0,
+        media_type: "movie" as const,
+      })),
+      ...(tData.results || []).map((item: any) => ({
+        id: item.id,
+        title: item.name || item.title,
+        overview: item.overview || "",
+        poster_path: item.poster_path,
+        backdrop_path: item.backdrop_path,
+        release_date: item.first_air_date || item.release_date,
+        first_air_date: item.first_air_date,
+        vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
+        vote_count: item.vote_count || 0,
+        media_type: "tv" as const,
+      }))
+    );
 
     if (sortBy === "vote_average.desc") {
       combined.sort((a, b) => b.vote_average - a.vote_average);
@@ -534,8 +527,8 @@ export async function discoverMoviesWithFilters(
     }
 
     return { results: combined.slice(0, 20), totalPages, totalResults };
-  } catch (error) {
-    console.error("Error discovering movies with filters:", error);
+  } catch (error: any) {
+    console.warn("Notice: Filtered discovery fallback:", error?.message || error);
     return { results: [], totalPages: 0, totalResults: 0 };
   }
 }
@@ -549,11 +542,10 @@ export async function getMovieRecommendations(
   mediaType: "movie" | "tv" = "movie"
 ): Promise<MovieItem[]> {
   try {
-    const res = await fetch(
-      `${TMDB_BASE_URL}/${mediaType}/${id}/recommendations?api_key=${TMDB_API_KEY}&language=en-US&page=1`
-    );
-    if (!res.ok) throw new Error("TMDB recommendations fetch failed");
-    const data = await res.json();
+    const data = await fetchTMDB(`/${mediaType}/${id}/recommendations`, {
+      language: "en-US",
+      page: "1",
+    });
     let results: MovieItem[] = (data.results || [])
       .filter((item: any) => item.poster_path && (item.title || item.name))
       .map((item: any) => ({
@@ -569,11 +561,11 @@ export async function getMovieRecommendations(
       }));
 
     if (results.length < 5) {
-      const simRes = await fetch(
-        `${TMDB_BASE_URL}/${mediaType}/${id}/similar?api_key=${TMDB_API_KEY}&language=en-US&page=1`
-      );
-      if (simRes.ok) {
-        const simData = await simRes.json();
+      try {
+        const simData = await fetchTMDB(`/${mediaType}/${id}/similar`, {
+          language: "en-US",
+          page: "1",
+        });
         const existingIds = new Set(results.map((r) => r.id));
         const simItems = (simData.results || [])
           .filter((item: any) => item.poster_path && !existingIds.has(item.id))
@@ -589,12 +581,12 @@ export async function getMovieRecommendations(
             media_type: mediaType,
           }));
         results = [...results, ...simItems];
-      }
+      } catch (e) {}
     }
 
     return results.slice(0, 10);
-  } catch (error) {
-    console.error("Error fetching TMDB recommendations:", error);
+  } catch (error: any) {
+    console.warn("Notice: Recommendations fetch fallback:", error?.message || error);
     return [];
   }
 }
