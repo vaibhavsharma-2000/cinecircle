@@ -56,7 +56,7 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
     - **Quick Theme Switcher**: 1-click Moon / Sun toggle.
     - **User Profile / Sign In Pill**: User avatar with display name and floating account settings menu.
 - **Distinct Active Navigation Indicator**: The active navigation tab features bold contrast styling (`text-[var(--text)] font-black`), subtle sunken highlight background (`bg-[var(--surface-sunken)]/60`), and a dedicated solid primary underline bar (`h-[2.5px] bg-[var(--primary)] rounded-full`), making the active tab immediately recognizable across both desktop and mobile viewports.
-- **Button & Badge Anti-Wrapping Safeguards**: Universal whitespace, flexbox, and SVG safeguards (`display: inline-flex !important; flex-direction: row !important; white-space: nowrap !important; svg { display: inline-block !important; }`) applied globally across all `Button`, `Badge`, inner `<span>` tags, and pill controls to eliminate awkward vertical text clipping, awkward word breaking, or icon/label misalignments.
+- **Button & Badge Anti-Wrapping Safeguards**: Component-level whitespace and flex-alignment formatting applied across buttons, badges, and rating elements (including Fragments UI `icon` prop integration) to prevent text clipping without interfering with container or card layouts.
 - **Avatar Profile Dropdown Menu**: Clicking the user avatar opens a floating menu containing:
   - User Handle & Email header (@username)
   - ⚙️ **Account & Settings**
