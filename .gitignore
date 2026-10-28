@@ -36,7 +36,8 @@ Thumbs.db
 .skills/
 skills/
 !.cursor/skills/
-!.cursor/skills/**
+.cursor/skills/*
+!.cursor/skills/piwik-rrweb-session-replay/
 scratch/
 .gemini/
 .antigravity/
