@@ -4,70 +4,55 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowLeft, KeyRound, Sparkles } from "lucide-react";
+import { authErrorMessage, signUpError } from "@/lib/authErrors";
+import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowLeft, KeyRound } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  const [linkState, setLinkState] = useState<"CHECKING" | "VALID" | "INVALID">("CHECKING");
 
   useEffect(() => {
-    // Listen for auth state change recovery event or active session
+    // The recovery token in the URL is exchanged for a session; if none appears, the link is bad or expired.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "PASSWORD_RECOVERY" || session) {
-        setIsReady(true);
-      }
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || session) setLinkState("VALID");
     });
-
-    // Check if session already active from recovery link
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setIsReady(true);
-      } else {
-        // Allow user a moment to verify link token in URL hash
-        setTimeout(() => setIsReady(true), 1000);
-      }
-    });
+    const timer = setTimeout(async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setLinkState(session ? "VALID" : "INVALID");
+    }, 2000);
 
     return () => {
+      clearTimeout(timer);
       subscription.unsubscribe();
     };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const invalid = signUpError(password, confirmPassword);
+    if (invalid) {
+      setErrorMsg(invalid);
+      return;
+    }
     setErrorMsg(null);
-
-    if (password !== confirmPassword) {
-      setErrorMsg("Passwords do not match. Please verify your new password.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorMsg("Password must be at least 6 characters long.");
-      return;
-    }
-
     setLoading(true);
-
-    try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
-      setIsSuccess(true);
-    } catch (err: any) {
-      console.error("Error resetting password:", err);
-      setErrorMsg(err.message || "Failed to update password. Your reset link may have expired.");
-    } finally {
-      setLoading(false);
+    const { error } = await supabase.auth.updateUser({ password });
+    setLoading(false);
+    if (error) {
+      setErrorMsg(authErrorMessage(error));
+      return;
     }
+    setIsSuccess(true);
   };
 
   return (
@@ -97,117 +82,101 @@ export default function ResetPasswordPage() {
         <button
           type="button"
           onClick={() => router.push("/")}
-          className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 transition cursor-pointer"
+          className="min-h-11 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 transition cursor-pointer"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to App
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to CineCircle
         </button>
       </header>
 
       {/* Main Center Card */}
       <main className="max-w-md mx-auto w-full my-auto py-8">
         <div className="bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-          {/* Header Icon */}
           <div className="space-y-2 text-center">
             <div className="w-12 h-12 rounded-2xl bg-[var(--brand-accent)] text-[var(--brand-accent-text)] flex items-center justify-center mx-auto shadow-md">
-              <KeyRound className="w-6 h-6" />
+              <KeyRound className="w-6 h-6" aria-hidden="true" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tight">
-              Create New Password
+            <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">
+              {linkState === "INVALID" && !isSuccess ? "Link Expired" : "Choose a New Password"}
             </h1>
-            <p className="text-xs text-[var(--text-secondary)]">
-              Enter and confirm your new CineCircle account password
-            </p>
           </div>
 
-          {/* Success State */}
           {isSuccess ? (
-            <div className="space-y-6 text-center animate-in fade-in py-4">
+            <div className="space-y-6 text-center animate-in fade-in py-2" role="status">
               <div className="w-14 h-14 rounded-full bg-[var(--success-subtle)] text-[var(--success)] flex items-center justify-center mx-auto border border-[var(--success-border)]">
-                <CheckCircle2 className="w-8 h-8" />
+                <CheckCircle2 className="w-8 h-8" aria-hidden="true" />
               </div>
-
-              <div className="space-y-1">
-                <h2 className="text-base font-extrabold text-[var(--text-primary)]">
-                  Password Updated Successfully!
-                </h2>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Your new password is now active. You are automatically signed in to your account.
-                </p>
-              </div>
-
+              <p className="text-sm text-[var(--text-secondary)]">Password updated. You&apos;re signed in.</p>
               <button
                 type="button"
                 onClick={() => router.push("/")}
-                className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Sparkles className="w-4 h-4 fill-current" /> Return to CineCircle
+                Continue to CineCircle
+              </button>
+            </div>
+          ) : linkState === "CHECKING" ? (
+            <p className="text-sm text-center text-[var(--text-secondary)] py-6" role="status">Checking link...</p>
+          ) : linkState === "INVALID" ? (
+            <div className="space-y-6 text-center">
+              <p className="text-sm text-[var(--text-secondary)]">
+                This reset link is invalid or has expired. Request a new one to continue.
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/?auth=forgot")}
+                className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-sm rounded-xl shadow-lg transition cursor-pointer"
+              >
+                Request New Link
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Error Notice */}
+            <form onSubmit={handleSubmit} method="post" action="#" className="space-y-4">
               {errorMsg && (
-                <div className="p-3.5 bg-[var(--danger-subtle)] border border-[var(--danger-border)] rounded-2xl flex items-center gap-2.5 text-xs text-[var(--danger-text)] animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-[var(--danger)]" />
+                <div role="alert" className="p-3.5 bg-[var(--danger-subtle)] border border-[var(--danger-border)] rounded-2xl flex items-center gap-2.5 text-sm text-[var(--danger-text)] animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-[var(--danger)]" aria-hidden="true" />
                   <span>{errorMsg}</span>
                 </div>
               )}
 
-              {/* New Password */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">New Password</label>
-                <div className="relative flex items-center">
-                  <Lock className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 pointer-events-none" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl pl-10 pr-10 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-1 cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+              {[
+                { id: "reset-password", label: "New Password", value: password, set: setPassword, placeholder: "At least 6 characters" },
+                { id: "reset-confirm-password", label: "Confirm New Password", value: confirmPassword, set: setConfirmPassword, placeholder: undefined },
+              ].map((f) => (
+                <div key={f.id} className="space-y-1.5">
+                  <label htmlFor={f.id} className="text-sm font-bold text-[var(--text-secondary)]">{f.label}</label>
+                  <div className="relative flex items-center">
+                    <Lock className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 pointer-events-none" aria-hidden="true" />
+                    <input
+                      id={f.id}
+                      name={f.id}
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      required
+                      minLength={6}
+                      value={f.value}
+                      onChange={(e) => f.set(e.target.value)}
+                      placeholder={f.placeholder}
+                      className="w-full h-12 bg-[var(--canvas)] border border-[var(--surface-border)] text-base sm:text-sm rounded-xl pl-10 pr-12 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] focus-visible:ring-2 focus-visible:ring-[var(--brand-accent)] transition"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-pressed={showPassword}
+                      className="absolute right-0 w-12 h-12 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ))}
 
-              {/* Confirm Password */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Confirm New Password</label>
-                <div className="relative flex items-center">
-                  <Lock className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 pointer-events-none" />
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    required
-                    minLength={6}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Re-enter password"
-                    className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl pl-10 pr-10 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-1 cursor-pointer"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Submit CTA */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
+                className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
               >
-                {loading ? "Updating Password..." : "Save New Password"}
+                {loading ? "Saving..." : "Save New Password"}
               </button>
             </form>
           )}
@@ -215,7 +184,7 @@ export default function ResetPasswordPage() {
       </main>
 
       {/* Footer */}
-      <footer className="text-center text-[11px] text-[var(--text-muted)] py-4">
+      <footer className="text-center text-xs text-[var(--text-muted)] py-4">
         CineCircle • Secure Authentication Powered by Supabase
       </footer>
     </div>

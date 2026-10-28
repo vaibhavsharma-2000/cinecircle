@@ -37,11 +37,9 @@ export default function RootLayout({
               (function() {
                 try {
                   const stored = localStorage.getItem("cinecircle_theme");
-                  if (stored === "dark") {
-                    document.documentElement.setAttribute("data-theme", "dark");
-                  } else {
-                    document.documentElement.setAttribute("data-theme", "light");
-                  }
+                  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                  const dark = stored ? stored === "dark" : prefersDark;
+                  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
                 } catch (e) {
                   document.documentElement.setAttribute("data-theme", "light");
                 }

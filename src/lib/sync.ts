@@ -390,7 +390,7 @@ export async function upsertUserProfile(profile: {
         username: profile.username,
         display_name: profile.display_name,
         avatar_character_id: profile.avatar_character_id,
-        age: profile.age,
+        age: profile.age ? Number(profile.age) : null,
       },
       { onConflict: "id" }
     );

@@ -337,6 +337,7 @@ export function DiscoverView({
                           </Button>
 
                           {/* Delete Recommendation Trigger Button */}
+                          {onDeleteRecommendation && rec.sender_name === currentUserDisplayName && (
                           <button
                             type="button"
                             onClick={(e) => {
@@ -344,10 +345,12 @@ export function DiscoverView({
                               setDeletingRec(rec);
                             }}
                             title="Delete recommendation"
+                            aria-label={`Delete recommendation for ${rec.title}`}
                             className="w-8 h-8 rounded-full bg-[var(--canvas)] hover:bg-[var(--danger-subtle)] border border-[var(--surface-border)] hover:border-[var(--danger-border)] text-[var(--text-muted)] hover:text-[var(--danger)] flex items-center justify-center transition"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -1,26 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Button, IconButton, Avatar, Alert } from "@usefragments/ui";
+import { Button, IconButton, Alert } from "@usefragments/ui";
 import { supabase } from "@/lib/supabase";
-import { DEFAULT_AVATAR_ID, AVVVATAR_PRESETS } from "@/constants/avatars";
+import { AVVVATAR_PRESETS } from "@/constants/avatars";
 import { UserAvatar } from "./UserAvatar";
 import { checkUsernameAvailable } from "@/lib/sync";
-import {
-  X,
-  Check,
-  Trash2,
-  AlertTriangle,
-  User,
-  ShieldAlert,
-  KeyRound,
-  Lock,
-  Eye,
-  EyeOff,
-  Mail,
-  CheckCircle2,
-  Sparkles,
-} from "lucide-react";
+import { authErrorMessage, sanitizeUsername } from "@/lib/authErrors";
+import { useDialog } from "@/lib/useDialog";
+import { X, Check, Trash2, AlertTriangle, ShieldAlert, KeyRound, Eye, EyeOff, Mail, CheckCircle2, Sparkles } from "lucide-react";
 import { AvatarPickerModal } from "./AvatarPickerModal";
 
 interface AccountModalProps {
@@ -28,208 +16,221 @@ interface AccountModalProps {
   onClose: () => void;
   userEmail: string | null;
   currentUserId?: string;
+  authProvider: string | null;
   currentAvatarId: string;
   currentDisplayName: string;
   currentUsername: string;
   currentAge?: string;
-  onSaveProfile: (updated: { avatarId: string; displayName: string; username: string; age?: string }) => void;
-  onDeleteAccount: () => void;
+  /** Resolves to an error message, or null on success. */
+  onSaveProfile: (updated: { avatarId: string; displayName: string; username: string; age?: string }) => Promise<string | null>;
+  /** Resolves to an error message, or null on success. */
+  onDeleteAccount: () => Promise<string | null>;
 }
+
+const inputClass =
+  "w-full h-12 bg-[var(--canvas)] border border-[var(--surface-border)] text-base sm:text-sm rounded-xl px-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] focus-visible:ring-2 focus-visible:ring-[var(--brand-accent)] transition";
+const labelClass = "text-sm font-bold text-[var(--text-secondary)]";
 
 export function AccountModal({
   isOpen,
   onClose,
   userEmail,
   currentUserId,
+  authProvider,
   currentAvatarId,
   currentDisplayName,
   currentUsername,
-  currentAge = "24",
+  currentAge = "",
   onSaveProfile,
   onDeleteAccount,
 }: AccountModalProps) {
-  const [activeTab, setActiveTab] = useState<"PROFILE" | "SETTINGS" | "SECURITY">("PROFILE");
-  
-  // Profile State
+  const [activeTab, setActiveTab] = useState<"PROFILE" | "SECURITY">("PROFILE");
+
   const [selectedAvatarId, setSelectedAvatarId] = useState(currentAvatarId);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [displayName, setDisplayName] = useState(currentDisplayName);
   const [username, setUsername] = useState(currentUsername);
   const [age, setAge] = useState(currentAge);
+  const [saving, setSaving] = useState(false);
 
-  // Security State
   const [passwordMethod, setPasswordMethod] = useState<"DIRECT" | "EMAIL">("DIRECT");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [securityNotice, setSecurityNotice] = useState<string | null>(null);
-  const [securityError, setSecurityError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [securityLoading, setSecurityLoading] = useState(false);
 
-  // Account Deletion State
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const usesPassword = !authProvider || authProvider === "email";
+  const isDirty =
+    displayName !== currentDisplayName ||
+    username !== currentUsername ||
+    age !== currentAge ||
+    selectedAvatarId !== currentAvatarId ||
+    Boolean(newPassword || confirmPassword);
+  const dialogRef = useDialog<HTMLDivElement>(isOpen && !isAvatarPickerOpen, onClose);
 
   if (!isOpen) return null;
 
+  const resetMessages = () => {
+    setError(null);
+    setNotice(null);
+  };
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSecurityError(null);
-    setSecurityNotice(null);
-
-    const cleanUsername = username.trim().toLowerCase();
+    resetMessages();
+    const cleanUsername = sanitizeUsername(username.trim());
     if (!cleanUsername) {
-      setSecurityError("Username handle cannot be empty.");
+      setError("Choose a username with letters, numbers, or underscores.");
       return;
     }
-
+    setSaving(true);
     const isAvailable = await checkUsernameAvailable(cleanUsername, currentUserId);
     if (!isAvailable) {
-      setSecurityError(`The handle @${cleanUsername} is already taken by another user.`);
+      setSaving(false);
+      setError(`@${cleanUsername} is already taken. Choose a different username.`);
       return;
     }
-
-    onSaveProfile({
+    const saveError = await onSaveProfile({
       avatarId: selectedAvatarId,
-      displayName: displayName.trim() || "Cinephile",
+      displayName: displayName.trim() || cleanUsername,
       username: cleanUsername,
-      age: age.trim() || "24",
+      age: age.trim(),
     });
-    setSecurityNotice("Profile saved successfully!");
+    setSaving(false);
+    if (saveError) {
+      setError(saveError);
+      return;
+    }
     onClose();
   };
 
   const handleSendResetEmail = async () => {
-    setSecurityError(null);
-    setSecurityNotice(null);
+    resetMessages();
+    if (!userEmail) return;
     setSecurityLoading(true);
-
-    try {
-      if (userEmail) {
-        const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
-          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined,
-        });
-        if (error) throw error;
-      }
-      setSecurityNotice(`Password reset link sent to ${userEmail || "your email"}. Check your inbox!`);
-    } catch (err: unknown) {
-      setSecurityNotice(`Password reset email sent to ${userEmail || "your email"}!`);
-    } finally {
-      setSecurityLoading(false);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(userEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setSecurityLoading(false);
+    if (resetError) {
+      setError(authErrorMessage(resetError));
+      return;
     }
+    setNotice(`Reset link sent to ${userEmail}.`);
   };
 
   const handleDirectPasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSecurityError(null);
-    setSecurityNotice(null);
-
-    if (newPassword !== confirmPassword) {
-      setSecurityError("Passwords do not match. Please verify your new password.");
-      return;
-    }
-
+    resetMessages();
     if (newPassword.length < 6) {
-      setSecurityError("New password must be at least 6 characters long.");
+      setError("Choose a password with at least 6 characters.");
       return;
     }
-
-    setSecurityLoading(true);
-
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
-
-      setSecurityNotice("Password updated successfully!");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err: unknown) {
-      setSecurityNotice("Password updated successfully!");
-      setNewPassword("");
-      setConfirmPassword("");
-    } finally {
-      setSecurityLoading(false);
+    if (newPassword !== confirmPassword) {
+      setError("Passwords don't match. Re-enter the same password in both fields.");
+      return;
     }
+    setSecurityLoading(true);
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    setSecurityLoading(false);
+    if (updateError) {
+      setError(authErrorMessage(updateError));
+      return;
+    }
+    setNotice("Password updated.");
+    setNewPassword("");
+    setConfirmPassword("");
   };
+
+  const handleDelete = async () => {
+    resetMessages();
+    setDeleting(true);
+    const deleteError = await onDeleteAccount();
+    setDeleting(false);
+    if (deleteError) {
+      setError(deleteError);
+      return;
+    }
+    onClose();
+  };
+
+  const tabButton = (tab: "PROFILE" | "SECURITY", label: string) => (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={activeTab === tab}
+      onClick={() => {
+        setActiveTab(tab);
+        resetMessages();
+      }}
+      className={`flex-1 h-11 text-sm font-extrabold rounded-lg transition cursor-pointer ${
+        activeTab === tab
+          ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow-sm"
+          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <>
-      <div 
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 cursor-pointer"
-        onClick={onClose}
+      <div
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200"
+        onClick={() => !isDirty && onClose()}
       >
-        <div 
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="account-title"
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          className="relative w-full max-w-lg bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto cursor-default"
+          className="relative w-full sm:max-w-lg bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-t-3xl sm:rounded-2xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto"
         >
-          
-          {/* Modal Header */}
-          <div className="flex items-center justify-between border-b border-[var(--surface-border)] pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[var(--brand-accent)] text-[var(--brand-accent-text)] flex items-center justify-center font-black shadow">
-                <User className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-base text-[var(--text-primary)]">Account & Settings</h3>
-                <p className="text-xs text-[var(--text-secondary)]">Manage profile, security, and preferences</p>
-              </div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <h2 id="account-title" className="font-extrabold text-xl text-[var(--text-primary)]">Account Settings</h2>
+              <p className="text-sm text-[var(--text-secondary)]">Profile, password, and account deletion</p>
             </div>
-
             <IconButton
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-[var(--canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center transition border border-[var(--surface-border)]"
+              aria-label="Close"
+              className="w-11 h-11 -mr-2 -mt-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] flex items-center justify-center transition shrink-0 cursor-pointer"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </IconButton>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-1 bg-[var(--canvas)] p-1 rounded-xl border border-[var(--surface-border)]">
-            <button
-              type="button"
-              onClick={() => setActiveTab("PROFILE")}
-              className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition ${
-                activeTab === "PROFILE"
-                  ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              Edit Profile
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("SECURITY")}
-              className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition ${
-                activeTab === "SECURITY"
-                  ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              Security
-            </button>
+          <div role="tablist" aria-label="Account sections" className="flex items-center gap-1 bg-[var(--canvas)] p-1 rounded-xl border border-[var(--surface-border)]">
+            {tabButton("PROFILE", "Profile")}
+            {tabButton("SECURITY", "Security")}
           </div>
 
-          {/* Error Notice */}
-          {securityNotice && (
-            <Alert className="bg-[var(--success-subtle)] border border-[var(--success-border)] text-[var(--success-text)] text-xs flex items-center gap-2 p-3 rounded-xl">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>{securityNotice}</span>
+          {notice && (
+            <Alert role="status" className="bg-[var(--success-subtle)] border border-[var(--success-border)] text-[var(--success-text)] text-sm flex items-center gap-2 p-3 rounded-xl">
+              <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>{notice}</span>
             </Alert>
           )}
 
-          {securityError && (
-            <Alert className="bg-[var(--danger-subtle)] border border-[var(--danger-border)] text-[var(--danger-text)] text-xs flex items-center gap-2 p-3 rounded-xl">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{securityError}</span>
+          {error && (
+            <Alert role="alert" className="bg-[var(--danger-subtle)] border border-[var(--danger-border)] text-[var(--danger-text)] text-sm flex items-center gap-2 p-3 rounded-xl">
+              <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>{error}</span>
             </Alert>
           )}
 
-          {/* PROFILE TAB */}
           {activeTab === "PROFILE" && (
             <form onSubmit={handleSaveProfile} method="post" action="#" autoComplete="on" className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label htmlFor="account-display-name" className="text-xs font-bold text-[var(--text-secondary)]">Display Name</label>
+                <div className="space-y-1.5">
+                  <label htmlFor="account-display-name" className={labelClass}>Display Name</label>
                   <input
                     id="account-display-name"
                     name="name"
@@ -238,313 +239,268 @@ export function AccountModal({
                     required
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl px-4 text-[var(--text-primary)] focus:outline-none focus:border-[var(--brand-accent)] transition leading-tight"
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label htmlFor="account-username" className="text-xs font-bold text-[var(--text-secondary)]">Username</label>
-                  <input
-                    id="account-username"
-                    name="username"
-                    type="text"
-                    autoComplete="username"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl px-4 text-[var(--text-primary)] focus:outline-none focus:border-[var(--brand-accent)] transition leading-tight"
-                  />
+                <div className="space-y-1.5">
+                  <label htmlFor="account-username" className={labelClass}>Username</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[var(--text-muted)]" aria-hidden="true">@</span>
+                    <input
+                      id="account-username"
+                      name="username"
+                      type="text"
+                      autoComplete="username"
+                      autoCapitalize="none"
+                      required
+                      value={username}
+                      onChange={(e) => setUsername(sanitizeUsername(e.target.value))}
+                      className={`${inputClass} pl-8`}
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label htmlFor="account-email" className="text-xs font-bold text-[var(--text-secondary)]">Email</label>
+                <div className="space-y-1.5">
+                  <label htmlFor="account-email" className={labelClass}>Email</label>
                   <input
                     id="account-email"
                     name="email"
                     type="email"
                     autoComplete="email"
                     disabled
-                    value={userEmail || "Not signed in"}
-                    className="w-full h-11 bg-[var(--canvas)]/50 border border-[var(--surface-border)] text-xs rounded-xl px-4 text-[var(--text-muted)] cursor-not-allowed leading-tight flex items-center"
+                    value={userEmail || ""}
+                    className={`${inputClass} opacity-60 cursor-not-allowed`}
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label htmlFor="account-age" className="text-xs font-bold text-[var(--text-secondary)]">Age</label>
+                <div className="space-y-1.5">
+                  <label htmlFor="account-age" className={labelClass}>
+                    Age <span className="font-normal text-[var(--text-muted)]">(optional)</span>
+                  </label>
                   <input
                     id="account-age"
                     name="age"
                     type="number"
+                    inputMode="numeric"
                     min={12}
                     max={120}
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
-                    placeholder="24"
-                    className="w-full h-11 bg-[var(--canvas)] border border-[var(--surface-border)] text-xs rounded-xl px-4 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-accent)] transition flex items-center leading-tight"
+                    className={inputClass}
                   />
                 </div>
               </div>
 
-              {/* Avatar Picker */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-[var(--text-secondary)]">Your Profile Avatar</label>
+                  <span className={labelClass}>Avatar</span>
                   <button
                     type="button"
                     onClick={() => setIsAvatarPickerOpen(true)}
-                    className="text-[11px] font-bold text-[var(--brand-accent)] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="min-h-11 text-sm font-bold text-[var(--brand-accent)] hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <Sparkles className="w-3 h-3" /> Browse All ({AVVVATAR_PRESETS.length})
+                    <Sparkles className="w-4 h-4" aria-hidden="true" /> Browse All ({AVVVATAR_PRESETS.length})
                   </button>
                 </div>
 
-                <div className="p-3 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl flex items-center justify-between gap-3 shadow-sm">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="rounded-full ring-2 ring-[var(--brand-accent)] ring-offset-2 ring-offset-[var(--canvas)] shadow shrink-0 overflow-hidden">
-                      <UserAvatar
-                        avatarId={selectedAvatarId}
-                        displayName={username || displayName || "You"}
-                        size="lg"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="font-extrabold text-xs text-[var(--text-primary)] truncate">
-                        @{username || currentUsername || "username"}
-                      </h4>
-                      <p className="text-[10px] text-[var(--text-secondary)] truncate">
-                        {displayName || currentDisplayName}
-                      </p>
-                    </div>
+                <div className="flex items-center gap-3 p-3 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl">
+                  <div className="rounded-full ring-2 ring-[var(--brand-accent)] ring-offset-2 ring-offset-[var(--canvas)] shrink-0 overflow-hidden">
+                    <UserAvatar avatarId={selectedAvatarId} displayName={username || displayName || "You"} size="lg" />
                   </div>
-
-                  <Button
-                    type="button"
-                    onClick={() => setIsAvatarPickerOpen(true)}
-                    className="h-9 px-3.5 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] border border-[var(--surface-border)] font-bold text-xs rounded-xl transition shrink-0 flex items-center gap-1.5 cursor-pointer shadow-sm"
-                  >
-                    Change
-                  </Button>
+                  <div className="min-w-0">
+                    <p className="font-extrabold text-sm text-[var(--text-primary)] truncate">@{username || "username"}</p>
+                    <p className="text-xs text-[var(--text-secondary)] truncate">{displayName}</p>
+                  </div>
                 </div>
 
-                {/* Inline Quick Avvvatars Carousel */}
-                <div className="space-y-1 pt-1">
-                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">
-                    Quick Pick Style
-                  </span>
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
-                    {AVVVATAR_PRESETS.slice(0, 10).map((preset) => {
-                      const isSelected = selectedAvatarId === preset;
-                      return (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => setSelectedAvatarId(preset)}
-                          title={preset}
-                          className={`shrink-0 rounded-full p-0.5 transition-all cursor-pointer ${
-                            isSelected
-                              ? "ring-2 ring-[var(--brand-accent)] ring-offset-2 ring-offset-[var(--surface-card)] scale-110"
-                              : "opacity-70 hover:opacity-100 hover:scale-105"
-                          }`}
-                        >
-                          <UserAvatar avatarId={preset} size="md" />
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div role="radiogroup" aria-label="Quick avatar choices" className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin">
+                  {AVVVATAR_PRESETS.slice(0, 10).map((preset) => {
+                    const isSelected = selectedAvatarId === preset;
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        aria-label={`Avatar ${preset}`}
+                        onClick={() => setSelectedAvatarId(preset)}
+                        className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                          isSelected
+                            ? "ring-2 ring-[var(--brand-accent)] ring-offset-2 ring-offset-[var(--surface-card)]"
+                            : "opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        <UserAvatar avatarId={preset} size="md" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2"
+                disabled={saving}
+                className="w-full h-12 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-60"
               >
-                <Check className="w-4 h-4" /> Save Profile Details
+                <Check className="w-4 h-4" aria-hidden="true" /> {saving ? "Saving..." : "Save Profile"}
               </Button>
             </form>
           )}
 
-          {/* SECURITY TAB */}
           {activeTab === "SECURITY" && (
             <div className="space-y-6">
-              {/* Password Change Method Switcher */}
-              <div className="p-4 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-extrabold text-xs text-[var(--text-primary)] flex items-center gap-1.5">
-                      <KeyRound className="w-4 h-4 text-[var(--brand-accent)]" /> Password Management
-                    </h4>
-                    <p className="text-[11px] text-[var(--text-secondary)]">Update your account password</p>
+              {usesPassword ? (
+                <div className="p-4 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="font-extrabold text-sm text-[var(--text-primary)] flex items-center gap-1.5">
+                      <KeyRound className="w-4 h-4 text-[var(--brand-accent)]" aria-hidden="true" /> Password
+                    </h3>
+                    <div role="tablist" aria-label="Password change method" className="flex items-center gap-1 bg-[var(--surface-card)] p-1 rounded-lg border border-[var(--surface-border)]">
+                      {(["DIRECT", "EMAIL"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          role="tab"
+                          aria-selected={passwordMethod === m}
+                          onClick={() => {
+                            setPasswordMethod(m);
+                            resetMessages();
+                          }}
+                          className={`h-9 px-3 rounded-md text-xs font-bold transition cursor-pointer ${
+                            passwordMethod === m ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow-sm" : "text-[var(--text-secondary)]"
+                          }`}
+                        >
+                          {m === "DIRECT" ? "Change Here" : "Email Link"}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1 bg-[var(--surface-card)] p-1 rounded-lg border border-[var(--surface-border)] text-[11px]">
-                    <button
-                      type="button"
-                      onClick={() => setPasswordMethod("DIRECT")}
-                      className={`px-2.5 py-1 rounded-md font-bold transition ${
-                        passwordMethod === "DIRECT"
-                          ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow-sm"
-                          : "text-[var(--text-secondary)]"
-                      }`}
-                    >
-                      Direct Entry
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPasswordMethod("EMAIL")}
-                      className={`px-2.5 py-1 rounded-md font-bold transition ${
-                        passwordMethod === "EMAIL"
-                          ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow-sm"
-                          : "text-[var(--text-secondary)]"
-                      }`}
-                    >
-                      Email Reset Link
-                    </button>
-                  </div>
+                  {passwordMethod === "DIRECT" ? (
+                    <form onSubmit={handleDirectPasswordChange} method="post" action="#" autoComplete="on" className="space-y-3">
+                      <input type="text" name="username" autoComplete="username" value={userEmail || ""} readOnly className="sr-only" tabIndex={-1} aria-hidden="true" />
+                      {[
+                        { id: "account-new-password", label: "New Password", value: newPassword, set: setNewPassword, placeholder: "At least 6 characters" },
+                        { id: "account-confirm-password", label: "Confirm New Password", value: confirmPassword, set: setConfirmPassword, placeholder: "" },
+                      ].map((f) => (
+                        <div key={f.id} className="space-y-1.5">
+                          <label htmlFor={f.id} className={labelClass}>{f.label}</label>
+                          <div className="relative flex items-center">
+                            <input
+                              id={f.id}
+                              name={f.id}
+                              type={showPassword ? "text" : "password"}
+                              autoComplete="new-password"
+                              required
+                              value={f.value}
+                              onChange={(e) => f.set(e.target.value)}
+                              placeholder={f.placeholder || undefined}
+                              className={`${inputClass} pr-12`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              aria-label={showPassword ? "Hide password" : "Show password"}
+                              aria-pressed={showPassword}
+                              className="absolute right-0 w-12 h-12 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                            >
+                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <Button
+                        type="submit"
+                        disabled={securityLoading}
+                        className="w-full h-12 bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold text-sm rounded-xl shadow transition disabled:opacity-60"
+                      >
+                        {securityLoading ? "Updating..." : "Update Password"}
+                      </Button>
+                    </form>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-[var(--text-secondary)]">
+                        A reset link will be sent to <strong className="text-[var(--text-primary)]">{userEmail}</strong>.
+                      </p>
+                      <Button
+                        type="button"
+                        onClick={handleSendResetEmail}
+                        disabled={securityLoading}
+                        className="w-full h-12 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] text-[var(--text-primary)] font-extrabold text-sm rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-60"
+                      >
+                        <Mail className="w-4 h-4 text-[var(--brand-accent)]" aria-hidden="true" />
+                        {securityLoading ? "Sending Link..." : "Send Reset Link"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <div className="p-4 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl text-sm text-[var(--text-secondary)]">
+                  You sign in with Google, so there&apos;s no CineCircle password to change. Manage your password in your Google account.
+                </div>
+              )}
 
-                {passwordMethod === "DIRECT" ? (
-                  <form onSubmit={handleDirectPasswordChange} method="post" action="#" autoComplete="on" className="space-y-3 pt-1">
-                    {/* Hidden username to link password update to the active account for browser keychain/managers */}
-                    <input
-                      type="text"
-                      name="username"
-                      autoComplete="username"
-                      value={userEmail || ""}
-                      readOnly
-                      className="sr-only"
-                      tabIndex={-1}
-                      aria-hidden="true"
-                    />
-
-                    <div className="space-y-1">
-                      <label htmlFor="account-new-password" className="text-[11px] font-bold text-[var(--text-secondary)]">New Password</label>
-                      <div className="relative flex items-center">
-                        <input
-                          id="account-new-password"
-                          name="new-password"
-                          type={showPassword ? "text" : "password"}
-                          autoComplete="new-password"
-                          required
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="At least 6 characters"
-                          className="w-full h-10 bg-[var(--surface-card)] border border-[var(--surface-border)] text-xs rounded-xl pl-3 pr-10 text-[var(--text-primary)] focus:outline-none focus:border-[var(--brand-accent)] transition"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs"
-                        >
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label htmlFor="account-confirm-password" className="text-[11px] font-bold text-[var(--text-secondary)]">Confirm New Password</label>
-                      <div className="relative flex items-center">
-                        <input
-                          id="account-confirm-password"
-                          name="confirm-password"
-                          type={showConfirmPassword ? "text" : "password"}
-                          autoComplete="new-password"
-                          required
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Re-enter new password"
-                          className="w-full h-10 bg-[var(--surface-card)] border border-[var(--surface-border)] text-xs rounded-xl pl-3 pr-10 text-[var(--text-primary)] focus:outline-none focus:border-[var(--brand-accent)] transition"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs"
-                        >
-                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={securityLoading}
-                      className="w-full h-10 bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold text-xs rounded-xl shadow transition"
-                    >
-                      {securityLoading ? "Updating..." : "Update Password Now"}
-                    </Button>
-                  </form>
-                ) : (
-                  <div className="space-y-3 pt-1">
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      We will send a password reset link to <strong className="text-[var(--text-primary)]">{userEmail}</strong>.
-                    </p>
-                    <Button
-                      type="button"
-                      onClick={handleSendResetEmail}
-                      disabled={securityLoading}
-                      className="w-full h-10 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] text-[var(--text-primary)] font-extrabold text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-2"
-                    >
-                      <Mail className="w-4 h-4 text-[var(--brand-accent)]" />
-                      {securityLoading ? "Sending Link..." : "Send Reset Email"}
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Danger Zone: Account Deletion */}
               <div className="p-4 bg-[var(--danger-subtle)] border border-[var(--danger-border)] rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-[var(--danger)]">
-                  <ShieldAlert className="w-4 h-4" />
-                  <h4 className="font-extrabold text-xs uppercase tracking-wider">Danger Zone</h4>
-                </div>
-
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Deleting your account permanently removes your profile, watchlist, ratings, and friend circle connections. This action cannot be undone.
+                <h3 className="font-extrabold text-sm text-[var(--danger)] flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4" aria-hidden="true" /> Delete Account
+                </h3>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  Permanently removes your profile, library, ratings, recommendations, and friend connections. This can&apos;t be undone.
                 </p>
 
                 {!showConfirmDelete ? (
                   <Button
                     type="button"
                     onClick={() => setShowConfirmDelete(true)}
-                    className="h-9 px-4 bg-[var(--canvas)] text-[var(--danger)] hover:bg-[var(--danger-subtle)] border border-[var(--danger-border)] font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+                    className="h-11 px-4 bg-[var(--canvas)] text-[var(--danger)] hover:bg-[var(--danger-subtle)] border border-[var(--danger-border)] font-bold text-sm rounded-xl transition flex items-center gap-1.5"
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> Delete Account
+                    <Trash2 className="w-4 h-4" aria-hidden="true" /> Delete Account...
                   </Button>
                 ) : (
                   <div className="p-3 bg-[var(--canvas)] border border-[var(--danger-border)] rounded-xl space-y-3">
-                    <p className="text-xs font-black text-[var(--danger-text)]">Are you absolutely sure?</p>
+                    <label htmlFor="delete-confirm" className="block text-sm font-bold text-[var(--danger-text)]">
+                      Type <span className="font-black">{currentUsername}</span> to confirm
+                    </label>
+                    <input
+                      id="delete-confirm"
+                      type="text"
+                      autoComplete="off"
+                      autoCapitalize="none"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      className={inputClass}
+                    />
                     <div className="flex items-center gap-2">
                       <Button
                         type="button"
                         onClick={() => {
-                          if (onDeleteAccount) onDeleteAccount();
-                          onClose();
+                          setShowConfirmDelete(false);
+                          setDeleteConfirmText("");
                         }}
-                        className="flex-1 h-11 bg-[var(--danger)] hover:opacity-90 text-white font-extrabold text-xs rounded-xl shadow transition"
-                      >
-                        Yes, Delete Account
-                      </Button>
-
-                      <Button
-                        type="button"
-                        onClick={() => setShowConfirmDelete(false)}
-                        className="h-11 px-4 bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs rounded-xl transition border border-[var(--surface-border)] font-bold"
+                        className="h-11 px-4 bg-[var(--surface-card)] text-[var(--text-primary)] text-sm rounded-xl transition border border-[var(--surface-border)] font-bold"
                       >
                         Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={deleting || deleteConfirmText.trim().toLowerCase() !== currentUsername.toLowerCase()}
+                        className="flex-1 h-11 bg-[var(--danger)] hover:opacity-90 text-white font-extrabold text-sm rounded-xl shadow transition disabled:opacity-50"
+                      >
+                        {deleting ? "Deleting..." : "Delete Account"}
                       </Button>
                     </div>
                   </div>
                 )}
               </div>
-
             </div>
           )}
-
         </div>
       </div>
 
-      {/* Avvvatars Picker Modal */}
       <AvatarPickerModal
         isOpen={isAvatarPickerOpen}
         onClose={() => setIsAvatarPickerOpen(false)}

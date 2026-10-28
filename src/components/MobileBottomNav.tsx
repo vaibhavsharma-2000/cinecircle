@@ -43,7 +43,7 @@ export function MobileBottomNav({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[var(--bg)] border-t border-[var(--border)] px-3 py-2 flex items-center justify-around safe-area-inset-bottom">
+    <nav aria-label="Main" className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[var(--bg)] border-t border-[var(--border)] px-3 py-2 flex items-center justify-around safe-area-inset-bottom">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isSelected = activeTab === tab.id;
@@ -53,7 +53,8 @@ export function MobileBottomNav({
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-md transition relative cursor-pointer ${
+            aria-current={isSelected ? "page" : undefined}
+            className={`flex flex-col items-center justify-center gap-1 min-h-11 min-w-11 py-1.5 px-2 rounded-md transition relative cursor-pointer ${
               isSelected
                 ? "text-[var(--text)] font-black"
                 : "text-[var(--text-muted)] hover:text-[var(--text)] font-medium"
@@ -63,7 +64,7 @@ export function MobileBottomNav({
               <Icon className={`w-5 h-5 transition-colors ${isSelected ? "text-[var(--primary)] stroke-[2.5]" : "stroke-[1.75]"}`} />
               {Boolean(tab.badge) && (
                 <span
-                  className={`absolute -top-1.5 -right-2.5 px-1 py-0.2 rounded text-[9px] font-black ${
+                  className={`absolute -top-1.5 -right-2.5 px-1 py-0.2 rounded text-[11px] leading-none font-black ${
                     tab.isAlert
                       ? "bg-[var(--danger)] text-white animate-pulse"
                       : "bg-[var(--accent)] text-[var(--primary)]"
@@ -73,7 +74,7 @@ export function MobileBottomNav({
                 </span>
               )}
             </div>
-            <span className="text-[10px] tracking-wider uppercase font-bold">{tab.label}</span>
+            <span className="text-[11px] tracking-wide uppercase font-bold">{tab.label}</span>
             {isSelected && (
               <span className="absolute bottom-0 left-2 right-2 h-[2.5px] bg-[var(--primary)] rounded-full" />
             )}

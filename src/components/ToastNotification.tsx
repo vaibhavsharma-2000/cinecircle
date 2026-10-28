@@ -31,7 +31,7 @@ export function ToastNotification({ toasts, onDismiss }: ToastNotificationProps)
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-4 left-4 sm:left-auto sm:w-96 z-50 flex flex-col gap-2.5 pointer-events-none">
+    <div role="status" aria-live="polite" className="fixed bottom-20 md:bottom-6 right-4 left-4 sm:left-auto sm:w-96 z-50 flex flex-col gap-2.5 pointer-events-none">
       {toasts.map((toast) => (
         <div
           key={toast.id}
@@ -50,10 +50,10 @@ export function ToastNotification({ toasts, onDismiss }: ToastNotificationProps)
 
           {/* Content */}
           <div className="flex-1 space-y-1 min-w-0">
-            <h4 className="text-xs font-black text-[var(--text-primary)] truncate">
+            <h4 className="text-sm font-black text-[var(--text-primary)] truncate">
               {toast.title}
             </h4>
-            <p className="text-[11px] text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
               {toast.message}
             </p>
 
@@ -64,9 +64,9 @@ export function ToastNotification({ toasts, onDismiss }: ToastNotificationProps)
                   toast.onAction?.();
                   onDismiss(toast.id);
                 }}
-                className="pt-1 text-[11px] font-extrabold text-[var(--brand-accent)] hover:underline flex items-center gap-1 cursor-pointer"
+                className="min-h-11 -my-2 text-sm font-extrabold text-[var(--brand-accent)] hover:underline flex items-center gap-1 cursor-pointer"
               >
-                {toast.actionLabel} →
+                {toast.actionLabel}
               </button>
             )}
           </div>
@@ -75,9 +75,10 @@ export function ToastNotification({ toasts, onDismiss }: ToastNotificationProps)
           <button
             type="button"
             onClick={() => onDismiss(toast.id)}
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 transition cursor-pointer"
+            aria-label="Dismiss notification"
+            className="w-11 h-11 -m-3 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition cursor-pointer"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       ))}

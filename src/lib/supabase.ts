@@ -9,7 +9,7 @@ if (rawUrl.includes("supabase.com/dashboard/project/")) {
   }
 }
 
-const supabaseUrl = rawUrl || "https://pkjzqtffppneqjyejbzj.supabase.co";
+export const supabaseUrl = rawUrl || "https://pkjzqtffppneqjyejbzj.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

@@ -25,6 +25,7 @@ interface NavbarProps {
   onSelectMovie: (movie: MovieItem) => void;
   profile: { displayName: string; username: string; avatarId: string };
   userEmail: string | null;
+  authReady: boolean;
   watchlistCount: number;
   friendsCount: number;
   incomingRequestsCount?: number;
@@ -42,6 +43,7 @@ export function Navbar({
   onSelectMovie,
   profile,
   userEmail,
+  authReady,
   watchlistCount,
   friendsCount,
   incomingRequestsCount = 0,
@@ -122,7 +124,7 @@ export function Navbar({
                   <span className="whitespace-nowrap shrink-0">{tab.label}</span>
                   {Boolean(tab.badge) && (
                     <Badge
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-black shrink-0 ${
+                      className={`px-1.5 py-0.2 rounded-full text-[11px] font-black shrink-0 ${
                         tab.isAlert
                           ? "bg-[var(--danger)] text-white font-black animate-pulse"
                           : isSelected
@@ -155,18 +157,23 @@ export function Navbar({
             onClick={onToggleTheme}
             title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            className="w-9 h-9 rounded-full bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--surface-border)] flex items-center justify-center p-0 shrink-0 transition cursor-pointer"
+            className="w-11 h-11 sm:w-9 sm:h-9 rounded-full bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--surface-border)] flex items-center justify-center p-0 shrink-0 transition cursor-pointer"
           >
             {isDarkMode ? <Sun className="w-4 h-4 text-[var(--star-accent)]" /> : <Moon className="w-4 h-4" />}
           </button>
 
           {/* User Profile Dropdown Menu or Sign In Button */}
-          {userEmail ? (
+          {!authReady ? (
+            <div className="h-11 w-11 sm:h-9 sm:w-24 rounded-full bg-[var(--surface-card)] border border-[var(--surface-border)] animate-pulse" aria-hidden="true" />
+          ) : userEmail ? (
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="h-9 px-2 sm:px-2.5 rounded-full bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] transition flex items-center gap-1.5 shadow-xs cursor-pointer group"
+                aria-label="Account menu"
+                aria-haspopup="menu"
+                aria-expanded={dropdownOpen}
+                className="h-11 sm:h-9 px-2 sm:px-2.5 rounded-full bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] transition flex items-center gap-1.5 shadow-xs cursor-pointer group"
               >
                 <UserAvatar avatarId={profile.avatarId} displayName={profile.displayName} size="sm" />
                 <span className="text-xs font-bold text-[var(--text-primary)] hidden sm:inline max-w-[85px] truncate">
@@ -183,7 +190,7 @@ export function Navbar({
                     <div className="space-y-0.5 min-w-0">
                       <p className="text-xs font-extrabold text-[var(--text-primary)] truncate">{profile.displayName}</p>
                       <p className="text-[11px] text-[var(--text-secondary)] truncate">@{profile.username}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] truncate">{userEmail}</p>
+                      <p className="text-xs text-[var(--text-muted)] truncate">{userEmail}</p>
                     </div>
                   </div>
 
@@ -227,7 +234,7 @@ export function Navbar({
           ) : (
             <Button
               onClick={onOpenAuth}
-              className="h-9 px-4 rounded-full bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs shadow-sm inline-flex items-center justify-center gap-1.5 transition whitespace-nowrap shrink-0 flex-nowrap"
+              className="h-11 sm:h-9 px-4 rounded-full bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs shadow-sm inline-flex items-center justify-center gap-1.5 transition whitespace-nowrap shrink-0 flex-nowrap"
             >
               <LogIn className="w-3.5 h-3.5 shrink-0" />
               <span className="whitespace-nowrap shrink-0">Sign In</span>

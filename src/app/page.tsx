@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { Navbar } from "@/components/Navbar";
 import { DiscoverView } from "@/components/DiscoverView";
 import { RecommendationsView } from "@/components/RecommendationsView";
@@ -11,25 +12,20 @@ import { TrailerModal } from "@/components/TrailerModal";
 import { RecommendModal } from "@/components/RecommendModal";
 import { AccountModal } from "@/components/AccountModal";
 import { MovieDetailModal } from "@/components/MovieDetailModal";
-import { AuthModal } from "@/components/AuthModal";
+import { AuthModal, AuthMode } from "@/components/AuthModal";
 import { CompleteProfileModal } from "@/components/CompleteProfileModal";
 import { CookieConsentModal } from "@/components/CookieConsentModal";
 import { InstallPwaModal } from "@/components/InstallPwaModal";
 import { InviteModal } from "@/components/InviteModal";
 import { FriendLibraryModal } from "@/components/FriendLibraryModal";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { SignInPrompt, GatedTab } from "@/components/SignInPrompt";
 import { ToastNotification, ToastItem } from "@/components/ToastNotification";
 import { MovieItem, getMovieDetails } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem, FriendItem, supabase } from "@/lib/supabase";
 import { DEFAULT_AVATAR_ID } from "@/constants/avatars";
 
-import {
-  MOCK_RECOMMENDATIONS,
-  MOCK_WATCHLIST,
-  MOCK_FRIENDS,
-  MOCK_DEMO_PROFILE,
-  MOCK_DEMO_EMAIL,
-} from "@/lib/mockData";
+import { MOCK_RECOMMENDATIONS, MOCK_FRIENDS } from "@/lib/mockData";
 
 import {
   fetchUserProfile,
@@ -55,44 +51,48 @@ import {
 
 // Environment check: Staging / Dev uses mock data; Production starts completely clean
 const IS_MOCK_MODE = process.env.NEXT_PUBLIC_ENABLE_MOCK_DATA === "true";
-const STORAGE_PREFIX = IS_MOCK_MODE ? "cinecircle_stage_" : "cinecircle_prod_";
+const VALID_TABS = ["discover", "recommendations", "watchlist", "matcher", "friends"];
+const GATED_TABS: GatedTab[] = ["watchlist", "matcher", "friends"];
+const GUEST_PROFILE = { displayName: "Guest", username: "guest", avatarId: DEFAULT_AVATAR_ID, age: "" };
+
+type WatchStatus = "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED";
+type PendingAction = (h: {
+  watchlist: WatchlistItem[];
+  handleToggleWatchlist: (movie: MovieItem) => void;
+  handleSetWatchStatus: (movie: MovieItem, status: WatchStatus | "NONE", rating?: number) => void;
+}) => void;
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>("discover");
-  // Theme state: defaults to light mode unless the user explicitly chose dark
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("cinecircle_theme");
-      if (stored === "dark") return true;
-      if (stored === "light") return false;
-    }
-    return false;
+    if (typeof window === "undefined") return false;
+    const stored = localStorage.getItem("cinecircle_theme");
+    if (stored) return stored === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
+  const [authReady, setAuthReady] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(IS_MOCK_MODE ? MOCK_DEMO_EMAIL : null);
-  const [watchlist, setWatchlist] = useState<WatchlistItem[]>(IS_MOCK_MODE ? MOCK_WATCHLIST : []);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [authProvider, setAuthProvider] = useState<string | null>(null);
+  const [syncedUserId, setSyncedUserId] = useState<string | null>(null);
+  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [friendRecommendations, setFriendRecommendations] = useState<Recommendation[]>(
     IS_MOCK_MODE ? MOCK_RECOMMENDATIONS : []
   );
-  const [friends, setFriends] = useState<FriendItem[]>(IS_MOCK_MODE ? MOCK_FRIENDS : []);
-  const [profile, setProfile] = useState(
-    IS_MOCK_MODE
-      ? MOCK_DEMO_PROFILE
-      : {
-          displayName: "Guest",
-          username: "guest",
-          avatarId: DEFAULT_AVATAR_ID,
-          age: "24",
-        }
-  );
+  const [friends, setFriends] = useState<FriendItem[]>([]);
+  const [profile, setProfile] = useState(GUEST_PROFILE);
+  const isSignedIn = Boolean(userId);
 
   // Modal States
-  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModal, setAuthModal] = useState<{ open: boolean; mode: AuthMode }>({ open: false, mode: "SIGN_IN" });
   const [completeProfileModalOpen, setCompleteProfileModalOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [installPwaModalOpen, setInstallPwaModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [invitedBy, setInvitedBy] = useState<string | null>(null);
+  const inviteRef = useRef<string | null>(null);
+  const pendingActionRef = useRef<PendingAction | null>(null);
+  const syncedUserRef = useRef<string | null>(null);
 
   const [detailModal, setDetailModal] = useState<{
     isOpen: boolean;
@@ -135,150 +135,145 @@ export default function Home() {
     setToasts((prev) => [{ id, ...toast }, ...prev]);
   };
 
+  const openAuth = (mode: AuthMode = "SIGN_IN", pendingAction: PendingAction | null = null) => {
+    pendingActionRef.current = pendingAction;
+    setAuthModal({ open: true, mode });
+  };
+
   const handleTabChange = (newTab: string) => {
+    const url = new URL(window.location.href);
     setActiveTab(newTab);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("tab", newTab);
-      window.history.replaceState({}, "", url.toString());
+    if ((url.searchParams.get("tab") || "discover") === newTab && !url.searchParams.has("movie")) return;
+    url.searchParams.set("tab", newTab);
+    url.searchParams.delete("movie");
+    url.searchParams.delete("type");
+    window.history.pushState({}, "", url.toString());
+  };
+
+  const showMovieDetail = (movie: MovieItem, recommendation?: Recommendation) => {
+    const resolvedMediaType: "movie" | "tv" =
+      recommendation?.media_type || movie.media_type || (movie.first_air_date ? "tv" : "movie");
+    setDetailModal({
+      isOpen: true,
+      movieId: movie.id,
+      mediaType: resolvedMediaType,
+      initialMovie: { ...movie, media_type: resolvedMediaType },
+      recommendationNote: recommendation?.note,
+      recommendedBy: recommendation?.sender_name,
+      ratingStars: recommendation?.rating_stars,
+    });
+    return resolvedMediaType;
+  };
+
+  // Opening a title adds a history entry so the Back button closes it instead of leaving the app.
+  const handleOpenMovieDetail = (movie: MovieItem, recommendation?: Recommendation) => {
+    const mediaType = showMovieDetail(movie, recommendation);
+    const url = new URL(window.location.href);
+    url.searchParams.set("movie", String(movie.id));
+    url.searchParams.set("type", mediaType);
+    if (window.history.state?.modal) {
+      window.history.replaceState({ modal: true }, "", url.toString());
+    } else {
+      window.history.pushState({ modal: true }, "", url.toString());
     }
   };
 
-  // LocalStorage state persistence across browser tab closes
-  useEffect(() => {
-    // Purge any stale watchlist cache that could leak across accounts
-    if (typeof window !== "undefined") {
-      try {
-        Object.keys(localStorage).forEach((key) => {
-          if (key.startsWith("cinecircle_") && key.includes("watchlist")) {
-            localStorage.removeItem(key);
-          }
-        });
-      } catch (e) {}
+  const handleCloseMovieDetail = () => {
+    if (window.history.state?.modal) {
+      window.history.back();
+      return;
     }
+    setDetailModal({ isOpen: false, movieId: null });
+    const url = new URL(window.location.href);
+    url.searchParams.delete("movie");
+    url.searchParams.delete("type");
+    window.history.replaceState({}, "", url.toString());
+  };
 
-    const cachedProfile = localStorage.getItem(`${STORAGE_PREFIX}user_profile`);
-    if (cachedProfile) {
-      try {
-        const parsed = JSON.parse(cachedProfile);
-        const legacyAvatarIds = [
-          "tony_stark", "deadpool", "batman", "barbie", "spider_man",
-          "wednesday", "oppenheimer", "luke_skywalker", "walter_white",
-          "john_wick", "neo", "harley_quinn", "jack_sparrow", "eleven"
-        ];
-        if (parsed.displayName === "Tony Stark" || legacyAvatarIds.includes(parsed.avatarId)) {
-          parsed.avatarId = "solaris";
-          if (parsed.displayName === "Tony Stark") parsed.displayName = "ironman";
-          localStorage.setItem(`${STORAGE_PREFIX}user_profile`, JSON.stringify(parsed));
-        }
-        setProfile(parsed);
-      } catch (e) {}
+  const acceptInvite = async (myUsername: string) => {
+    const inviter = inviteRef.current;
+    if (!inviter) return;
+    inviteRef.current = null;
+    setInvitedBy(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("invite");
+    window.history.replaceState(window.history.state, "", url.toString());
+    if (inviter === myUsername.toLowerCase()) return;
+    if (await addLiveFriendship(myUsername, inviter)) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) setFriends(await fetchLiveFriends(session.user.id));
+      addToast({ type: "friend", title: "Joined Circle", message: `You and @${inviter} are now friends.` });
     }
-    const cachedEmail = localStorage.getItem(`${STORAGE_PREFIX}user_email`);
-    if (cachedEmail) {
-      setUserEmail(cachedEmail);
-    }
-  }, []);
+  };
 
   useEffect(() => {
-    if (userEmail) {
-      localStorage.setItem(`${STORAGE_PREFIX}user_email`, userEmail);
-    } else {
-      localStorage.removeItem(`${STORAGE_PREFIX}user_email`);
+    const syncFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      setActiveTab(tab && VALID_TABS.includes(tab) ? tab : "discover");
+      const movieId = Number(params.get("movie"));
+      if (movieId) {
+        const type = params.get("type") === "tv" ? "tv" : "movie";
+        getMovieDetails(movieId, type).then((fetched) => fetched && showMovieDetail(fetched));
+      } else {
+        setDetailModal({ isOpen: false, movieId: null });
+      }
+    };
+
+    syncFromUrl();
+    window.addEventListener("popstate", syncFromUrl);
+
+    const params = new URLSearchParams(window.location.search);
+    const inviteUser = params.get("invite")?.trim().replace(/^@/, "").toLowerCase();
+    if (inviteUser) {
+      inviteRef.current = inviteUser;
+      setInvitedBy(inviteUser);
     }
-    if (profile && profile.displayName !== "Guest") {
-      localStorage.setItem(`${STORAGE_PREFIX}user_profile`, JSON.stringify(profile));
-    } else {
-      localStorage.removeItem(`${STORAGE_PREFIX}user_profile`);
-    }
-  }, [userEmail, profile]);
-
-  // Live Supabase Auth, Invite Handling, & Multi-User Data Synchronization
-  useEffect(() => {
-    // Check URL parameters on mount (?tab=..., ?movie=..., ?invite=...)
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-
-      // 1. Sync active tab from ?tab=
-      const tabParam = urlParams.get("tab");
-      const validTabs = ["discover", "recommendations", "watchlist", "matcher", "friends"];
-      if (tabParam && validTabs.includes(tabParam)) {
-        setActiveTab(tabParam);
-      }
-
-      // 2. Direct movie deep link (?movie=...&type=...)
-      const movieParam = urlParams.get("movie");
-      const mediaTypeParam = (urlParams.get("type") as "movie" | "tv") || "movie";
-      if (movieParam && !isNaN(Number(movieParam))) {
-        getMovieDetails(Number(movieParam), mediaTypeParam).then((fetched) => {
-          if (fetched) {
-            handleOpenMovieDetail(fetched);
-          }
-        });
-      }
-
-      // 3. Friend invite query (?invite=username)
-      const inviteUser = urlParams.get("invite");
-      if (inviteUser && inviteUser.trim() !== "") {
-        const cleanInviter = inviteUser.trim().replace(/^@/, "");
-        setInvitedBy(cleanInviter);
-        setFriends((prev) => {
-          const exists = prev.some((f) => f.username.toLowerCase() === cleanInviter.toLowerCase());
-          if (exists) return prev;
-          return [
-            {
-              id: `friend_invite_${Date.now()}`,
-              username: cleanInviter,
-              display_name: cleanInviter.charAt(0).toUpperCase() + cleanInviter.slice(1),
-              avatar_character_id: "aurora",
-              status: "ACCEPTED",
-              stats: { recommendedCount: 1, watchedCount: 8, topGenre: "Drama" },
-            },
-            ...prev,
-          ];
-        });
-      }
+    if (params.get("auth") === "forgot") {
+      setAuthModal({ open: true, mode: "FORGOT" });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("auth");
+      window.history.replaceState({}, "", url.toString());
     }
 
-    const syncUserSession = async (session: any) => {
+    const syncUserSession = async (session: Session | null) => {
+      fetchLiveRecommendations().then((recs) =>
+        setFriendRecommendations(recs.length > 0 ? recs : IS_MOCK_MODE ? MOCK_RECOMMENDATIONS : [])
+      );
+
       if (!session?.user) {
+        syncedUserRef.current = null;
         setUserId(null);
         setUserEmail(null);
+        setAuthProvider(null);
+        setSyncedUserId(null);
         setIncomingRequests([]);
         setOutgoingRequests([]);
-        localStorage.removeItem(`${STORAGE_PREFIX}user_email`);
-        localStorage.removeItem(`${STORAGE_PREFIX}user_profile`);
-        if (IS_MOCK_MODE) {
-          setWatchlist(MOCK_WATCHLIST);
-          setFriends(MOCK_FRIENDS);
-          setProfile(MOCK_DEMO_PROFILE);
-        } else {
-          setWatchlist([]);
-          setFriends([]);
-          setProfile({
-            displayName: "Guest",
-            username: "guest",
-            avatarId: DEFAULT_AVATAR_ID,
-            age: "24",
-          });
-        }
+        setWatchlist([]);
+        setFriends([]);
+        setProfile(GUEST_PROFILE);
+        setCompleteProfileModalOpen(false);
+        setAuthReady(true);
         return;
       }
 
-      // Immediately wipe previous user's watchlist from memory when account switches
-      setUserId(session.user.id);
-      setUserEmail(session.user.email ?? null);
+      const user = session.user;
+      syncedUserRef.current = user.id;
+      setUserId(user.id);
+      setUserEmail(user.email ?? null);
+      setAuthProvider(user.app_metadata?.provider ?? null);
       setWatchlist([]);
+      setAuthReady(true);
 
-      const meta = session.user.user_metadata || {};
-
-      // Fetch user profile, requests, friends, and user's database watchlist concurrently
+      const meta = user.user_metadata || {};
       const [dbProfile, incRequests, outgRequests, dbFriends, dbWatchlist] = await Promise.all([
-        fetchUserProfile(session.user.id),
-        fetchIncomingFriendRequests(session.user.id),
-        fetchOutgoingFriendRequests(session.user.id),
-        fetchLiveFriends(session.user.id),
-        fetchLiveWatchlist(session.user.id),
+        fetchUserProfile(user.id),
+        fetchIncomingFriendRequests(user.id),
+        fetchOutgoingFriendRequests(user.id),
+        fetchLiveFriends(user.id),
+        fetchLiveWatchlist(user.id),
       ]);
 
       let activeUsername = "";
@@ -288,77 +283,59 @@ export default function Home() {
           displayName: dbProfile.display_name,
           username: dbProfile.username,
           avatarId: dbProfile.avatar_character_id || DEFAULT_AVATAR_ID,
-          age: dbProfile.age ? String(dbProfile.age) : "24",
+          age: dbProfile.age ? String(dbProfile.age) : "",
         });
       } else if (meta.username && meta.username !== "guest" && meta.username !== "user") {
         activeUsername = meta.username;
         const newProf = {
-          displayName: meta.display_name || meta.full_name || meta.name || session.user.email?.split("@")[0] || "User",
+          displayName: meta.display_name || meta.full_name || meta.name || user.email?.split("@")[0] || "User",
           username: meta.username,
           avatarId: meta.avatar_id || DEFAULT_AVATAR_ID,
-          age: String(meta.age || "24"),
+          age: meta.age ? String(meta.age) : "",
         };
         setProfile(newProf);
         await upsertUserProfile({
-          id: session.user.id,
+          id: user.id,
           username: newProf.username,
           display_name: newProf.displayName,
           avatar_character_id: newProf.avatarId,
           age: newProf.age,
         });
       } else {
-        // Missing profile or username handle (e.g. Google Auth!)
-        const gName = meta.full_name || meta.name || meta.display_name || session.user.email?.split("@")[0] || "User";
+        // No username yet (new email sign-up or first Google sign-in)
         setProfile({
-          displayName: gName,
-          username: session.user.email?.split("@")[0] || "user",
+          displayName: meta.full_name || meta.name || meta.display_name || user.email?.split("@")[0] || "User",
+          username: user.email?.split("@")[0] || "user",
           avatarId: meta.avatar_id || DEFAULT_AVATAR_ID,
-          age: "24",
+          age: "",
         });
         setCompleteProfileModalOpen(true);
       }
 
-      // Mutual Reciprocal Friend Syncing for Invite Links
-      if (invitedBy && activeUsername && invitedBy.toLowerCase() !== activeUsername.toLowerCase()) {
-        await addLiveFriendship(activeUsername, invitedBy);
-      }
-
       setIncomingRequests(incRequests);
       setOutgoingRequests(outgRequests);
-      setFriends(dbFriends.length > 0 ? dbFriends : (IS_MOCK_MODE ? MOCK_FRIENDS : []));
+      setFriends(dbFriends.length > 0 ? dbFriends : IS_MOCK_MODE ? MOCK_FRIENDS : []);
       setWatchlist(dbWatchlist);
+      setSyncedUserId(user.id);
+
+      if (activeUsername) await acceptInvite(activeUsername);
     };
 
-    // 1. Initial session check and data fetch
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      syncUserSession(session);
-    });
-
-    // 2. Load live recommendations for all users
-    fetchLiveRecommendations().then((dbRecs) => {
-      if (dbRecs.length > 0) {
-        setFriendRecommendations(dbRecs);
-      }
-    });
-
-    // 3. Realtime WebSocket subscription for live recommendations across circle
+    // Realtime WebSocket subscription for live recommendations across circle
     const unsubRecs = subscribeToRecommendations(
       (newRec) => {
         setFriendRecommendations((prev) => {
           const exists = prev.some(
-            (r) =>
-              r.id === newRec.id ||
-              (r.tmdb_id === newRec.tmdb_id && r.sender_name === newRec.sender_name)
+            (r) => r.id === newRec.id || (r.tmdb_id === newRec.tmdb_id && r.sender_name === newRec.sender_name)
           );
           if (exists) return prev;
           return [newRec, ...prev];
         });
 
-        // Trigger real-time toast alert
         addToast({
           type: "rec",
           title: "New Circle Recommendation",
-          message: `${newRec.sender_name} recommended "${newRec.title}"!`,
+          message: `${newRec.sender_name} recommended "${newRec.title}".`,
           actionLabel: "View Film",
           onAction: () => {
             handleOpenMovieDetail(
@@ -383,50 +360,63 @@ export default function Home() {
       }
     );
 
-    // 4. Realtime subscription for friendship changes and incoming requests
-    const friendshipsChannel = supabase
-      .channel("live_friendships_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "friendships" },
-        async () => {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-          if (session?.user?.id) {
-            const [inc, outg, updatedFriends] = await Promise.all([
-              fetchIncomingFriendRequests(session.user.id),
-              fetchOutgoingFriendRequests(session.user.id),
-              fetchLiveFriends(session.user.id),
-            ]);
-            setIncomingRequests(inc);
-            setOutgoingRequests(outg);
-            setFriends(updatedFriends.length > 0 ? updatedFriends : (IS_MOCK_MODE ? MOCK_FRIENDS : []));
-            addToast({
-              type: "friend",
-              title: "Circle Activity",
-              message: "Your friend circle list or friend requests have been updated!",
-              actionLabel: "View Friends",
-              onAction: () => handleTabChange("friends"),
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    // 5. Auth State change subscription
+    // onAuthStateChange fires INITIAL_SESSION on load, so it is the single source of auth state.
+    // Supabase calls inside this callback can deadlock, hence the setTimeout.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      syncUserSession(session);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "TOKEN_REFRESHED") return;
+      if (event === "SIGNED_IN" && session?.user.id === syncedUserRef.current) return;
+      setTimeout(() => syncUserSession(session), 0);
     });
 
     return () => {
+      window.removeEventListener("popstate", syncFromUrl);
       subscription.unsubscribe();
       unsubRecs();
-      friendshipsChannel.unsubscribe();
     };
   }, []);
+
+  // Realtime friend requests and accepts aimed at the signed-in user
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`friendships_${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "friendships", filter: `friend_id=eq.${userId}` },
+        async () => {
+          const [inc, outg, updatedFriends] = await Promise.all([
+            fetchIncomingFriendRequests(userId),
+            fetchOutgoingFriendRequests(userId),
+            fetchLiveFriends(userId),
+          ]);
+          setIncomingRequests(inc);
+          setOutgoingRequests(outg);
+          setFriends(updatedFriends.length > 0 ? updatedFriends : IS_MOCK_MODE ? MOCK_FRIENDS : []);
+          addToast({
+            type: "friend",
+            title: "Circle Activity",
+            message: "Your friends or friend requests changed.",
+            actionLabel: "View Friends",
+            onAction: () => handleTabChange("friends"),
+          });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  // Resume the action a guest tried before signing in, once their data has loaded.
+  const handlersRef = useRef<Parameters<PendingAction>[0] | null>(null);
+  useEffect(() => {
+    if (!syncedUserId || !pendingActionRef.current || !handlersRef.current) return;
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    action(handlersRef.current);
+  }, [syncedUserId]);
 
   const handleToggleTheme = () => {
     const nextMode = !isDarkMode;
@@ -440,65 +430,16 @@ export default function Home() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    if (userId) {
-      localStorage.removeItem(`${STORAGE_PREFIX}watchlist_${userId}`);
-    }
-    localStorage.removeItem(`${STORAGE_PREFIX}watchlist`);
-    localStorage.removeItem(`${STORAGE_PREFIX}user_email`);
-    localStorage.removeItem(`${STORAGE_PREFIX}user_profile`);
-    setUserId(null);
-    setUserEmail(null);
-    setIncomingRequests([]);
-    setOutgoingRequests([]);
-    if (IS_MOCK_MODE) {
-      setWatchlist(MOCK_WATCHLIST);
-      setFriends(MOCK_FRIENDS);
-      setProfile(MOCK_DEMO_PROFILE);
-    } else {
-      setWatchlist([]);
-      setFriends([]);
-      setProfile({
-        displayName: "Guest",
-        username: "guest",
-        avatarId: DEFAULT_AVATAR_ID,
-        age: "24",
-      });
-    }
-  };
-
-  // Movie Details Click Handler - dynamically preserves movie vs tv series
-  const handleOpenMovieDetail = (
-    movie: MovieItem,
-    recommendation?: Recommendation
-  ) => {
-    const resolvedMediaType: "movie" | "tv" =
-      recommendation?.media_type ||
-      movie.media_type ||
-      (movie.first_air_date ? "tv" : "movie");
-
-    setDetailModal({
-      isOpen: true,
-      movieId: movie.id,
-      mediaType: resolvedMediaType,
-      initialMovie: {
-        ...movie,
-        media_type: resolvedMediaType,
-      },
-      recommendationNote: recommendation?.note,
-      recommendedBy: recommendation?.sender_name,
-      ratingStars: recommendation?.rating_stars,
-    });
-
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("movie", String(movie.id));
-      url.searchParams.set("type", resolvedMediaType);
-      window.history.replaceState({}, "", url.toString());
-    }
   };
 
   // Watchlist Handlers with Live Supabase Persistence
   const handleToggleWatchlist = async (movie: MovieItem) => {
+    if (!userId) {
+      openAuth("SIGN_IN", (h) => {
+        if (!h.watchlist.some((w) => w.tmdb_id === movie.id)) h.handleToggleWatchlist(movie);
+      });
+      return;
+    }
     const exists = watchlist.find((w) => w.tmdb_id === movie.id);
     if (exists) {
       setWatchlist((prev) => prev.filter((w) => w.tmdb_id !== movie.id));
@@ -520,7 +461,7 @@ export default function Home() {
       setWatchlist((prev) => [newItem, ...prev]);
 
       const saved = await addLiveWatchlistItem({
-        userId: userId || undefined,
+        userId,
         tmdbId: movie.id,
         mediaType: (movie.media_type as "movie" | "tv") || "movie",
         title: movie.title || movie.name || "Untitled",
@@ -536,11 +477,11 @@ export default function Home() {
     }
   };
 
-  const handleSetWatchStatus = async (
-    movie: MovieItem,
-    status: "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED" | "NONE",
-    rating?: number
-  ) => {
+  const handleSetWatchStatus = async (movie: MovieItem, status: WatchStatus | "NONE", rating?: number) => {
+    if (!userId) {
+      openAuth("SIGN_IN", (h) => h.handleSetWatchStatus(movie, status, rating));
+      return;
+    }
     const exists = watchlist.find((w) => w.tmdb_id === movie.id);
     if (status === "NONE") {
       if (exists) {
@@ -575,7 +516,7 @@ export default function Home() {
       setWatchlist((prev) => [newItem, ...prev]);
 
       const saved = await addLiveWatchlistItem({
-        userId: userId || undefined,
+        userId,
         tmdbId: movie.id,
         mediaType: (movie.media_type as "movie" | "tv") || "movie",
         title: movie.title || movie.name || "Untitled",
@@ -592,22 +533,44 @@ export default function Home() {
     }
   };
 
-  const handleUpdateWatchlistStatus = async (
-    id: string,
-    status: "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED",
-    rating?: number
-  ) => {
+  handlersRef.current = { watchlist, handleToggleWatchlist, handleSetWatchStatus };
+
+  const handleUpdateWatchlistStatus = async (id: string, status: WatchStatus, rating?: number) => {
+    if (!userId) return openAuth();
     setWatchlist((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status, rating_stars: rating || item.rating_stars } : item
-      )
+      prev.map((item) => (item.id === id ? { ...item, status, rating_stars: rating || item.rating_stars } : item))
     );
     await updateLiveWatchlistItem(id, { status, rating_stars: rating });
   };
 
   const handleRemoveFromWatchlist = async (id: string) => {
+    if (!userId) return openAuth();
+    const removed = watchlist.find((w) => w.id === id);
     setWatchlist((prev) => prev.filter((w) => w.id !== id));
     await removeLiveWatchlistItem(id);
+    if (!removed) return;
+    addToast({
+      type: "system",
+      title: "Removed from Library",
+      message: `"${removed.title}" was removed.`,
+      actionLabel: "Undo",
+      onAction: async () => {
+        setWatchlist((prev) => [removed, ...prev]);
+        const saved = await addLiveWatchlistItem({
+          userId,
+          tmdbId: removed.tmdb_id,
+          mediaType: removed.media_type,
+          title: removed.title,
+          posterPath: removed.poster_path,
+          releaseYear: removed.release_year,
+          genre: removed.genre,
+          status: removed.status,
+          ratingStars: removed.rating_stars,
+          recommendedBy: removed.recommended_by,
+        });
+        if (saved) setWatchlist((prev) => prev.map((w) => (w.id === removed.id ? saved : w)));
+      },
+    });
   };
 
   // Recommendation Submission Handler with Live Supabase Persistence
@@ -646,11 +609,10 @@ export default function Home() {
     };
     setFriendRecommendations((prev) => [newRec, ...prev]);
 
-    // Sensory toast alert confirming recommendation was submitted
     addToast({
       type: "rec",
-      title: "Recommendation Shared!",
-      message: `"${data.title}" was published to ${data.recipient === "Global" ? "the Global Community" : data.recipient}!`,
+      title: "Recommendation Shared",
+      message: `"${data.title}" was shared with ${data.recipient === "Global" ? "the Global community" : data.recipient}.`,
     });
 
     const saved = await createLiveRecommendation({
@@ -671,9 +633,7 @@ export default function Home() {
     });
 
     if (saved) {
-      setFriendRecommendations((prev) =>
-        prev.map((r) => (r.id === tempId ? saved : r))
-      );
+      setFriendRecommendations((prev) => prev.map((r) => (r.id === tempId ? saved : r)));
     }
   };
 
@@ -685,8 +645,8 @@ export default function Home() {
   // Friend Request & Circle Handlers
   const handleSendFriendRequest = async (targetUsername: string) => {
     if (!userId) {
-      setAuthModalOpen(true);
-      return { success: false, error: "Please sign in to send friend requests" };
+      openAuth();
+      return { success: false, error: "Sign in to send friend requests." };
     }
     const res = await sendFriendRequest(userId, targetUsername);
     if (res.success) {
@@ -699,10 +659,7 @@ export default function Home() {
   const handleAcceptFriendRequest = async (requestId: string, requesterId: string) => {
     if (!userId) return;
     await acceptFriendRequest(requestId, requesterId, userId);
-    const [inc, updatedFriends] = await Promise.all([
-      fetchIncomingFriendRequests(userId),
-      fetchLiveFriends(userId),
-    ]);
+    const [inc, updatedFriends] = await Promise.all([fetchIncomingFriendRequests(userId), fetchLiveFriends(userId)]);
     setIncomingRequests(inc);
     if (updatedFriends.length > 0) {
       setFriends(updatedFriends);
@@ -717,27 +674,58 @@ export default function Home() {
   };
 
   const handleRemoveFriend = async (id: string) => {
+    if (!userId) return;
+    const removed = friends.find((f) => f.id === id);
     setFriends((prev) => prev.filter((f) => f.id !== id));
-    if (userId) {
-      await supabase
-        .from("friendships")
-        .delete()
-        .or(`and(user_id.eq.${userId},friend_id.eq.${id}),and(user_id.eq.${id},friend_id.eq.${userId})`);
-    }
+    await supabase
+      .from("friendships")
+      .delete()
+      .or(`and(user_id.eq.${userId},friend_id.eq.${id}),and(user_id.eq.${id},friend_id.eq.${userId})`);
+    if (!removed) return;
+    addToast({
+      type: "friend",
+      title: "Friend Removed",
+      message: `@${removed.username} was removed from your circle.`,
+      actionLabel: "Undo",
+      onAction: async () => {
+        setFriends((prev) => [removed, ...prev]);
+        await addLiveFriendship(userId, id);
+      },
+    });
   };
+
+  const handleDeleteAccount = async (): Promise<string | null> => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return "Your session has expired. Sign in again to delete your account.";
+    const res = await fetch("/api/delete-account", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return body.error || "Unable to delete your account. Try again in a moment.";
+    }
+    await supabase.auth.signOut();
+    addToast({ type: "system", title: "Account Deleted", message: "Your account and its data were permanently removed." });
+    return null;
+  };
+
+  const gatedTab = GATED_TABS.find((t) => t === activeTab);
 
   return (
     <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col pb-24 transition-colors duration-300">
-      {/* Navbar with Supabase Auth */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={handleTabChange}
         onOpenAccountModal={() => setAccountModalOpen(true)}
-        onOpenAuth={() => setAuthModalOpen(true)}
+        onOpenAuth={() => openAuth()}
         onLogout={handleLogout}
         onSelectMovie={(movie) => handleOpenMovieDetail(movie)}
         profile={profile}
         userEmail={userEmail}
+        authReady={authReady}
         watchlistCount={watchlist.filter((w) => w.status === "WANT_TO_WATCH").length}
         friendsCount={friends.length}
         incomingRequestsCount={incomingRequests.length}
@@ -746,116 +734,120 @@ export default function Home() {
         onOpenInstallPwa={() => setInstallPwaModalOpen(true)}
       />
 
-      {/* Incoming Invite Welcome Banner */}
-      {invitedBy && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-          <div className="p-4 bg-[var(--secondary-subtle)] border border-[var(--secondary-border)] rounded-2xl flex items-center justify-between text-xs text-[var(--secondary)] shadow-lg animate-in fade-in">
-            <span className="font-extrabold flex items-center gap-2">
-              🎉 Welcome to CineCircle! You&apos;ve joined <strong className="underline decoration-[var(--secondary)]">@{invitedBy}</strong>&apos;s private movie circle!
+      {/* Invite banner for guests; signed-in users are connected automatically */}
+      {invitedBy && authReady && !isSignedIn && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 w-full">
+          <div className="p-4 bg-[var(--secondary-subtle)] border border-[var(--secondary-border)] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-[var(--secondary)] shadow-lg animate-in fade-in">
+            <span className="font-bold">
+              <strong>@{invitedBy}</strong> invited you to their circle. Create an account to join.
             </span>
-            <button
-              type="button"
-              onClick={() => setInvitedBy(null)}
-              className="text-[var(--secondary)] hover:opacity-80 font-bold ml-4 text-sm cursor-pointer"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => openAuth("SIGN_UP")}
+                className="h-11 px-4 rounded-xl bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold text-sm cursor-pointer"
+              >
+                Create Account
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  inviteRef.current = null;
+                  setInvitedBy(null);
+                }}
+                aria-label="Dismiss invitation"
+                className="w-11 h-11 flex items-center justify-center hover:opacity-80 font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Main Tab View Container with Generous Spacing */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 mb-16 flex-1 w-full">
-        {activeTab === "discover" && (
-          <DiscoverView
-            onOpenMovieDetail={handleOpenMovieDetail}
-            onOpenTrailer={(title, youtubeKey) =>
-              setTrailerModal({ isOpen: true, title, youtubeKey })
-            }
-            onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
-            onToggleWatchlist={handleToggleWatchlist}
-            onDeleteRecommendation={handleDeleteRecommendation}
-            onViewAllRecommendations={() => setActiveTab("recommendations")}
-            watchlist={watchlist}
-            friendRecommendations={friendRecommendations}
-            friends={friends}
-            currentUserDisplayName={profile.displayName}
-            currentUsername={profile.username}
-          />
-        )}
+        {gatedTab && !isSignedIn ? (
+          authReady && <SignInPrompt tab={gatedTab} onOpenAuth={openAuth} />
+        ) : (
+          <>
+            {activeTab === "discover" && (
+              <DiscoverView
+                onOpenMovieDetail={handleOpenMovieDetail}
+                onOpenTrailer={(title, youtubeKey) => setTrailerModal({ isOpen: true, title, youtubeKey })}
+                onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
+                onToggleWatchlist={handleToggleWatchlist}
+                onDeleteRecommendation={isSignedIn ? handleDeleteRecommendation : undefined}
+                onViewAllRecommendations={() => handleTabChange("recommendations")}
+                watchlist={watchlist}
+                friendRecommendations={friendRecommendations}
+                friends={friends}
+                currentUserDisplayName={profile.displayName}
+                currentUsername={profile.username}
+              />
+            )}
 
-        {activeTab === "recommendations" && (
-          <RecommendationsView
-            friendRecommendations={friendRecommendations}
-            watchlist={watchlist}
-            friends={friends}
-            currentUserDisplayName={profile.displayName}
-            currentUsername={profile.username}
-            onOpenMovieDetail={handleOpenMovieDetail}
-            onToggleWatchlist={handleToggleWatchlist}
-            onDeleteRecommendation={handleDeleteRecommendation}
-          />
-        )}
+            {activeTab === "recommendations" && (
+              <RecommendationsView
+                friendRecommendations={friendRecommendations}
+                watchlist={watchlist}
+                friends={friends}
+                currentUserDisplayName={profile.displayName}
+                currentUsername={profile.username}
+                onOpenMovieDetail={handleOpenMovieDetail}
+                onToggleWatchlist={handleToggleWatchlist}
+                onDeleteRecommendation={isSignedIn ? handleDeleteRecommendation : undefined}
+              />
+            )}
 
-        {activeTab === "watchlist" && (
-          <WatchlistView
-            watchlist={watchlist}
-            friendRecommendations={friendRecommendations}
-            currentUserDisplayName={profile.displayName}
-            onUpdateStatus={handleUpdateWatchlistStatus}
-            onRemove={handleRemoveFromWatchlist}
-            onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
-            onOpenMovieDetail={handleOpenMovieDetail}
-            onOpenTrailer={(title, youtubeKey) =>
-              setTrailerModal({ isOpen: true, title, youtubeKey })
-            }
-          />
-        )}
+            {activeTab === "watchlist" && (
+              <WatchlistView
+                watchlist={watchlist}
+                friendRecommendations={friendRecommendations}
+                currentUserDisplayName={profile.displayName}
+                onUpdateStatus={handleUpdateWatchlistStatus}
+                onRemove={handleRemoveFromWatchlist}
+                onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
+                onOpenMovieDetail={handleOpenMovieDetail}
+                onOpenTrailer={(title, youtubeKey) => setTrailerModal({ isOpen: true, title, youtubeKey })}
+              />
+            )}
 
-        {activeTab === "matcher" && (
-          <GroupMatcherView
-            friends={friends}
-            watchlist={watchlist}
-            onOpenTrailer={(title, youtubeKey) =>
-              setTrailerModal({ isOpen: true, title, youtubeKey })
-            }
-            onOpenMovieDetail={handleOpenMovieDetail}
-            onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
-            onToggleWatchlist={handleToggleWatchlist}
-          />
-        )}
+            {activeTab === "matcher" && (
+              <GroupMatcherView
+                friends={friends}
+                watchlist={watchlist}
+                onOpenTrailer={(title, youtubeKey) => setTrailerModal({ isOpen: true, title, youtubeKey })}
+                onOpenMovieDetail={handleOpenMovieDetail}
+                onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
+                onToggleWatchlist={handleToggleWatchlist}
+              />
+            )}
 
-        {activeTab === "friends" && (
-          <FriendsView
-            friends={friends}
-            watchlist={watchlist}
-            friendRecommendations={friendRecommendations}
-            currentUserDisplayName={profile.displayName}
-            incomingRequests={incomingRequests}
-            outgoingRequests={outgoingRequests}
-            onSendFriendRequest={handleSendFriendRequest}
-            onAcceptFriendRequest={handleAcceptFriendRequest}
-            onDeclineFriendRequest={handleDeclineFriendRequest}
-            onRemoveFriend={handleRemoveFriend}
-            onOpenInvite={() => setInviteModalOpen(true)}
-            onOpenRecommend={() => setRecommendModal({ isOpen: true, movie: null })}
-            onOpenFriendLibrary={(friend) => setSelectedFriendForLibrary(friend)}
-          />
+            {activeTab === "friends" && (
+              <FriendsView
+                friends={friends}
+                watchlist={watchlist}
+                friendRecommendations={friendRecommendations}
+                currentUserDisplayName={profile.displayName}
+                incomingRequests={incomingRequests}
+                outgoingRequests={outgoingRequests}
+                onSendFriendRequest={handleSendFriendRequest}
+                onAcceptFriendRequest={handleAcceptFriendRequest}
+                onDeclineFriendRequest={handleDeclineFriendRequest}
+                onRemoveFriend={handleRemoveFriend}
+                onOpenInvite={() => setInviteModalOpen(true)}
+                onOpenRecommend={() => setRecommendModal({ isOpen: true, movie: null })}
+                onOpenFriendLibrary={(friend) => setSelectedFriendForLibrary(friend)}
+              />
+            )}
+          </>
         )}
       </main>
 
       {/* Global Interactive Modals */}
       <MovieDetailModal
         isOpen={detailModal.isOpen}
-        onClose={() => {
-          setDetailModal({ isOpen: false, movieId: null });
-          if (typeof window !== "undefined") {
-            const url = new URL(window.location.href);
-            url.searchParams.delete("movie");
-            url.searchParams.delete("type");
-            window.history.replaceState({}, "", url.toString());
-          }
-        }}
+        onClose={handleCloseMovieDetail}
         movieId={detailModal.movieId}
         mediaType={detailModal.mediaType}
         initialMovie={detailModal.initialMovie}
@@ -863,9 +855,7 @@ export default function Home() {
         recommendedBy={detailModal.recommendedBy}
         ratingStars={detailModal.ratingStars}
         currentUserDisplayName={profile.displayName}
-        onOpenTrailer={(title, youtubeKey) =>
-          setTrailerModal({ isOpen: true, title, youtubeKey })
-        }
+        onOpenTrailer={(title, youtubeKey) => setTrailerModal({ isOpen: true, title, youtubeKey })}
         onOpenRecommend={(movie) => setRecommendModal({ isOpen: true, movie })}
         onToggleWatchlist={handleToggleWatchlist}
         onSetWatchStatus={handleSetWatchStatus}
@@ -873,23 +863,9 @@ export default function Home() {
       />
 
       <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        onAuthSuccess={async (userData: any) => {
-          if (userData.id && userData.id !== userId) {
-            setUserId(userData.id);
-            setWatchlist([]);
-            const live = await fetchLiveWatchlist(userData.id);
-            setWatchlist(live);
-          }
-          setUserEmail(userData.email);
-          setProfile({
-            displayName: userData.displayName,
-            username: userData.username,
-            avatarId: userData.avatarId,
-            age: userData.age || "24",
-          });
-        }}
+        isOpen={authModal.open}
+        initialMode={authModal.mode}
+        onClose={() => setAuthModal((prev) => ({ ...prev, open: false }))}
       />
 
       <CompleteProfileModal
@@ -897,6 +873,7 @@ export default function Home() {
         userId={userId || ""}
         initialDisplayName={profile.displayName !== "Guest" ? profile.displayName : ""}
         initialEmail={userEmail || ""}
+        onSignOut={handleLogout}
         onComplete={async (completed) => {
           const newProf = {
             displayName: completed.displayName,
@@ -915,6 +892,7 @@ export default function Home() {
             });
           }
           setCompleteProfileModalOpen(false);
+          await acceptInvite(newProf.username);
         }}
       />
 
@@ -931,7 +909,7 @@ export default function Home() {
         movie={recommendModal.movie}
         friends={friends}
         currentUserDisplayName={profile.displayName}
-        isGuest={!userId || profile.displayName === "Guest"}
+        isGuest={!isSignedIn}
         onRecommend={handlePublishRecommendation}
       />
 
@@ -944,64 +922,46 @@ export default function Home() {
         onOpenMovieDetail={handleOpenMovieDetail}
       />
 
-      <AccountModal
-        isOpen={accountModalOpen}
-        onClose={() => setAccountModalOpen(false)}
-        userEmail={userEmail}
-        currentUserId={userId || undefined}
-        currentAvatarId={profile.avatarId}
-        currentDisplayName={profile.displayName}
-        currentUsername={profile.username}
-        currentAge={profile.age}
-        onSaveProfile={async (updated) => {
-          const newProf = {
-            displayName: updated.displayName,
-            username: updated.username,
-            avatarId: updated.avatarId,
-            age: updated.age || profile.age,
-          };
-          setProfile(newProf);
-          if (userId) {
-            await upsertUserProfile({
-              id: userId,
-              username: newProf.username,
-              display_name: newProf.displayName,
-              avatar_character_id: newProf.avatarId,
-              age: newProf.age,
-            });
-          }
-        }}
-        onDeleteAccount={async () => {
-          await supabase.auth.signOut();
-          if (userId) {
-            localStorage.removeItem(`${STORAGE_PREFIX}watchlist_${userId}`);
-          }
-          localStorage.removeItem(`${STORAGE_PREFIX}user_email`);
-          localStorage.removeItem(`${STORAGE_PREFIX}user_profile`);
-          localStorage.removeItem(`${STORAGE_PREFIX}watchlist`);
-          setUserId(null);
-          setUserEmail(null);
-          setWatchlist([]);
-          setFriends([]);
-          setProfile({
-            displayName: "Guest",
-            username: "guest",
-            avatarId: DEFAULT_AVATAR_ID,
-            age: "24",
-          });
-        }}
-      />
+      {accountModalOpen && (
+        <AccountModal
+          isOpen
+          onClose={() => setAccountModalOpen(false)}
+          userEmail={userEmail}
+          currentUserId={userId || undefined}
+          authProvider={authProvider}
+          currentAvatarId={profile.avatarId}
+          currentDisplayName={profile.displayName}
+          currentUsername={profile.username}
+          currentAge={profile.age}
+          onSaveProfile={async (updated) => {
+            const newProf = {
+              displayName: updated.displayName,
+              username: updated.username,
+              avatarId: updated.avatarId,
+              age: updated.age ?? profile.age,
+            };
+            const saved = userId
+              ? await upsertUserProfile({
+                  id: userId,
+                  username: newProf.username,
+                  display_name: newProf.displayName,
+                  avatar_character_id: newProf.avatarId,
+                  age: newProf.age,
+                })
+              : false;
+            if (!saved) return "Unable to save your profile. Check your connection and try again.";
+            setProfile(newProf);
+            addToast({ type: "system", title: "Profile Saved", message: "Your profile details were updated." });
+            return null;
+          }}
+          onDeleteAccount={handleDeleteAccount}
+        />
+      )}
 
-      {/* Global Cookie Preferences & Consent Banner */}
       <CookieConsentModal />
 
-      {/* PWA Mobile Installation Guidance Modal */}
-      <InstallPwaModal
-        isOpen={installPwaModalOpen}
-        onClose={() => setInstallPwaModalOpen(false)}
-      />
+      <InstallPwaModal isOpen={installPwaModalOpen} onClose={() => setInstallPwaModalOpen(false)} />
 
-      {/* 1-Click Friend Invite Modal */}
       <InviteModal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
@@ -1009,7 +969,6 @@ export default function Home() {
         currentDisplayName={profile.displayName}
       />
 
-      {/* Fixed Mobile Bottom Navigation Bar */}
       <MobileBottomNav
         activeTab={activeTab}
         setActiveTab={handleTabChange}
@@ -1018,17 +977,12 @@ export default function Home() {
         incomingRequestsCount={incomingRequests.length}
       />
 
-      {/* Floating Real-Time In-App Toast Notifications */}
-      <ToastNotification
-        toasts={toasts}
-        onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
-      />
+      <ToastNotification toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
 
-      {/* Footer */}
       <footer className="border-t border-[var(--surface-border)] mt-24 py-12 text-center text-xs text-[var(--text-secondary)]">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="font-medium">CineCircle • Private Friend Film Feed & Discovery Platform</p>
-          <div className="flex items-center gap-4 text-[11px] font-bold text-[var(--text-muted)]">
+          <div className="flex items-center gap-4 text-xs font-bold text-[var(--text-muted)]">
             <span>Powered by TMDB</span>
             <span>•</span>
             <span>Supabase Auth</span>

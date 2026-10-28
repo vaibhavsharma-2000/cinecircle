@@ -65,24 +65,39 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
+## 🚪 Guest vs Signed-In Member Experience
+- **Discover**: open to everyone. Adding to the watchlist, setting a watch status, or rating as a guest opens the sign-in modal; after sign-in the action resumes automatically (pending action replayed once the member's data loads).
+- **Feeds**: guests read the Global feed and may post to Global under a typed name (as specified under Guest User Contributions). Members also post to All Friends and individual friends.
+- **Library, Matcher, Friends**: tabs stay visible; guests see a `SignInPrompt` panel explaining the feature with **Create Account** and **Sign In** buttons instead of the tool.
+- **Movie detail**: watch status and rating require sign-in; recommending stays open (Global only for guests).
+- **Staging mock data** is shown only to signed-in members, so guests on staging see the same experience as production.
+
+---
+
 ## ⚙️ Account Settings, Security & Session Persistence
 - **Durable Session Persistence**: Supabase Auth configured with `persistSession: true`, `autoRefreshToken: true`, `detectSessionInUrl: true`, and explicit storage key `cinecircle_auth_session`. Users remain logged in even after closing the browser tab or restarting their device.
-- **Per-User Scoped LocalStorage & State Isolation**: Application state is isolated per user (`${STORAGE_PREFIX}watchlist_${userId}`, `${STORAGE_PREFIX}user_profile`, etc.) and automatically purged on logout. When an authenticated user logs in, their Supabase watchlist is the authoritative source of truth, preventing cross-account state leakage when switching between test or circle accounts on the same browser.
+- **Single Source of Auth State**: `supabase.auth.onAuthStateChange` (including its `INITIAL_SESSION` event) is the only place auth state is set (`syncUserSession` in `page.tsx`). No profile or email is cached in `localStorage`; Supabase data is authoritative. Signing in or out refetches recommendations so friend-only posts appear/disappear immediately. `isSignedIn = Boolean(userId)` is the one definition of "signed in".
+- **Session Restore Placeholder**: Until the first auth event arrives (`authReady`), the navbar shows a neutral placeholder instead of flashing "Sign In", and member-only tabs render nothing.
 - **Reorganized 2-Tab Navigation**:
   - 👤 **Profile Details**: Update Display Name, Circle Handle (@username), Age, and Pop-Culture Character Avatar (*Tony Stark, Wednesday, Luke Skywalker, Michael Scott, Barbie, Batman, Hermione, Miles Morales*).
   - 🔑 **Account Settings**:
     - **Password Management**: Switch between two clear methods: **Enter New Password Directly** (`updateUser`) or **Send Password Reset Email Link** (`resetPasswordForEmail`).
-    - **Danger Zone**: Integrated Account Deletion section with double confirmation dialog to permanently remove user account and data.
+    - Google-only accounts see a note instead of password controls (`app_metadata.provider !== "email"`).
+    - **Delete Account**: The user types their username to confirm. `POST /api/delete-account` verifies the access token, deletes the user's `watchlist`, `recommendations`, `friendships`, and `profiles` rows, then removes the auth user with `auth.admin.deleteUser` using the server-only `SUPABASE_SERVICE_ROLE_KEY` (Vercel env var; returns 503 if unset).
+  - Failures are always shown as errors (never as success). `AccountModal` mounts only while open so its fields always reflect the current profile.
 - **Browser Autofill & Credential Management Heuristics**:
   - All authentication and credential forms (`AuthModal`, `CompleteProfileModal`, `AccountModal`) adhere to WHATWG / HTML5 Credential Management standards (`method="post"`, `autoComplete="on"`, `action="#"`).
   - Standardized explicit element identifiers (`id`) and corresponding `<label htmlFor="...">` associations.
   - Granular `autoComplete` attributes: `autoComplete="username email"` / `autoComplete="email"` for user identity, `autoComplete="current-password"` for login authentication, `autoComplete="new-password"` for account registration and password updates, `autoComplete="name"` for full name, and `autoComplete="username"` for circle handles.
   - Direct password update forms include hidden contextually-linked `name="username"` inputs so native browser keychains and credential managers (macOS Keychain, Chrome Passwords, 1Password, Bitwarden) reliably identify the active account and prompt to save or update credentials.
-- **Authentication Modal Lifecycle & Clean Slate Reset**:
-  - `AuthModal` automatically performs a complete state purge (`resetForm`) upon modal close, dismissal, and reopening via `useEffect([isOpen])`.
-  - Clears half-typed fields (`email`, `password`, `confirmPassword`, `displayName`, `username`, `age`), toggles password visibility back to hidden, clears stale error alerts (`errorMsg = null`), and returns mode to default `"SIGN_IN"`.
-  - Prevents sensitive plain text credentials or invalid validation messages from lingering in memory or in the DOM across reopenings.
-  - Universal backdrop overlay dismiss: Clicking outside modal cards (`fixed inset-0` with `cursor-pointer` and inner `e.stopPropagation()`) across `AuthModal`, `AccountModal`, `AvatarPickerModal`, `MovieDetailModal`, `FriendLibraryModal`, `RecommendModal`, and `WatchRouletteModal` smoothly dismisses the overlay.
+- **Authentication Modal (`AuthModal`)**:
+  - Modes: **Sign In**, **Create Account**, **Forgot Password** (sends `resetPasswordForEmail` to `/reset-password`), plus "Check Your Email" screens after sign-up and reset requests. A `?auth=forgot` URL opens it in Forgot Password mode (used by expired reset links).
+  - **Short sign-up**: email, password, confirm password only. Username, display name, avatar, and optional age are chosen afterwards in `CompleteProfileModal`, the single onboarding step for email and Google users.
+  - Real errors are shown inline via `authErrorMessage()` (`src/lib/authErrors.ts`); an already-registered email is detected (`identities.length === 0`) and the user is told to sign in. Password mismatch is validated as the user types.
+  - Unconfirmed emails get a **Resend Verification Email** action (`auth.resend({ type: "signup" })`).
+  - `emailRedirectTo` and Google `redirectTo` use the current URL, so `?invite=`, `?movie=`, and `?tab=` survive verification and OAuth round trips. The Supabase project must allow the production domain, `https://*-<team>.vercel.app/**`, and `/reset-password` as Redirect URLs, and should use custom SMTP (Supabase's built-in mailer only delivers to team members).
+  - No fake sessions: the app is signed in only when Supabase reports a session.
+  - Form state resets each time the modal opens. Backdrop clicks close the modal only when no field has been filled in; Escape and the Close button always work.
 
 ---
 
@@ -99,11 +114,11 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 - **Dedicated Recommendations View**: Separate primary tab for full recommendation feed. The main **Discover** landing page previews the 3 most recent recommendations with a direct button leading to the dedicated **Recommendations** page.
 - **Recommendation Modal State Management**: Full-width optional review note textarea, 1.0–5.0 star rating, friend search bar, and dynamic **Custom Tag Creation** (#tags). Form state cleanly resets upon opening, submitting, or switching movies.
 - **Live Supabase Multi-User Sync & Realtime WebSockets**: Recommendations, comments, user watchlists, and profile updates synchronize directly to Supabase (`recommendations`, `recommendation_comments`, `watchlist`, `profiles`). Authenticated users automatically receive live updates via WebSocket subscriptions (`postgres_changes`), rendering new recommendations and comments immediately without page refresh.
-- **1-Click Mutual Friend Invite Links (`/?invite=${username}`)**: Users can generate personalized invite links from the Friends tab with 1-click **Copy Link**, **WhatsApp**, and **iMessage/SMS** sharing. When a friend opens the link, the app automatically creates a reciprocal two-way friendship in Supabase (`addLiveFriendship`), adding the friend to your circle and adding you to their circle simultaneously.
+- **1-Click Mutual Friend Invite Links (`/?invite=${username}`)**: Users can generate personalized invite links from the Friends tab with 1-click **Copy Link**, **WhatsApp**, and **iMessage/SMS** sharing. Guests who open the link see an "@user invited you" banner with **Create Account**. Once they are signed in and have a username (immediately, or right after `CompleteProfileModal`), the app creates the reciprocal friendship (`addLiveFriendship`), removes `?invite=` from the URL, and confirms with a toast. No placeholder friend is added before that.
 - **Project-Wide Storage & Cookie Preferences (`CookieConsentModal`)**: Configured modal and banner to manage local storage keys (`cinecircle_auth_session`, `cinecircle_streaming_country`, `avatar_character_id`, `cinecircle_cookie_consent`), respecting essential session storage, regional streaming preferences, character avatars, and genre discovery filters.
 - **Row Level Security (RLS)**: Enabled across all Postgres tables (`profiles`, `friendships`, `recommendations`, `watchlist`, `recommendation_comments`) with granular security policies preventing unauthorized mutation while allowing circle members to view recommendations.
 - **Supabase Comments Thread**: `recommendation_comments` table created in Supabase Postgres with RLS policies enabled. Comments are loaded dynamically and saved directly to the database with realtime live updates.
-- **Recommendation Deletion with Confirmation Overlay**: Each feed item features a trash trigger button (🗑️). Clicking it opens a **Delete Recommendation Overlay** modal asking for explicit user confirmation before deletion, which purges the record from both UI state and Supabase.
+- **Recommendation Deletion with Confirmation Overlay**: Feed items sent by the signed-in user feature a trash trigger button (🗑️); it is hidden on other people's recommendations and for guests. Clicking it opens a **Delete Recommendation Overlay** modal asking for explicit user confirmation before deletion, which purges the record from both UI state and Supabase.
 
 ---
 
@@ -155,17 +170,16 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
   - In avatar selection grids (`AvatarPickerModal`, `AuthModal`, `CompleteProfileModal`, `AccountModal`), avatars are presented purely as visual pictures with no character names, no fictional franchises, and no quotes.
   - Alongside the avatar, the user's `@username` (or display name) is displayed exclusively as the identity.
 - **Universal Vector `<UserAvatar />`**: Reusable component rendering high-resolution, vector-crisp SVG shapes across navigation (`Navbar`), friend cards (`FriendsView`), friend library browsing (`FriendLibraryModal`), recommendation feeds (`DiscoverView`, `RecommendationsView`), group matcher selection (`GroupMatcherView`), movie card friend review badges (`MovieCard`), and movie detail review headers (`MovieDetailModal`) without external image network calls or broken URLs.
-- **Inline Quick-Pick Carousel**: Embedded directly in `AuthModal` (Sign Up tab) and `AccountModal` (Profile tab), allowing users to immediately see and pick from 10 popular Avvvatar styles in 1 click, alongside a "Browse All" button triggering the full 42-preset `AvatarPickerModal`.
-- **Top Tab Switcher in Auth Modal**: Instant toggle tabs (`[Sign In] [Create Account]`) at the top of `AuthModal` so users can switch to the signup view and inspect avatars immediately.
-- **Auto-Migration of Legacy Profiles**: Client automatically migrates legacy fictional character profile caches in `localStorage` to modern seeds (`solaris`, `aurora`, `nebula`, `zenith`).
+- **Inline Quick-Pick Carousel**: Embedded directly in `CompleteProfileModal` (onboarding) and `AccountModal` (Profile tab), allowing users to immediately see and pick from 10 popular Avvvatar styles in 1 click, alongside a "Browse All" button triggering the full 42-preset `AvatarPickerModal`.
+- **Top Tab Switcher in Auth Modal**: Toggle tabs (`[Sign In] [Create Account]`) at the top of `AuthModal`.
 - **Database & Existing Users Migration**: Live Supabase `profiles`, `auth.users`, and `recommendations` migrated to Avvvatar seeds (`solaris`, `aurora`, `nebula`, `zenith`, etc.), seamlessly replacing old movie character identifiers.
 
 ---
 
 ## 🔒 Unique Handle Enforcer & Google Auth Profile Completion
-- **Mandatory Profile Completion (`CompleteProfileModal`)**: When a user logs in via Google Auth or Email, if their profile handle (`@username`) is unconfigured, the app automatically presents a high-focus profile setup modal.
+- **Mandatory Profile Completion (`CompleteProfileModal`)**: When a user logs in via Google Auth or Email, if their profile handle (`@username`) is unconfigured, the app automatically presents a high-focus profile setup modal. Every new email sign-up passes through it. It includes a "Not you? Sign Out" escape hatch; age is optional with no default.
 - **Google Metadata Integration**: Automatically pre-fills the user's Full Name from Google Auth (`user_metadata.full_name` / `name`) while prompting them to select a custom `@username` handle, age, and character avatar persona.
-- **Real-Time Handle Uniqueness Check (`checkUsernameAvailable`)**: Queries the Supabase `profiles` table in real time with debounced input, displaying instant status (*"✓ Handle Available"* or *"⚠️ Handle Taken"*). Enforced strictly across Sign Up, Google Onboarding, and Account Settings.
+- **Real-Time Handle Uniqueness Check (`checkUsernameAvailable`)**: Queries the Supabase `profiles` table in real time with debounced input, displaying instant status (*"✓ Handle Available"* or *"⚠️ Handle Taken"*). Enforced strictly across onboarding and Account Settings; usernames are sanitized to lowercase letters, numbers, and underscores everywhere (`sanitizeUsername`).
 - **Zero Fallback Reversion**: Ensures profile details persist directly to Supabase (`profiles`), preventing accounts from ever reverting to `"Guest"` or `"guest"`.
 
 ---
@@ -243,7 +257,8 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 ## 🔗 Deep Linking, URL State Synchronization & Mobile App Shell
 - **Bidirectional URL Query Parameter Sync (`?tab=`, `?movie=`, `?type=`)**:
   - **Tab Sync**: Active view state synchronizes seamlessly with URL search parameters (`/?tab=discover`, `/?tab=recommendations`, `/?tab=watchlist`, `/?tab=matcher`, `/?tab=friends`). Browser back/forward buttons, bookmarking, and link sharing maintain user context perfectly.
-  - **Movie Deep Links**: Opening any movie detail modal updates the URL query to `/?movie=${id}&type=${movie|tv}`. Closing the modal cleans up the URL without a page reload (`window.history.replaceState`).
+  - **History-Aware Navigation**: Tab changes and opening a title use `history.pushState`, and a `popstate` listener syncs state back, so the browser/phone Back button returns to the previous tab or closes the movie modal instead of leaving the app.
+  - **Movie Deep Links**: Opening any movie detail modal updates the URL query to `/?movie=${id}&type=${movie|tv}`. Closing the modal steps back in history (or cleans the URL with `replaceState` when the page was opened directly from a deep link).
   - **Direct Movie Link Sharing**: `MovieDetailModal` includes a **"Copy Direct Movie Link 🔗"** action button that writes the deep link to the user's clipboard, allowing friends to open the exact movie card directly.
 - **Mobile Ergonomic Bottom Navigation Bar (`MobileBottomNav`)**:
   - Modern bottom navigation bar docked to the screen bottom for mobile screen widths (`md:hidden`), with safe area padding and frosted backdrop blur (`bg-black/90 backdrop-blur-xl border-t border-[var(--surface-border)]`).
@@ -277,6 +292,7 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 - **Standalone Reset Route**: `src/app/reset-password/page.tsx` handles Supabase password recovery callbacks directly.
 - **Fragments UI Monochrome Styling**: Matches CineCircle's signature minimalist theme with logo branding, password strength criteria, show/hide password toggles, and direct CTA back to the application.
 - **Supabase Auth Event Listener**: Automatically verifies recovery tokens via `onAuthStateChange` (`PASSWORD_RECOVERY`), updating user credentials with `supabase.auth.updateUser({ password })`.
+- **Link States**: Shows "Checking link..." while the token is exchanged; if no session appears, shows "Link Expired" with **Request New Link** (opens `/?auth=forgot`). Errors use the shared `authErrorMessage()` copy.
 
 ---
 

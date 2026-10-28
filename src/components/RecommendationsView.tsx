@@ -230,15 +230,16 @@ export function RecommendationsView({
                         ))}
                       </div>
 
-                      {onDeleteRecommendation && (
+                      {onDeleteRecommendation && rec.sender_name === currentUserDisplayName && (
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             onDeleteRecommendation(rec.id);
                           }}
-                          className="text-[var(--text-muted)] hover:text-[var(--danger)] p-1 transition cursor-pointer"
+                          className="w-11 h-11 -m-2 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--danger)] transition cursor-pointer"
                           title="Delete Recommendation"
+                          aria-label={`Delete recommendation for ${rec.title}`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
