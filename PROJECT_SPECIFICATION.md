@@ -48,10 +48,10 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 ---
 
 ## 🧭 Header Navigation & Profile Avatar Dropdown
-- **Branded Logo Asset**: Uses custom high-resolution `/logo.png` located in `public/logo.png` for navbar branding, reset password views, PWA manifest, and app icons.
+- **Branded Logo Asset & Presentation**: Uses high-resolution emblem `/logo.png` (610x610) featuring the 3D film reel 'C', play button, and sparkles presented inside a refined squircle tile (`rounded-xl` with hairline border, subtle surface elevation, and `object-contain`), completely eliminating circular clipping and awkward text truncation. The full horizontal artwork with editorial wordmark is preserved at `/logo-full.png`.
 - **Streamlined Single-Row Layout**: Ultra-clean header featuring Logo on the left, compact Search bar (`md:w-64`), navigation bar in the middle, and profile avatar dropdown menu on the right.
 - **Distinct Active Navigation Indicator**: The active navigation tab features bold contrast styling (`text-[var(--text)] font-black`), subtle sunken highlight background (`bg-[var(--surface-sunken)]/60`), and a dedicated solid primary underline bar (`h-[2.5px] bg-[var(--primary)] rounded-full`), making the active tab immediately recognizable across both desktop and mobile viewports.
-- **Button & Badge Anti-Wrapping Safeguards**: Universal whitespace and flexbox safeguards (`white-space: nowrap !important; flex-wrap: nowrap !important;`) applied globally across all `Button`, `Badge`, and pill controls to eliminate awkward vertical text clipping, awkward word breaking, or icon/label misalignments.
+- **Button & Badge Anti-Wrapping Safeguards**: Universal whitespace, flexbox, and SVG safeguards (`display: inline-flex !important; flex-direction: row !important; white-space: nowrap !important; svg { display: inline-block !important; }`) applied globally across all `Button`, `Badge`, inner `<span>` tags, and pill controls to eliminate awkward vertical text clipping, awkward word breaking, or icon/label misalignments.
 - **Avatar Profile Dropdown Menu**: Clicking the user avatar opens a floating menu containing:
   - User Handle & Email header (@username)
   - ⚙️ **Account & Settings**

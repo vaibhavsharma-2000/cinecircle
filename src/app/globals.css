@@ -214,6 +214,9 @@ button,
 [data-fc-canonical="Badge"],
 [class*="_button_"],
 [class*="_badge_"] {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
   white-space: nowrap !important;
   flex-wrap: nowrap !important;
 }
@@ -224,7 +227,24 @@ button > *,
 [data-fc-canonical="Badge"] > *,
 [class*="_button_"] > *,
 [class*="_badge_"] > * {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
   white-space: nowrap !important;
-  flex-shrink: 0;
+  flex-wrap: nowrap !important;
+  flex-shrink: 0 !important;
 }
+
+/* Force SVGs inside buttons and badges to render inline without breaking lines */
+button svg,
+[role="button"] svg,
+[data-fc-canonical="Button"] svg,
+[data-fc-canonical="Badge"] svg,
+[class*="_button_"] svg,
+[class*="_badge_"] svg {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  flex-shrink: 0 !important;
+}
+
 

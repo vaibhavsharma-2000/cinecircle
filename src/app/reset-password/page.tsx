@@ -79,17 +79,17 @@ export default function ResetPasswordPage() {
           onClick={() => router.push("/")}
           className="flex items-center gap-2.5 group cursor-pointer"
         >
-          <div className="w-9 h-9 rounded-full overflow-hidden shadow group-hover:scale-105 transition relative flex items-center justify-center bg-[var(--surface-card)]">
+          <div className="w-10 h-10 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--surface-raised)] shadow-xs flex items-center justify-center p-1 group-hover:scale-105 transition-transform duration-200">
             <Image
               src="/logo.png"
               alt="CineCircle Logo"
-              width={36}
-              height={36}
-              className="w-full h-full object-cover"
+              width={40}
+              height={40}
+              className="w-full h-full object-contain"
               priority
             />
           </div>
-          <span className="text-lg font-black text-[var(--text-primary)] tracking-tight">
+          <span className="text-xl font-black text-[var(--text)] tracking-tight">
             CineCircle
           </span>
         </button>

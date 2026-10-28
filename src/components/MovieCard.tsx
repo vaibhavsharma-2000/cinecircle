@@ -74,9 +74,11 @@ export function MovieCard({
             <span />
           )}
 
-          <Badge className="bg-[var(--surface)] text-[var(--rating)] font-extrabold text-xs px-2.5 py-0.5 rounded-sm border border-[var(--border)] flex items-center gap-1 shadow-none">
-            <Star className="w-3.5 h-3.5 fill-[var(--rating)] text-[var(--rating)]" />
-            {friendRating ? friendRating.toFixed(1) : tmdbRating?.toFixed(1) || "5.0"}
+          <Badge
+            icon={<Star className="w-3.5 h-3.5 fill-[var(--rating)] text-[var(--rating)] inline-block shrink-0" />}
+            className="bg-[var(--surface)] text-[var(--rating)] font-extrabold text-xs px-2.5 py-0.5 rounded-sm border border-[var(--border)] inline-flex items-center gap-1 shadow-none flex-nowrap whitespace-nowrap shrink-0"
+          >
+            <span className="whitespace-nowrap">{friendRating ? friendRating.toFixed(1) : tmdbRating?.toFixed(1) || "5.0"}</span>
           </Badge>
         </div>
       </div>
