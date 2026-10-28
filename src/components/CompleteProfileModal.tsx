@@ -105,6 +105,7 @@ export function CompleteProfileModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="complete-profile-title"
+          data-private=""
           className="relative w-full sm:max-w-md bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-t-3xl sm:rounded-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto"
         >
           <div className="space-y-1">

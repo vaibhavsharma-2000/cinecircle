@@ -35,12 +35,15 @@ Thumbs.db
 # IDE, AI Agents & Tooling
 .skills/
 skills/
+!.cursor/skills/
+!.cursor/skills/**
 scratch/
 .gemini/
 .antigravity/
 .agent/
 .cortex/
-.cursor/
+.cursor/*
+!.cursor/skills/
 .windsurf/
 .claude/
 .idea/
