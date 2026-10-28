@@ -26,19 +26,34 @@ export function TasteCompatibilityModal({
 }: TasteCompatibilityModalProps) {
   if (!isOpen || !friend) return null;
 
-  // Calculate dynamic taste compatibility percentage based on friend stats and watchlist count
-  const baseMatch = 75;
-  const picksBonus = Math.min((friend.stats.recommendedCount || 0) * 3, 12);
-  const watchedBonus = Math.min((friend.stats.watchedCount || 0) * 1, 10);
-  const tasteScore = Math.min(baseMatch + picksBonus + watchedBonus, 98);
+  // Calculate dynamic taste compatibility percentage based on shared genres and recommendations
+  const userGenres = watchlist.map((w) => w.genre || "").filter(Boolean);
+  const friendTopGenre = friend.stats.topGenre || "Cinema";
+  const hasGenreOverlap = userGenres.some((g) => g.toLowerCase().includes(friendTopGenre.toLowerCase()));
+
+  // Overlap between user watchlist and this friend's recommendations
+  const mutualFavorites = watchlist.filter((w) =>
+    friendRecommendations.some(
+      (r) =>
+        r.tmdb_id === w.tmdb_id &&
+        (r.sender_name.toLowerCase() === friend.display_name.toLowerCase() ||
+         r.sender_name.toLowerCase() === friend.username.toLowerCase())
+    )
+  );
+
+  const baseScore = hasGenreOverlap ? 82 : 75;
+  const mutualBonus = Math.min(mutualFavorites.length * 6, 12);
+  const activityBonus = Math.min((friend.stats.recommendedCount || 0) * 2, 8);
+  const tasteScore = Math.min(baseScore + mutualBonus + activityBonus, 98);
 
   // Common mutual films from friend recommendations and user's watchlist
   const friendRecs = friendRecommendations.filter(
-    (r) => r.sender_name.toLowerCase() === friend.display_name.toLowerCase() ||
-           r.sender_name.toLowerCase() === friend.username.toLowerCase()
+    (r) =>
+      r.sender_name.toLowerCase() === friend.display_name.toLowerCase() ||
+      r.sender_name.toLowerCase() === friend.username.toLowerCase()
   );
 
-  const sharedFavorites = watchlist.slice(0, 3);
+  const sharedCandidates = mutualFavorites.length > 0 ? mutualFavorites : watchlist.slice(0, 3);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
@@ -71,7 +86,7 @@ export function TasteCompatibilityModal({
           
           {/* Circular Taste Score Hero */}
           <div className="p-6 rounded-2xl bg-[var(--canvas)] border border-[var(--surface-border)] text-center space-y-3 relative overflow-hidden">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-tr from-amber-500/20 to-emerald-500/20 border-2 border-[var(--star-accent)]/50 shadow-xl">
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[var(--surface-sunken)] border-2 border-[var(--star-accent)]/50 shadow-xl">
               <span className="text-3xl font-black text-[var(--text-primary)] tracking-tight">
                 {tasteScore}%
               </span>
@@ -108,30 +123,36 @@ export function TasteCompatibilityModal({
             </h4>
 
             <div className="space-y-2">
-              {sharedFavorites.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-3 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl gap-3 shadow-sm hover:border-[var(--brand-accent)] transition"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={getTMDBImageUrl(item.poster_path, "w500")}
-                      alt={item.title}
-                      className="w-10 h-14 object-cover rounded-xl shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <h5 className="font-extrabold text-xs text-[var(--text-primary)] truncate">{item.title}</h5>
-                      <p className="text-[10px] text-[var(--text-secondary)]">
-                        {item.release_year} • {item.genre || "Featured"}
-                      </p>
+              {sharedCandidates.length > 0 ? (
+                sharedCandidates.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-3 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl gap-3 shadow-sm hover:border-[var(--brand-accent)] transition"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={getTMDBImageUrl(item.poster_path, "w500")}
+                        alt={item.title}
+                        className="w-10 h-14 object-cover rounded-xl shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <h5 className="font-extrabold text-xs text-[var(--text-primary)] truncate">{item.title}</h5>
+                        <p className="text-[10px] text-[var(--text-secondary)]">
+                          {item.release_year} • {item.genre || "Featured"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <Badge className="px-2.5 py-1 rounded-full bg-[var(--surface-card)] border border-[var(--surface-border)] text-[10px] font-extrabold text-[var(--text-primary)] shrink-0">
-                    Mutual Pick
-                  </Badge>
+                    <Badge className="px-2.5 py-1 rounded-full bg-[var(--surface-card)] border border-[var(--surface-border)] text-[10px] font-extrabold text-[var(--text-primary)] shrink-0">
+                      Mutual Pick
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 rounded-xl bg-[var(--canvas)] border border-[var(--surface-border)] text-center text-xs text-[var(--text-secondary)]">
+                  Add movies to your Watchlist to uncover shared watch recommendations!
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -149,7 +170,7 @@ export function TasteCompatibilityModal({
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-extrabold text-xs text-[var(--text-primary)]">{rec.title}</span>
-                      <span className="text-[11px] font-black text-amber-400">⭐ {rec.rating_stars.toFixed(1)}</span>
+                      <span className="text-[11px] font-black text-[var(--star-accent)]">★ {rec.rating_stars.toFixed(1)}</span>
                     </div>
                     {rec.note && (
                       <p className="text-[11px] text-[var(--text-secondary)] italic line-clamp-2">

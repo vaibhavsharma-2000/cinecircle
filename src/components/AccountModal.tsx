@@ -211,14 +211,14 @@ export function AccountModal({
 
           {/* Error Notice */}
           {securityNotice && (
-            <Alert className="bg-emerald-950/40 border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2 p-3 rounded-xl">
+            <Alert className="bg-[var(--success-subtle)] border border-[var(--success-border)] text-[var(--success-text)] text-xs flex items-center gap-2 p-3 rounded-xl">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{securityNotice}</span>
             </Alert>
           )}
 
           {securityError && (
-            <Alert className="bg-red-950/40 border-red-500/40 text-red-300 text-xs flex items-center gap-2 p-3 rounded-xl">
+            <Alert className="bg-[var(--danger-subtle)] border border-[var(--danger-border)] text-[var(--danger-text)] text-xs flex items-center gap-2 p-3 rounded-xl">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>{securityError}</span>
             </Alert>
@@ -493,8 +493,8 @@ export function AccountModal({
               </div>
 
               {/* Danger Zone: Account Deletion */}
-              <div className="p-4 bg-red-950/20 border border-red-500/30 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-red-400">
+              <div className="p-4 bg-[var(--danger-subtle)] border border-[var(--danger-border)] rounded-2xl space-y-3">
+                <div className="flex items-center gap-2 text-[var(--danger)]">
                   <ShieldAlert className="w-4 h-4" />
                   <h4 className="font-extrabold text-xs uppercase tracking-wider">Danger Zone</h4>
                 </div>
@@ -507,13 +507,13 @@ export function AccountModal({
                   <Button
                     type="button"
                     onClick={() => setShowConfirmDelete(true)}
-                    className="h-9 px-4 bg-red-950/40 text-red-400 hover:bg-red-900/60 border border-red-500/40 font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+                    className="h-9 px-4 bg-[var(--canvas)] text-[var(--danger)] hover:bg-[var(--danger-subtle)] border border-[var(--danger-border)] font-bold text-xs rounded-xl transition flex items-center gap-1.5"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Delete Account
                   </Button>
                 ) : (
-                  <div className="p-3 bg-red-950/40 border border-red-500/50 rounded-xl space-y-3">
-                    <p className="text-xs font-black text-red-300">Are you absolutely sure?</p>
+                  <div className="p-3 bg-[var(--canvas)] border border-[var(--danger-border)] rounded-xl space-y-3">
+                    <p className="text-xs font-black text-[var(--danger-text)]">Are you absolutely sure?</p>
                     <div className="flex items-center gap-2">
                       <Button
                         type="button"
@@ -521,7 +521,7 @@ export function AccountModal({
                           if (onDeleteAccount) onDeleteAccount();
                           onClose();
                         }}
-                        className="flex-1 h-11 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl shadow transition"
+                        className="flex-1 h-11 bg-[var(--danger)] hover:opacity-90 text-white font-extrabold text-xs rounded-xl shadow transition"
                       >
                         Yes, Delete Account
                       </Button>

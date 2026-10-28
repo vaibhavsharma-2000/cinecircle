@@ -245,8 +245,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = "SIGN_
 
           {/* Error Alert */}
           {errorMsg && (
-            <Alert className="p-3.5 bg-red-950/60 border border-red-500/30 rounded-xl flex items-center gap-2.5 text-xs text-red-200">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+            <Alert className="p-3.5 bg-[var(--danger-subtle)] border border-[var(--danger-border)] rounded-xl flex items-center gap-2.5 text-xs text-[var(--danger-text)]">
+              <AlertCircle className="w-4 h-4 shrink-0 text-[var(--danger)]" />
               <span>{errorMsg}</span>
             </Alert>
           )}
@@ -254,7 +254,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = "SIGN_
           {/* VERIFICATION NOTICE */}
           {mode === "VERIFY_NOTICE" ? (
             <div className="text-center py-4 space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-2xl shadow">
+              <div className="w-14 h-14 rounded-2xl bg-[var(--success-subtle)] border border-[var(--success-border)] text-[var(--success)] flex items-center justify-center mx-auto text-2xl shadow">
                 <CheckCircle2 className="w-7 h-7" />
               </div>
               <div className="space-y-1.5">

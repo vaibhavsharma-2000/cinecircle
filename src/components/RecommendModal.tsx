@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button, IconButton } from "@usefragments/ui";
 import { MovieItem, getTMDBImageUrl } from "@/lib/tmdb";
 import { FriendItem } from "@/lib/supabase";
+import { StarRatingPicker } from "./StarRatingPicker";
 import { X, Star, Sparkles, Send, Users, Globe, User } from "lucide-react";
 
 interface RecommendModalProps {
@@ -171,8 +172,8 @@ export function RecommendModal({
           
           {/* Guest Name input if user is not logged in */}
           {isGuest && (
-            <div className="p-3 bg-[var(--canvas)] border border-amber-500/30 rounded-2xl space-y-1.5">
-              <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+            <div className="p-3 bg-[var(--surface-sunken)] border border-[var(--brand-accent)]/30 rounded-2xl space-y-1.5">
+              <label className="text-xs font-bold text-[var(--brand-accent)] flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5" /> Post as Guest to Global Feed
               </label>
               <input
@@ -261,30 +262,18 @@ export function RecommendModal({
           </div>
 
           {/* Star Rating Slider */}
-          <div className="space-y-1.5">
+          {/* 5-Star Rating Picker (1.0 - 5.0 with 0.5 half-stars) */}
+          <div className="space-y-2 p-3 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Your Star Rating</label>
-              <span className="text-xs font-black text-[var(--star-accent)] flex items-center gap-1">
-                <Star className="w-4 h-4 fill-[var(--star-accent)] text-[var(--star-accent)]" /> {ratingStars.toFixed(1)} / 5.0
-              </span>
+              <label className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1.5">
+                <Star className="w-3.5 h-3.5 text-[var(--star-accent)] fill-current" /> 5-Star Rating (Half-Stars Supported)
+              </label>
             </div>
-
-            <div className="flex items-center justify-between gap-2 bg-[var(--canvas)] p-2 rounded-2xl border border-[var(--surface-border)]">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  type="button"
-                  key={star}
-                  onClick={() => setRatingStars(star)}
-                  className={`flex-1 h-9 rounded-xl font-extrabold text-xs transition cursor-pointer ${
-                    ratingStars >= star
-                      ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow"
-                      : "bg-[var(--surface-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  }`}
-                >
-                  ★ {star}
-                </button>
-              ))}
-            </div>
+            <StarRatingPicker
+              rating={ratingStars}
+              onChange={(newRating) => setRatingStars(newRating)}
+              size="md"
+            />
           </div>
 
           {/* Personal Review Note (Optional) */}

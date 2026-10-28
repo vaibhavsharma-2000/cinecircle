@@ -202,7 +202,7 @@ export function RecommendationsView({
                             🌍 Global
                           </span>
                         ) : rec.recipient === "All Friends" ? (
-                          <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-[var(--secondary-subtle)] text-[var(--secondary)] border border-[var(--secondary-border)]">
                             🔒 Circle
                           </span>
                         ) : (

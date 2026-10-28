@@ -22,6 +22,8 @@ interface MovieCardProps {
   onRecommendClick?: (e: React.MouseEvent) => void;
   onWatchlistClick?: (e: React.MouseEvent) => void;
   isSaved?: boolean;
+  currentUsername?: string;
+  currentUserDisplayName?: string;
 }
 
 export function MovieCard({
@@ -41,8 +43,13 @@ export function MovieCard({
   onRecommendClick,
   onWatchlistClick,
   isSaved = false,
+  currentUsername,
+  currentUserDisplayName,
 }: MovieCardProps) {
-  const isDirectForYou = recipient === "You" || recipient === "ironman" || recipient === "Tony Stark";
+  const isDirectForYou =
+    recipient === "You" ||
+    (Boolean(currentUsername) && recipient?.toLowerCase() === currentUsername?.toLowerCase()) ||
+    (Boolean(currentUserDisplayName) && recipient?.toLowerCase() === currentUserDisplayName?.toLowerCase());
 
   return (
     <Card

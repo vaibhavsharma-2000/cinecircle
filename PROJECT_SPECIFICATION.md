@@ -5,16 +5,44 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
-## 🎨 Design System & Color Palette (Minimalist Black & White)
+## 🎨 Design System & Color Palette (Palette A: Marquee)
 - **Component Engine**: Built entirely with authentic Fragments UI (`@usefragments/ui`) component primitives.
-- **Minimalist Monochrome Dual-Mode Palette**:
-  - **Dark Mode**: Pitch Black `#000000` canvas, pitch black `#000000` cards, subtle `#222222` borders, stark white `#ffffff` primary text & buttons, `#f59e0b` gold stars.
-  - **Light Mode**: Seamless Pure White `#ffffff` site canvas & white cards, clean `#eaeaea` borders, stark pitch black `#000000` primary text & buttons, `#f59e0b` gold stars.
+- **Marquee Dual-Mode Palette**:
+  - **Atmosphere**: Warm cream paper, cocoa ink, ember-orange accent like theater marquee bulbs, muted teal secondary, and gold reserved for star ratings.
+  - **Light Mode**:
+    - `bg`: `#FBF6EE` (Warm cream page background)
+    - `surface`: `#FFFDF9` (Cards, modals, navbar)
+    - `surface-sunken`: `#F3EBDD` (Input fields, inset areas, stripes)
+    - `border`: `#E4D8C5` (Card outlines, dividers)
+    - `text`: `#2A211B` (Cocoa ink body text and headings)
+    - `text-muted`: `#6B5D50` / `#958474` (Secondary text, timestamps, metadata)
+    - `primary`: `#C4461A` (Ember orange primary buttons, active items, key links)
+    - `primary-hover`: `#A83A14` | `primary-active`: `#8F300F` | `on-primary`: `#FFFFFF`
+    - `secondary`: `#1F6F6B` (Muted teal secondary buttons, tags, "friend" badges)
+    - `secondary-hover`: `#185755`
+    - `rating`: `#E0A526` (Star ratings only)
+    - `success`: `#3E7D4F` (Confirmations) | `danger`: `#B3261E` (Errors, destructive actions)
+    - `focus-ring`: `#1F6F6B` (Keyboard focus outline)
+  - **Dark Mode**:
+    - `bg`: `#17120F` (Dark warm espresso page background)
+    - `surface`: `#211A16` (Cards, modals, navbar)
+    - `surface-sunken`: `#120E0B` (Input fields, inset areas)
+    - `border`: `#3A2F28` (Card outlines, dividers)
+    - `text`: `#F4EBDD` (Cream body text and headings)
+    - `text-muted`: `#B3A494` / `#8E7E6E` (Secondary text, metadata)
+    - `primary`: `#F2793F` (Luminous ember orange primary buttons, active nav, key links)
+    - `primary-hover`: `#FF8E58` | `primary-active`: `#D9652D` | `on-primary`: `#1A0F08` (Dark text on ember)
+    - `secondary`: `#4FB3AC` (Muted luminous teal secondary buttons, tags, "friend" badges)
+    - `secondary-hover`: `#6CC7C0`
+    - `rating`: `#F0B93A` (Star ratings only)
+    - `success`: `#6DBB82` (Confirmations) | `danger`: `#F07167` (Errors, destructive actions)
+    - `focus-ring`: `#4FB3AC` (Keyboard focus outline)
 - **Rounded Visual Style**: Standardized on Fragments UI signature rounded geometry (`rounded-2xl`, `rounded-full` pills).
 
 ---
 
 ## 🧭 Header Navigation & Profile Avatar Dropdown
+- **Branded Logo Asset**: Uses custom high-resolution `/logo.png` located in `public/logo.png` for navbar branding, reset password views, PWA manifest, and app icons.
 - **Streamlined Single-Row Layout**: Ultra-clean header featuring Logo on the left, compact Search bar (`md:w-64`), single unified segmented control pill navigation bar in the middle, and profile avatar dropdown menu on the right.
 - **Unified Segmented Pill Navigation Bar**: Groups all 5 main view pills (*Discover, Recommendations, Watchlist, Group Matcher, Friends*) inside a single minimalist container (`bg-[var(--surface-card)] p-1 rounded-full`), keeping horizontal space compact and clutter-free.
 - **Avatar Profile Dropdown Menu**: Clicking the user avatar opens a floating menu containing:
@@ -183,6 +211,58 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
   - `main`: Production release branch linked to production Vercel deployment (`NEXT_PUBLIC_ENABLE_MOCK_DATA="false"`). Direct commits strictly forbidden.
   - `staging`: Primary integration & testing branch linked to Vercel preview deployment (`NEXT_PUBLIC_ENABLE_MOCK_DATA="true"`).
   - `feat/*`: Feature branches branched from and merged back into `staging`.
+
+---
+
+## 🔗 Deep Linking, URL State Synchronization & Mobile App Shell
+- **Bidirectional URL Query Parameter Sync (`?tab=`, `?movie=`, `?type=`)**:
+  - **Tab Sync**: Active view state synchronizes seamlessly with URL search parameters (`/?tab=discover`, `/?tab=recommendations`, `/?tab=watchlist`, `/?tab=matcher`, `/?tab=friends`). Browser back/forward buttons, bookmarking, and link sharing maintain user context perfectly.
+  - **Movie Deep Links**: Opening any movie detail modal updates the URL query to `/?movie=${id}&type=${movie|tv}`. Closing the modal cleans up the URL without a page reload (`window.history.replaceState`).
+  - **Direct Movie Link Sharing**: `MovieDetailModal` includes a **"Copy Direct Movie Link 🔗"** action button that writes the deep link to the user's clipboard, allowing friends to open the exact movie card directly.
+- **Mobile Ergonomic Bottom Navigation Bar (`MobileBottomNav`)**:
+  - Modern bottom navigation bar docked to the screen bottom for mobile screen widths (`md:hidden`), with safe area padding and frosted backdrop blur (`bg-black/90 backdrop-blur-xl border-t border-[var(--surface-border)]`).
+  - Displays high-priority notification badges for incoming friend requests and watchlist counts.
+  - Top header on mobile hides redundant horizontally-overflowing tab pills (`hidden md:flex`), delivering a clean, app-like header experience.
+- **Realtime Floating In-App Notifications (`ToastNotification`)**:
+  - Non-blocking floating toast alerts appear in the top-right corner when new friend recommendations or incoming friend requests arrive via Supabase realtime subscriptions.
+  - Features 1-click **"View"** action navigating directly to the relevant tab.
+
+---
+
+## ⭐️ Interactive 0.5-Step Half-Star Rating Picker (`StarRatingPicker`)
+- **Granular 1.0–5.0 Star Precision**:
+  - Replaced integer-only star rating with an interactive 0.5-step rating picker supporting exact values (1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0).
+  - Uses split left/right target hover zones on each star icon for intuitive mouse/touch half-star selection.
+  - Includes quick-pick preset chips (`1.0`, `2.0`, `3.0`, `3.5`, `4.0`, `4.5`, `5.0`) for fast mobile ratings.
+  - Uniformly implemented across `RecommendModal`, `MovieDetailModal`, and `WatchlistView`.
+
+---
+
+## 🎯 Multi-Friend Consensus Matcher & Enhanced Group Intelligence
+- **Multi-Friend Watchlist Intersection**:
+  - `GroupMatcherView` dynamically aggregates selected friends' watchlists in parallel (`Promise.all`) via `fetchFriendWatchlist`.
+  - Computes exact mathematical intersections between the user's watchlist and all selected friends.
+  - Ranks consensus matches by agreement count with celebratory `100% Group Pick` badges and avatar stacks showing exactly which friends want to watch.
+  - Intelligent fallback when zero mutual titles exist: recommends the highest-rated titles across the group's collective wishlists.
+
+---
+
+## 🔐 Dedicated Password Recovery Route (`/reset-password`)
+- **Standalone Reset Route**: `src/app/reset-password/page.tsx` handles Supabase password recovery callbacks directly.
+- **Fragments UI Monochrome Styling**: Matches CineCircle's signature minimalist theme with logo branding, password strength criteria, show/hide password toggles, and direct CTA back to the application.
+- **Supabase Auth Event Listener**: Automatically verifies recovery tokens via `onAuthStateChange` (`PASSWORD_RECOVERY`), updating user credentials with `supabase.auth.updateUser({ password })`.
+
+---
+
+## 🔍 Keyboard Accessible Search Autocomplete & Streaming Filters
+- **Keyboard Navigation in Autocomplete (`SearchAutocomplete`)**:
+  - Supports `ArrowDown` and `ArrowUp` to navigate search suggestions, `Enter` to select, and `Escape` to close suggestions popup.
+  - Highlights currently selected autocomplete suggestion with active border and contrast background.
+- **Streaming Service Filter Chips (`GenreFilterDrawer`)**:
+  - Added dedicated **Streaming Platform** filter section (*Netflix, Amazon Prime Video, Disney+, Apple TV+, Max*).
+  - Automatically translates selected services into TMDB watch provider IDs (`with_watch_providers`) scoped to the user's selected country code.
+- **Scroll to Top Floating Action (`DiscoverView`)**:
+  - Appears smoothly when scrolling down the discovery grid, allowing users to return to top navigation with one tap.
 
 ---
 

@@ -2,37 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
-/* True Modern Minimalist Theme (Linear / Vercel Style) */
+/* ==========================================================================
+   Palette A: Marquee
+   Warm cream paper, cocoa ink, ember-orange accent, muted teal secondary,
+   and gold reserved for star ratings.
+   ========================================================================== */
+
+/* DARK MODE (Default on :root) */
 :root {
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
   
-  /* DARK MODE: Pitch Black Seamless */
-  --canvas: #000000;
-  --surface-card: #000000;
-  --surface-hover: #0a0a0a;
-  --surface-border: #222222;
-  --brand-accent: #ffffff;
-  --brand-accent-text: #000000;
-  --brand-accent-hover: #f5f5f5;
-  --star-accent: #f59e0b;
-  --text-primary: #ffffff;
-  --text-secondary: #888888;
-  --text-muted: #555555;
+  /* Core Marquee Dark Theme */
+  --canvas: #17120F;
+  --surface-card: #211A16;
+  --surface-hover: #2B221D;
+  --surface-sunken: #120E0B;
+  --surface-border: #3A2F28;
+  
+  /* Typography */
+  --text-primary: #F4EBDD;
+  --text-secondary: #B3A494;
+  --text-muted: #8E7E6E;
+
+  /* Primary Brand (Ember Orange) */
+  --brand-accent: #F2793F;
+  --brand-accent-hover: #FF8E58;
+  --brand-accent-active: #D9652D;
+  --brand-accent-text: #1A0F08;
+
+  /* Secondary (Muted Teal) */
+  --secondary: #4FB3AC;
+  --secondary-hover: #6CC7C0;
+  --secondary-text: #120E0B;
+  --secondary-subtle: rgba(79, 179, 172, 0.15);
+  --secondary-border: rgba(79, 179, 172, 0.35);
+
+  /* Ratings */
+  --star-accent: #F0B93A;
+  --star-accent-hover: #F6C858;
+
+  /* Semantic Feedback */
+  --success: #6DBB82;
+  --success-subtle: rgba(109, 187, 130, 0.16);
+  --success-border: rgba(109, 187, 130, 0.35);
+  --success-text: #86D199;
+
+  --danger: #F07167;
+  --danger-subtle: rgba(240, 113, 103, 0.16);
+  --danger-border: rgba(240, 113, 103, 0.35);
+  --danger-text: #F49189;
+
+  /* Focus Ring */
+  --focus-ring: #4FB3AC;
 }
 
-/* LIGHT MODE: Pure White Seamless */
+/* LIGHT MODE */
 .light {
-  --canvas: #ffffff;
-  --surface-card: #ffffff;
-  --surface-hover: #fafafa;
-  --surface-border: #eaeaea;
-  --brand-accent: #000000;
-  --brand-accent-text: #ffffff;
-  --brand-accent-hover: #333333;
-  --star-accent: #f59e0b;
-  --text-primary: #000000;
-  --text-secondary: #666666;
-  --text-muted: #999999;
+  /* Core Marquee Light Theme */
+  --canvas: #FBF6EE;
+  --surface-card: #FFFDF9;
+  --surface-hover: #F7EFE1;
+  --surface-sunken: #F3EBDD;
+  --surface-border: #E4D8C5;
+  
+  /* Typography */
+  --text-primary: #2A211B;
+  --text-secondary: #6B5D50;
+  --text-muted: #958474;
+
+  /* Primary Brand (Ember Orange) */
+  --brand-accent: #C4461A;
+  --brand-accent-hover: #A83A14;
+  --brand-accent-active: #8F300F;
+  --brand-accent-text: #FFFFFF;
+
+  /* Secondary (Muted Teal) */
+  --secondary: #1F6F6B;
+  --secondary-hover: #185755;
+  --secondary-text: #FFFFFF;
+  --secondary-subtle: rgba(31, 111, 107, 0.12);
+  --secondary-border: rgba(31, 111, 107, 0.28);
+
+  /* Ratings */
+  --star-accent: #E0A526;
+  --star-accent-hover: #C9901C;
+
+  /* Semantic Feedback */
+  --success: #3E7D4F;
+  --success-subtle: rgba(62, 125, 79, 0.12);
+  --success-border: rgba(62, 125, 79, 0.28);
+  --success-text: #285E36;
+
+  --danger: #B3261E;
+  --danger-subtle: rgba(179, 38, 30, 0.12);
+  --danger-border: rgba(179, 38, 30, 0.28);
+  --danger-text: #961C15;
+
+  /* Focus Ring */
+  --focus-ring: #1F6F6B;
 }
 
 body {
@@ -46,7 +113,7 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Minimalist Custom Scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

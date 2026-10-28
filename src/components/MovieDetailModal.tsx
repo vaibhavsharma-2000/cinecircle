@@ -29,10 +29,13 @@ import {
   Eye,
   CheckCircle2,
   Trash2,
+  Share2,
+  Copy,
 } from "lucide-react";
 import { WatchlistItem, supabase } from "@/lib/supabase";
 import { subscribeToComments } from "@/lib/sync";
 import { CastFilmographyModal } from "./CastFilmographyModal";
+import { StarRatingPicker } from "./StarRatingPicker";
 
 interface MovieDetailModalProps {
   isOpen: boolean;
@@ -84,6 +87,20 @@ export function MovieDetailModal({
   const [filmographyPerson, setFilmographyPerson] = useState<{ id: number; name: string } | null>(null);
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState<{author: string; text: string}[]>([]);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyMovieLink = async () => {
+    if (typeof window !== "undefined" && movieId) {
+      const shareUrl = `${window.location.origin}/?movie=${movieId}&type=${mediaType}`;
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy link:", err);
+      }
+    }
+  };
 
   const handleSelectCountry = (code: string) => {
     setSelectedCountry(code);
@@ -251,6 +268,27 @@ export function MovieDetailModal({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface-card)] via-[var(--surface-card)]/50 to-transparent" />
           
+          {/* Direct Share Link Button */}
+          <button
+            type="button"
+            onClick={handleCopyMovieLink}
+            aria-label="Copy direct movie link"
+            title={copiedLink ? "Link copied!" : "Copy direct movie share link"}
+            className="absolute top-4 right-16 px-3 h-10 rounded-full bg-black/80 hover:bg-black text-white flex items-center gap-1.5 border border-white/20 transition z-10 text-xs font-bold cursor-pointer"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="w-4 h-4 text-[var(--success)] stroke-[3]" />
+                <span className="text-[var(--success)] text-[11px]">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-4 h-4" />
+                <span className="hidden sm:inline text-[11px]">Share</span>
+              </>
+            )}
+          </button>
+
           <IconButton
             onClick={onClose}
             aria-label="Close details window"
@@ -513,7 +551,7 @@ export function MovieDetailModal({
                 onClick={() => onSetWatchStatus?.(currentMovie, "CURRENTLY_WATCHING")}
                 className={`py-2.5 px-3 rounded-xl font-bold text-xs flex flex-col items-center justify-center gap-1 transition border cursor-pointer ${
                   currentWatchItem?.status === "CURRENTLY_WATCHING"
-                    ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md font-extrabold"
+                    ? "bg-[var(--secondary)] text-[var(--secondary-text)] border-[var(--secondary)] shadow-md font-extrabold"
                     : "bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--surface-border)]"
                 }`}
               >
@@ -526,7 +564,7 @@ export function MovieDetailModal({
                 onClick={() => onSetWatchStatus?.(currentMovie, "WATCHED", currentWatchItem?.rating_stars || 5.0)}
                 className={`py-2.5 px-3 rounded-xl font-bold text-xs flex flex-col items-center justify-center gap-1 transition border cursor-pointer ${
                   currentWatchItem?.status === "WATCHED"
-                    ? "bg-emerald-600 text-white border-emerald-600 shadow-md font-extrabold"
+                    ? "bg-[var(--success)] text-white border-[var(--success)] shadow-md font-extrabold"
                     : "bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--surface-border)]"
                 }`}
               >
@@ -535,31 +573,15 @@ export function MovieDetailModal({
               </button>
             </div>
 
-            {/* Interactive Rating Row when marked as Watched */}
+            {/* Interactive Half-Star Rating when marked as Watched */}
             {currentWatchItem?.status === "WATCHED" && (
-              <div className="pt-2 border-t border-[var(--surface-border)] flex items-center justify-between gap-2 animate-in fade-in">
+              <div className="pt-3 border-t border-[var(--surface-border)] space-y-2 animate-in fade-in">
                 <span className="text-xs font-bold text-[var(--text-secondary)]">Your Star Rating:</span>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => onSetWatchStatus?.(currentMovie, "WATCHED", star)}
-                      className="p-1 hover:scale-125 transition cursor-pointer"
-                    >
-                      <Star
-                        className={`w-5 h-5 ${
-                          (currentWatchItem?.rating_stars || 5.0) >= star
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-[var(--text-muted)]"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                  <span className="text-xs font-black text-amber-400 ml-1.5">
-                    {(currentWatchItem?.rating_stars || 5.0).toFixed(1)} ★
-                  </span>
-                </div>
+                <StarRatingPicker
+                  rating={currentWatchItem?.rating_stars || 5.0}
+                  onChange={(newRating) => onSetWatchStatus?.(currentMovie, "WATCHED", newRating)}
+                  size="md"
+                />
               </div>
             )}
           </div>

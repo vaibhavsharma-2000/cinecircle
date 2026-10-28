@@ -111,7 +111,7 @@ export function CastFilmographyModal({
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                       />
-                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-black text-amber-400 flex items-center gap-1 border border-white/10">
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-black text-[var(--star-accent)] flex items-center gap-1 border border-white/10">
                         <Star className="w-3 h-3 fill-current" /> {item.vote_average.toFixed(1)}
                       </div>
                     </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Badge, Button, IconButton, EmptyState } from "@usefragments/ui";
 import { WatchlistItem, Recommendation } from "@/lib/supabase";
 import { getTMDBImageUrl, getMovieDetails, MovieItem } from "@/lib/tmdb";
+import { StarRatingPicker } from "./StarRatingPicker";
 import {
   Star,
   Trash2,
@@ -39,6 +40,7 @@ export function WatchlistView({
 }: WatchlistViewProps) {
   const [filter, setFilter] = useState<"ALL" | "WANT_TO_WATCH" | "CURRENTLY_WATCHING" | "WATCHED" | "RECOMMENDED">("ALL");
   const [ratingModalItem, setRatingModalItem] = useState<WatchlistItem | null>(null);
+  const [ratingModalValue, setRatingModalValue] = useState<number>(5.0);
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
   const [overviews, setOverviews] = useState<Record<number, string>>({});
 
@@ -76,13 +78,13 @@ export function WatchlistView({
     switch (status) {
       case "CURRENTLY_WATCHING":
         return (
-          <Badge className="bg-amber-500/90 text-slate-950 px-2.5 py-0.5 rounded-full font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow">
+          <Badge className="bg-[var(--secondary)] text-[var(--secondary-text)] px-2.5 py-0.5 rounded-full font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow">
             <Eye className="w-3 h-3" /> Watching
           </Badge>
         );
       case "WATCHED":
         return (
-          <Badge className="bg-emerald-600 text-white px-2.5 py-0.5 rounded-full font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow">
+          <Badge className="bg-[var(--success)] text-white px-2.5 py-0.5 rounded-full font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow">
             <CheckCircle2 className="w-3 h-3" /> Watched
           </Badge>
         );
@@ -153,7 +155,7 @@ export function WatchlistView({
             onClick={() => setFilter("CURRENTLY_WATCHING")}
             className={`h-9 px-3.5 rounded-full text-xs font-bold transition cursor-pointer ${
               filter === "CURRENTLY_WATCHING"
-                ? "bg-amber-500 text-slate-950 font-extrabold shadow"
+                ? "bg-[var(--secondary)] text-[var(--secondary-text)] font-extrabold shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
             }`}
           >
@@ -164,7 +166,7 @@ export function WatchlistView({
             onClick={() => setFilter("WATCHED")}
             className={`h-9 px-3.5 rounded-full text-xs font-bold transition cursor-pointer ${
               filter === "WATCHED"
-                ? "bg-emerald-600 text-white font-extrabold shadow"
+                ? "bg-[var(--success)] text-white font-extrabold shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
             }`}
           >
@@ -324,8 +326,8 @@ export function WatchlistView({
                     {/* Star Rating Badge if Rated */}
                     {item.rating_stars && item.status === "WATCHED" && (
                       <div className="absolute top-3 right-3 z-10">
-                        <Badge className="bg-black/80 text-amber-400 font-extrabold text-xs px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <Badge className="bg-black/80 text-[var(--star-accent)] font-extrabold text-xs px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow">
+                          <Star className="w-3.5 h-3.5 fill-[var(--star-accent)] text-[var(--star-accent)]" />
                           {item.rating_stars.toFixed(1)}
                         </Badge>
                       </div>
@@ -417,7 +419,7 @@ export function WatchlistView({
                           title="Mark Currently Watching"
                           className={`py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center transition cursor-pointer ${
                             item.status === "CURRENTLY_WATCHING"
-                              ? "bg-amber-500 text-slate-950 shadow-sm font-extrabold"
+                              ? "bg-[var(--secondary)] text-[var(--secondary-text)] shadow-sm font-extrabold"
                               : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                           }`}
                         >
@@ -425,11 +427,14 @@ export function WatchlistView({
                         </button>
                         <button
                           type="button"
-                          onClick={() => setRatingModalItem(item)}
+                          onClick={() => {
+                            setRatingModalValue(item.rating_stars || 5.0);
+                            setRatingModalItem(item);
+                          }}
                           title="Mark Watched & Rate"
                           className={`py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center transition cursor-pointer ${
                             item.status === "WATCHED"
-                              ? "bg-emerald-600 text-white shadow-sm font-extrabold"
+                              ? "bg-[var(--success)] text-white shadow-sm font-extrabold"
                               : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                           }`}
                         >
@@ -445,14 +450,14 @@ export function WatchlistView({
                             onClick={() => onOpenRecommend(movieObj)}
                             className="flex-1 h-9 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] text-[var(--text-primary)] font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                           >
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Recommend
+                            <Sparkles className="w-3.5 h-3.5 text-[var(--star-accent)]" /> Recommend
                           </Button>
                         )}
 
                         <IconButton
                           onClick={() => onRemove(item.id)}
                           title="Remove from library"
-                          className="w-9 h-9 rounded-xl bg-[var(--canvas)] hover:bg-red-950/60 border border-[var(--surface-border)] hover:border-red-500/40 text-[var(--text-muted)] hover:text-red-400 transition flex items-center justify-center cursor-pointer"
+                          className="w-9 h-9 rounded-xl bg-[var(--canvas)] hover:bg-[var(--danger-subtle)] border border-[var(--surface-border)] hover:border-[var(--danger-border)] text-[var(--text-muted)] hover:text-[var(--danger)] transition flex items-center justify-center cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </IconButton>
@@ -471,33 +476,25 @@ export function WatchlistView({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
           <div className="relative w-full max-w-sm bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 space-y-5 shadow-2xl">
             <h3 className="font-extrabold text-[var(--text-primary)] text-base">Rate &quot;{ratingModalItem.title}&quot;</h3>
-            <p className="text-xs text-[var(--text-secondary)]">How many stars would you give this title?</p>
+            <p className="text-xs text-[var(--text-secondary)]">Select a rating (1.0 - 5.0 with half-stars):</p>
 
-            <div className="flex justify-center gap-2 py-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => {
-                    onUpdateStatus(ratingModalItem.id, "WATCHED", star);
-                    setRatingModalItem(null);
-                  }}
-                  className="w-10 h-10 rounded-full bg-[var(--canvas)] hover:bg-[var(--brand-accent)] hover:text-[var(--brand-accent-text)] border border-[var(--surface-border)] text-amber-400 transition font-extrabold flex items-center justify-center cursor-pointer hover:scale-110"
-                >
-                  ★ {star}
-                </button>
-              ))}
+            <div className="p-3 bg-[var(--canvas)] rounded-xl border border-[var(--surface-border)]">
+              <StarRatingPicker
+                rating={ratingModalValue}
+                onChange={(val) => setRatingModalValue(val)}
+                size="md"
+              />
             </div>
 
             <div className="flex gap-2">
               <Button
                 onClick={() => {
-                  onUpdateStatus(ratingModalItem.id, "WATCHED", 5.0);
+                  onUpdateStatus(ratingModalItem.id, "WATCHED", ratingModalValue);
                   setRatingModalItem(null);
                 }}
                 className="flex-1 h-11 bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold text-xs rounded-xl shadow cursor-pointer"
               >
-                Save 5.0 Rating
+                Save ★ {ratingModalValue.toFixed(1)} Rating
               </Button>
               <Button
                 onClick={() => setRatingModalItem(null)}

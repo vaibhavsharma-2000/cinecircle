@@ -13,12 +13,14 @@ export function SearchAutocomplete({ onSelectMovie }: SearchAutocompleteProps) {
   const [results, setResults] = useState<MovieItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
       setIsOpen(false);
+      setSelectedIndex(-1);
       return;
     }
 
@@ -28,10 +30,33 @@ export function SearchAutocomplete({ onSelectMovie }: SearchAutocompleteProps) {
       setResults(res.slice(0, 6));
       setIsLoading(false);
       setIsOpen(true);
+      setSelectedIndex(-1);
     }, 250);
 
     return () => clearTimeout(timer);
   }, [query]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen || results.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+    } else if (e.key === "Enter") {
+      if (selectedIndex >= 0 && selectedIndex < results.length) {
+        e.preventDefault();
+        const selected = results[selectedIndex];
+        if (onSelectMovie) onSelectMovie(selected);
+        setIsOpen(false);
+        setQuery("");
+      }
+    } else if (e.key === "Escape") {
+      setIsOpen(false);
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -51,6 +76,7 @@ export function SearchAutocomplete({ onSelectMovie }: SearchAutocompleteProps) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
           onFocus={() => query.trim() && setIsOpen(true)}
           placeholder="Search movies, TV shows..."
           className="w-full h-10 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] focus:bg-[var(--surface-card)] border border-[var(--surface-border)] focus:border-[var(--brand-accent)] text-xs rounded-full pl-10 pr-9 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none transition duration-150 shadow-sm"
@@ -81,9 +107,10 @@ export function SearchAutocomplete({ onSelectMovie }: SearchAutocompleteProps) {
               No results found for "{query}"
             </div>
           ) : (
-            results.map((item) => {
+            results.map((item, index) => {
               const title = item.title || item.name || "Untitled";
               const releaseYear = (item.release_date || item.first_air_date || "").substring(0, 4);
+              const isHighlighted = selectedIndex === index;
 
               return (
                 <div
@@ -93,7 +120,10 @@ export function SearchAutocomplete({ onSelectMovie }: SearchAutocompleteProps) {
                     setIsOpen(false);
                     setQuery("");
                   }}
-                  className="p-3.5 hover:bg-[var(--surface-hover)] flex items-center justify-between cursor-pointer transition gap-4 group"
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  className={`p-3.5 flex items-center justify-between cursor-pointer transition gap-4 group ${
+                    isHighlighted ? "bg-[var(--surface-hover)]" : "hover:bg-[var(--surface-hover)]"
+                  }`}
                 >
                   <div className="flex items-center gap-3.5 overflow-hidden flex-1">
                     <img

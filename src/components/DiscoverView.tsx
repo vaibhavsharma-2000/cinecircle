@@ -11,6 +11,7 @@ import {
   discoverMoviesWithFilters,
   FilterOptions,
   MOVIE_GENRES,
+  STREAMING_PLATFORMS,
 } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem } from "@/lib/supabase";
 import { MovieCard } from "./MovieCard";
@@ -29,6 +30,8 @@ import {
   Bookmark,
   Check,
   Globe,
+  ArrowUp,
+  Tv2,
 } from "lucide-react";
 import { GenreFilterDrawer } from "./GenreFilterDrawer";
 import { FriendItem } from "@/lib/supabase";
@@ -72,13 +75,23 @@ export function DiscoverView({
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 450);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const hasActiveCustomFilters = Boolean(
     customFilters &&
       ((customFilters.contentType && customFilters.contentType !== "all") ||
         customFilters.genreIds.length > 0 ||
         (customFilters.minRating && customFilters.minRating > 0) ||
-        (customFilters.decade && customFilters.decade !== "all"))
+        (customFilters.decade && customFilters.decade !== "all") ||
+        Boolean(customFilters.providerId))
   );
 
   useEffect(() => {
@@ -327,7 +340,7 @@ export function DiscoverView({
                               setDeletingRec(rec);
                             }}
                             title="Delete recommendation"
-                            className="w-8 h-8 rounded-full bg-[var(--canvas)] hover:bg-red-500/15 border border-[var(--surface-border)] hover:border-red-500/40 text-[var(--text-muted)] hover:text-red-500 flex items-center justify-center transition"
+                            className="w-8 h-8 rounded-full bg-[var(--canvas)] hover:bg-[var(--danger-subtle)] border border-[var(--surface-border)] hover:border-[var(--danger-border)] text-[var(--text-muted)] hover:text-[var(--danger)] flex items-center justify-center transition"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -381,10 +394,10 @@ export function DiscoverView({
                 : "bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] border-[var(--surface-border)] hover:border-[var(--brand-accent)]"
             }`}
           >
-            <SlidersHorizontal className="w-4 h-4 text-amber-400" />
+            <SlidersHorizontal className="w-4 h-4 text-[var(--brand-accent)]" />
             <span>Filter by Genres 🎛️</span>
             {customFilters && customFilters.genreIds.length > 0 && (
-              <span className="ml-1 px-2 py-0.5 rounded-full bg-black/40 text-amber-400 text-[10px] font-black border border-amber-500/30">
+              <span className="ml-1 px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--brand-accent)] text-[10px] font-black border border-[var(--brand-accent)]/30">
                 {customFilters.genreIds.length}
               </span>
             )}
@@ -416,9 +429,9 @@ export function DiscoverView({
       <section className="space-y-6">
         {/* Active Custom Filter Feedback Banner */}
         {hasActiveCustomFilters && customFilters && (
-          <div className="p-4 bg-[var(--surface-card)] border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm animate-in fade-in">
+          <div className="p-4 bg-[var(--surface-card)] border border-[var(--brand-accent)]/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm animate-in fade-in">
             <div className="flex items-center gap-2 flex-wrap min-w-0">
-              <span className="text-xs font-black text-amber-400 flex items-center gap-1.5 shrink-0">
+              <span className="text-xs font-black text-[var(--brand-accent)] flex items-center gap-1.5 shrink-0">
                 <SlidersHorizontal className="w-3.5 h-3.5" /> Active Discovery Filters:
               </span>
 
@@ -443,7 +456,7 @@ export function DiscoverView({
               })}
 
               {customFilters.minRating && customFilters.minRating > 0 && (
-                <span className="px-2.5 py-1 rounded-full bg-[var(--canvas)] border border-[var(--surface-border)] text-xs font-black text-amber-400">
+                <span className="px-2.5 py-1 rounded-full bg-[var(--canvas)] border border-[var(--surface-border)] text-xs font-black text-[var(--star-accent)]">
                   ★ {customFilters.minRating.toFixed(1)}+
                 </span>
               )}
@@ -451,6 +464,13 @@ export function DiscoverView({
               {customFilters.decade && customFilters.decade !== "all" && (
                 <span className="px-2.5 py-1 rounded-full bg-[var(--canvas)] border border-[var(--surface-border)] text-xs font-bold text-[var(--text-secondary)]">
                   {customFilters.decade}
+                </span>
+              )}
+
+              {customFilters.providerId && (
+                <span className="px-2.5 py-1 rounded-full bg-[var(--secondary-subtle)] border border-[var(--secondary-border)] text-xs font-black text-[var(--secondary)] flex items-center gap-1">
+                  <Tv2 className="w-3.5 h-3.5" />
+                  {STREAMING_PLATFORMS.find((p) => p.id === customFilters.providerId)?.name || "Streaming"}
                 </span>
               )}
             </div>
@@ -464,7 +484,7 @@ export function DiscoverView({
               </Button>
               <Button
                 onClick={() => setCustomFilters(null)}
-                className="h-8 px-3 rounded-lg text-xs font-bold bg-red-950/40 text-red-400 border border-red-500/30 hover:bg-red-900/60"
+                className="h-8 px-3 rounded-lg text-xs font-bold bg-[var(--danger-subtle)] text-[var(--danger)] border border-[var(--danger-border)] hover:opacity-80"
               >
                 Clear
               </Button>
@@ -588,7 +608,7 @@ export function DiscoverView({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
           <Card className="relative w-full max-w-sm bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-6 space-y-5 shadow-2xl">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-500/15 text-red-500 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[var(--danger-subtle)] text-[var(--danger)] flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
@@ -609,7 +629,7 @@ export function DiscoverView({
                   }
                   setDeletingRec(null);
                 }}
-                className="flex-1 h-11 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl shadow transition"
+                className="flex-1 h-11 bg-[var(--danger)] hover:opacity-90 text-white font-extrabold text-xs rounded-xl shadow transition"
               >
                 Yes, Delete Recommendation
               </Button>
@@ -631,6 +651,18 @@ export function DiscoverView({
         currentFilters={customFilters || { genreIds: [] }}
         onApplyFilters={(filters) => setCustomFilters(filters)}
       />
+
+      {/* Floating Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="Scroll to top of discovery feed"
+          className="fixed bottom-20 md:bottom-8 right-6 z-40 w-11 h-11 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition cursor-pointer border border-[var(--surface-border)]"
+        >
+          <ArrowUp className="w-5 h-5 stroke-[2.5]" />
+        </button>
+      )}
     </div>
   );
 }

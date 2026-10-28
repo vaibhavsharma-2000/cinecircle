@@ -168,8 +168,8 @@ export function FriendsView({
         <div
           className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between animate-in fade-in ${
             statusMessage.type === "success"
-              ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
-              : "bg-red-950/40 border-red-500/40 text-red-300"
+              ? "bg-[var(--success-subtle)] border border-[var(--success-border)] text-[var(--success-text)]"
+              : "bg-[var(--danger-subtle)] border border-[var(--danger-border)] text-[var(--danger-text)]"
           }`}
         >
           <span>{statusMessage.text}</span>
@@ -204,7 +204,7 @@ export function FriendsView({
           onClick={handleToggleGlobalLibrarySharing}
           className={`h-9 px-4 rounded-xl text-xs font-extrabold flex items-center gap-2 border transition cursor-pointer self-start sm:self-auto ${
             allowFriendsViewLibrary
-              ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+              ? "bg-[var(--secondary)] text-[var(--secondary-text)] border-[var(--secondary)] shadow-sm"
               : "bg-[var(--canvas)] text-[var(--text-secondary)] border-[var(--surface-border)] hover:text-[var(--text-primary)]"
           }`}
         >
@@ -224,12 +224,12 @@ export function FriendsView({
 
       {/* Incoming Friend Requests Section */}
       {incomingRequests.length > 0 && (
-        <div className="p-5 bg-amber-500/10 border border-amber-500/30 rounded-2xl space-y-4 shadow-sm animate-in fade-in">
+        <div className="p-5 bg-[var(--surface-sunken)] border border-[var(--brand-accent)]/30 rounded-2xl space-y-4 shadow-sm animate-in fade-in">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-xs font-black text-[var(--brand-accent)] uppercase tracking-wider flex items-center gap-2">
               <Bell className="w-4 h-4" /> Pending Friend Requests ({incomingRequests.length})
             </h3>
-            <span className="text-[11px] text-amber-300/80 font-medium">Action Required</span>
+            <span className="text-[11px] text-[var(--text-secondary)] font-medium">Action Required</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -251,7 +251,7 @@ export function FriendsView({
                     type="button"
                     onClick={() => onAcceptFriendRequest(req.id, req.senderId)}
                     title="Approve friend request"
-                    className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold transition flex items-center gap-1 cursor-pointer shadow"
+                    className="h-8 px-3 rounded-lg bg-[var(--success)] hover:opacity-90 text-white text-[11px] font-extrabold transition flex items-center gap-1 cursor-pointer shadow"
                   >
                     <Check className="w-3.5 h-3.5 stroke-[3]" /> Approve
                   </button>
@@ -260,7 +260,7 @@ export function FriendsView({
                     type="button"
                     onClick={() => onDeclineFriendRequest(req.id)}
                     title="Disapprove / Decline request"
-                    className="h-8 px-2.5 rounded-lg bg-[var(--canvas)] hover:bg-red-950/50 border border-[var(--surface-border)] hover:border-red-500/40 text-[var(--text-muted)] hover:text-red-400 text-[11px] font-bold transition flex items-center justify-center cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg bg-[var(--canvas)] hover:bg-[var(--danger-subtle)] border border-[var(--surface-border)] hover:border-[var(--danger-border)] text-[var(--text-muted)] hover:text-[var(--danger)] text-[11px] font-bold transition flex items-center justify-center cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -285,7 +285,7 @@ export function FriendsView({
               >
                 <UserAvatar avatarId={req.recipientAvatarId} displayName={req.recipientDisplayName} size="sm" />
                 <span className="font-bold text-[var(--text-primary)]">@{req.recipientUsername}</span>
-                <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full font-extrabold">
+                <span className="text-[10px] text-[var(--secondary)] bg-[var(--secondary-subtle)] px-2 py-0.5 rounded-full font-extrabold">
                   Pending
                 </span>
               </div>
@@ -298,16 +298,16 @@ export function FriendsView({
       {friends.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-amber-400" /> Circle Hall of Fame & Superlatives
+            <Trophy className="w-4 h-4 text-[var(--star-accent)]" /> Circle Hall of Fame & Superlatives
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {topCritic && (
               <div className="p-4 bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl flex items-center gap-3 shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-black shrink-0 text-lg">
+                <div className="w-10 h-10 rounded-xl bg-[var(--surface-sunken)] text-[var(--star-accent)] flex items-center justify-center font-black shrink-0 text-lg">
                   🏆
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 block">Top Recommender</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[var(--star-accent)] block">Top Recommender</span>
                   <p className="text-xs font-black text-[var(--text-primary)]">{topCritic.display_name} (@{topCritic.username})</p>
                   <p className="text-[11px] text-[var(--text-secondary)]">{topCritic.stats.recommendedCount} recommendations curated</p>
                 </div>
@@ -377,14 +377,14 @@ export function FriendsView({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-[10px] font-black text-emerald-400 flex items-center gap-1 shadow-sm">
+                    <span className="px-2.5 py-1 rounded-full bg-[var(--secondary-subtle)] border border-[var(--secondary-border)] text-[10px] font-black text-[var(--secondary)] flex items-center gap-1 shadow-sm">
                       <Flame className="w-3 h-3 fill-current" /> {matchPercent}%
                     </span>
 
                     <IconButton
                       onClick={() => onRemoveFriend(friend.id)}
                       title="Remove friend from circle"
-                      className="w-8 h-8 rounded-full bg-[var(--canvas)] hover:bg-red-950/60 border border-[var(--surface-border)] hover:border-red-500/30 text-[var(--text-muted)] hover:text-red-400 transition flex items-center justify-center cursor-pointer"
+                      className="w-8 h-8 rounded-full bg-[var(--canvas)] hover:bg-[var(--danger-subtle)] border border-[var(--surface-border)] hover:border-[var(--danger-border)] text-[var(--text-muted)] hover:text-[var(--danger)] transition flex items-center justify-center cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </IconButton>
@@ -421,7 +421,7 @@ export function FriendsView({
                     <span className="text-[11px] font-bold">Allow viewing my library</span>
                   </label>
                   {isFriendAllowed ? (
-                    <span className="text-[10px] font-extrabold text-emerald-400">✓ Shared</span>
+                    <span className="text-[10px] font-extrabold text-[var(--secondary)]">✓ Shared</span>
                   ) : (
                     <span className="text-[10px] font-bold text-[var(--text-muted)]">Hidden</span>
                   )}
@@ -442,7 +442,7 @@ export function FriendsView({
                     onClick={() => setComparingFriend(friend)}
                     className="h-9 bg-[var(--canvas)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] text-[var(--text-primary)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer"
                   >
-                    <Flame className="w-3.5 h-3.5 text-amber-400" /> Taste Match
+                    <Flame className="w-3.5 h-3.5 text-[var(--secondary)]" /> Taste Match
                   </Button>
                 </div>
               </Card>

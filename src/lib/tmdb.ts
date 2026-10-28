@@ -31,8 +31,12 @@ export interface WatchProvidersResult {
   buy?: WatchProvider[];
 }
 
-const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || "d1063e408496911ca74bc7a968b9cf95";
+const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || "";
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+
+if (!TMDB_API_KEY && typeof window !== "undefined") {
+  console.warn("⚠️ CineCircle: NEXT_PUBLIC_TMDB_API_KEY is not set. TMDB discovery and search features will fail.");
+}
 
 export interface GenreCategory {
   id: string;
@@ -343,6 +347,20 @@ export const MOVIE_GENRES: GenreOption[] = [
   { id: 12, name: "Adventure", emoji: "🗺️" },
   { id: 99, name: "Documentary", emoji: "📽️" },
   { id: 36, name: "History", emoji: "📜" },
+];
+
+export interface StreamingPlatform {
+  id: number;
+  name: string;
+  icon: string;
+}
+
+export const STREAMING_PLATFORMS: StreamingPlatform[] = [
+  { id: 8, name: "Netflix", icon: "🍿" },
+  { id: 9, name: "Prime Video", icon: "📦" },
+  { id: 337, name: "Disney+", icon: "✨" },
+  { id: 350, name: "Apple TV+", icon: "🍏" },
+  { id: 1899, name: "Max / HBO", icon: "⚡" },
 ];
 
 export interface FilterOptions {

@@ -206,7 +206,7 @@ export function WatchRouletteModal({
             {/* Reel Status Badge */}
             <div className="absolute top-2 left-2 right-2 flex justify-center">
               {isSpinning ? (
-                <span className="px-3 py-1 rounded-full bg-black/80 backdrop-blur-md text-[10px] font-black text-amber-400 border border-amber-500/40 uppercase tracking-widest flex items-center gap-1.5 shadow">
+                <span className="px-3 py-1 rounded-full bg-black/80 backdrop-blur-md text-[10px] font-black text-[var(--star-accent)] border border-[var(--star-accent)]/40 uppercase tracking-widest flex items-center gap-1.5 shadow">
                   <RotateCw className="w-3 h-3 animate-spin" /> Shuffling...
                 </span>
               ) : winner ? (
@@ -280,7 +280,7 @@ export function WatchRouletteModal({
                     onClick={handleRecommendWinner}
                     className="h-10 rounded-xl bg-[var(--canvas)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] text-[var(--text-primary)] font-extrabold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Recommend ✨
+                    <Sparkles className="w-3.5 h-3.5 text-[var(--star-accent)]" /> Recommend ✨
                   </Button>
                 )}
               </div>
@@ -295,7 +295,7 @@ export function WatchRouletteModal({
 
                 <Button
                   onClick={onClose}
-                  className="h-9 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/30 text-emerald-400 font-extrabold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  className="h-9 rounded-xl bg-[var(--secondary)] hover:opacity-90 text-[var(--secondary-text)] font-extrabold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow"
                 >
                   <Check className="w-3 h-3" /> Lock It In 🍿
                 </Button>

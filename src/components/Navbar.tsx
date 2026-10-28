@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { Header, Button, Avatar, Badge } from "@usefragments/ui";
 import { SearchAutocomplete } from "./SearchAutocomplete";
 import { MovieItem } from "@/lib/tmdb";
@@ -94,8 +95,15 @@ export function Navbar({
             onClick={() => setActiveTab("discover")}
             className="flex items-center gap-2.5 cursor-pointer group shrink-0"
           >
-            <div className="w-9 h-9 rounded-full bg-[var(--brand-accent)] flex items-center justify-center text-[var(--brand-accent-text)] font-black text-sm shadow group-hover:scale-105 transition">
-              C
+            <div className="w-9 h-9 rounded-full overflow-hidden shadow group-hover:scale-105 transition relative flex items-center justify-center bg-[var(--surface-card)]">
+              <Image
+                src="/logo.png"
+                alt="CineCircle Logo"
+                width={36}
+                height={36}
+                className="w-full h-full object-cover"
+                priority
+              />
             </div>
             <span className="text-lg font-black text-[var(--text-primary)] tracking-tight group-hover:opacity-80 transition">
               CineCircle
@@ -196,8 +204,8 @@ export function Navbar({
           <SearchAutocomplete onSelectMovie={onSelectMovie} />
         </div>
 
-        {/* Navigation Tabs - Mobile Touch Scroll Segmented Control */}
-        <nav className="flex items-center gap-0.5 bg-[var(--surface-card)] p-1 rounded-full border border-[var(--surface-border)] shadow-sm shrink-0 overflow-x-auto w-full md:w-auto max-w-full touch-pan-x">
+        {/* Navigation Tabs - Desktop Segmented Pill Control */}
+        <nav className="hidden md:flex items-center gap-0.5 bg-[var(--surface-card)] p-1 rounded-full border border-[var(--surface-border)] shadow-sm shrink-0">
           {tabs.map((tab) => {
             const IconComp = tab.icon;
             const isSelected = activeTab === tab.id;
@@ -219,7 +227,7 @@ export function Navbar({
                   <Badge
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                       tab.isAlert
-                        ? "bg-amber-400 text-slate-950 font-black shadow animate-pulse"
+                        ? "bg-[var(--secondary)] text-[var(--secondary-text)] font-black shadow animate-pulse"
                         : isSelected
                         ? "bg-black/20 text-[var(--brand-accent-text)]"
                         : "bg-[var(--canvas)] text-[var(--text-primary)]"

@@ -18,8 +18,8 @@ export const metadata: Metadata = {
     title: "CineCircle",
   },
   icons: {
-    icon: "/icon-192.svg",
-    apple: "/icon-192.svg",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
 };
 

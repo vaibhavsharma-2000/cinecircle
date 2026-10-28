@@ -151,10 +151,10 @@ export function CookieConsentModal({ onPreferencesSaved }: CookieConsentModalPro
               <div className="p-4 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                    <ShieldCheck className="w-4 h-4 text-[var(--success)]" />
                     <h4 className="font-extrabold text-xs text-[var(--text-primary)]">Essential Authentication & Session Storage</h4>
                   </div>
-                  <Badge className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                  <Badge className="bg-[var(--success-subtle)] border border-[var(--success-border)] text-[var(--success)] text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
                     Always Active
                   </Badge>
                 </div>

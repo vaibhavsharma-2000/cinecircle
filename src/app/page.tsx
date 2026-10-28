@@ -17,7 +17,9 @@ import { CookieConsentModal } from "@/components/CookieConsentModal";
 import { InstallPwaModal } from "@/components/InstallPwaModal";
 import { InviteModal } from "@/components/InviteModal";
 import { FriendLibraryModal } from "@/components/FriendLibraryModal";
-import { MovieItem } from "@/lib/tmdb";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { ToastNotification, ToastItem } from "@/components/ToastNotification";
+import { MovieItem, getMovieDetails } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem, FriendItem, supabase } from "@/lib/supabase";
 import { DEFAULT_AVATAR_ID } from "@/constants/avatars";
 
@@ -118,6 +120,21 @@ export default function Home() {
   const [incomingRequests, setIncomingRequests] = useState<FriendRequestItem[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<OutgoingFriendRequestItem[]>([]);
   const [selectedFriendForLibrary, setSelectedFriendForLibrary] = useState<FriendItem | null>(null);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const addToast = (toast: Omit<ToastItem, "id">) => {
+    const id = `toast_${Date.now()}_${Math.random()}`;
+    setToasts((prev) => [{ id, ...toast }, ...prev]);
+  };
+
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", newTab);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
   // LocalStorage state persistence across browser tab closes
   useEffect(() => {
@@ -170,9 +187,29 @@ export default function Home() {
 
   // Live Supabase Auth, Invite Handling, & Multi-User Data Synchronization
   useEffect(() => {
-    // Check for incoming friend invite query param (?invite=username)
+    // Check URL parameters on mount (?tab=..., ?movie=..., ?invite=...)
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
+
+      // 1. Sync active tab from ?tab=
+      const tabParam = urlParams.get("tab");
+      const validTabs = ["discover", "recommendations", "watchlist", "matcher", "friends"];
+      if (tabParam && validTabs.includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+
+      // 2. Direct movie deep link (?movie=...&type=...)
+      const movieParam = urlParams.get("movie");
+      const mediaTypeParam = (urlParams.get("type") as "movie" | "tv") || "movie";
+      if (movieParam && !isNaN(Number(movieParam))) {
+        getMovieDetails(Number(movieParam), mediaTypeParam).then((fetched) => {
+          if (fetched) {
+            handleOpenMovieDetail(fetched);
+          }
+        });
+      }
+
+      // 3. Friend invite query (?invite=username)
       const inviteUser = urlParams.get("invite");
       if (inviteUser && inviteUser.trim() !== "") {
         const cleanInviter = inviteUser.trim().replace(/^@/, "");
@@ -308,6 +345,30 @@ export default function Home() {
           if (exists) return prev;
           return [newRec, ...prev];
         });
+
+        // Trigger real-time toast alert
+        addToast({
+          type: "rec",
+          title: "New Circle Recommendation",
+          message: `${newRec.sender_name} recommended "${newRec.title}"!`,
+          actionLabel: "View Film",
+          onAction: () => {
+            handleOpenMovieDetail(
+              {
+                id: newRec.tmdb_id,
+                title: newRec.title,
+                poster_path: newRec.poster_path,
+                backdrop_path: newRec.backdrop_path || null,
+                media_type: newRec.media_type,
+                release_date: newRec.release_year,
+                vote_average: 8.0,
+                vote_count: 100,
+                overview: newRec.note,
+              },
+              newRec
+            );
+          },
+        });
       },
       (deletedId) => {
         setFriendRecommendations((prev) => prev.filter((r) => r.id !== deletedId));
@@ -333,6 +394,13 @@ export default function Home() {
             setIncomingRequests(inc);
             setOutgoingRequests(outg);
             setFriends(updatedFriends.length > 0 ? updatedFriends : (IS_MOCK_MODE ? MOCK_FRIENDS : []));
+            addToast({
+              type: "friend",
+              title: "Circle Activity",
+              message: "Your friend circle list or friend requests have been updated!",
+              actionLabel: "View Friends",
+              onAction: () => handleTabChange("friends"),
+            });
           }
         }
       )
@@ -412,6 +480,13 @@ export default function Home() {
       recommendedBy: recommendation?.sender_name,
       ratingStars: recommendation?.rating_stars,
     });
+
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("movie", String(movie.id));
+      url.searchParams.set("type", resolvedMediaType);
+      window.history.replaceState({}, "", url.toString());
+    }
   };
 
   // Watchlist Handlers with Live Supabase Persistence
@@ -641,7 +716,7 @@ export default function Home() {
       {/* Navbar with Supabase Auth */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         onOpenAccountModal={() => setAccountModalOpen(true)}
         onOpenAuth={() => setAuthModalOpen(true)}
         onLogout={handleLogout}
@@ -659,14 +734,14 @@ export default function Home() {
       {/* Incoming Invite Welcome Banner */}
       {invitedBy && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-          <div className="p-4 bg-emerald-950/50 border border-emerald-500/40 rounded-2xl flex items-center justify-between text-xs text-emerald-300 shadow-lg animate-in fade-in">
+          <div className="p-4 bg-[var(--secondary-subtle)] border border-[var(--secondary-border)] rounded-2xl flex items-center justify-between text-xs text-[var(--secondary)] shadow-lg animate-in fade-in">
             <span className="font-extrabold flex items-center gap-2">
-              🎉 Welcome to CineCircle! You&apos;ve joined <strong className="underline decoration-emerald-400">@{invitedBy}</strong>&apos;s private movie circle!
+              🎉 Welcome to CineCircle! You&apos;ve joined <strong className="underline decoration-[var(--secondary)]">@{invitedBy}</strong>&apos;s private movie circle!
             </span>
             <button
               type="button"
               onClick={() => setInvitedBy(null)}
-              className="text-emerald-400 hover:text-white font-bold ml-4 text-sm cursor-pointer"
+              className="text-[var(--secondary)] hover:opacity-80 font-bold ml-4 text-sm cursor-pointer"
             >
               ✕
             </button>
@@ -757,7 +832,15 @@ export default function Home() {
       {/* Global Interactive Modals */}
       <MovieDetailModal
         isOpen={detailModal.isOpen}
-        onClose={() => setDetailModal({ isOpen: false, movieId: null })}
+        onClose={() => {
+          setDetailModal({ isOpen: false, movieId: null });
+          if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("movie");
+            url.searchParams.delete("type");
+            window.history.replaceState({}, "", url.toString());
+          }
+        }}
         movieId={detailModal.movieId}
         mediaType={detailModal.mediaType}
         initialMovie={detailModal.initialMovie}
@@ -909,6 +992,21 @@ export default function Home() {
         onClose={() => setInviteModalOpen(false)}
         currentUsername={profile.username}
         currentDisplayName={profile.displayName}
+      />
+
+      {/* Fixed Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
+        watchlistCount={watchlist.filter((w) => w.status === "WANT_TO_WATCH").length}
+        friendsCount={friends.length}
+        incomingRequestsCount={incomingRequests.length}
+      />
+
+      {/* Floating Real-Time In-App Toast Notifications */}
+      <ToastNotification
+        toasts={toasts}
+        onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
       />
 
       {/* Footer */}

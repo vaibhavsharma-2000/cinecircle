@@ -135,8 +135,8 @@ export function CompleteProfileModal({
 
           {/* Error Banner */}
           {errorMsg && (
-            <div className="p-3.5 bg-red-950/60 border border-red-500/30 rounded-2xl flex items-center gap-2.5 text-xs text-red-200">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+            <div className="p-3.5 bg-[var(--danger-subtle)] border border-[var(--danger-border)] rounded-2xl flex items-center gap-2.5 text-xs text-[var(--danger-text)]">
+              <AlertCircle className="w-4 h-4 shrink-0 text-[var(--danger)]" />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -167,12 +167,12 @@ export function CompleteProfileModal({
                   <span className="text-[10px] text-[var(--text-muted)] animate-pulse">Checking...</span>
                 )}
                 {!isCheckingUsername && isUsernameAvailable === true && username.trim() && (
-                  <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                  <span className="text-[10px] font-bold text-[var(--success)] flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> Available
                   </span>
                 )}
                 {!isCheckingUsername && isUsernameAvailable === false && username.trim() && (
-                  <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
+                  <span className="text-[10px] font-bold text-[var(--danger)] flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" /> Taken
                   </span>
                 )}
@@ -191,9 +191,9 @@ export function CompleteProfileModal({
                   placeholder="ironman"
                   className={`w-full h-11 bg-[var(--canvas)] border text-xs rounded-xl pl-8 pr-4 text-[var(--text-primary)] focus:outline-none transition ${
                     isUsernameAvailable === false
-                      ? "border-red-500/60 focus:border-red-500"
+                      ? "border-[var(--danger)] focus:border-[var(--danger)]"
                       : isUsernameAvailable === true
-                      ? "border-emerald-500/60 focus:border-emerald-500"
+                      ? "border-[var(--success)] focus:border-[var(--success)]"
                       : "border-[var(--surface-border)] focus:border-[var(--brand-accent)]"
                   }`}
                 />
@@ -244,7 +244,7 @@ export function CompleteProfileModal({
                   onClick={() => setIsAvatarPickerOpen(true)}
                   className="h-9 px-3.5 bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] border border-[var(--surface-border)] font-bold text-xs rounded-xl transition shrink-0 flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Choose Avatar
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--star-accent)]" /> Choose Avatar
                 </Button>
               </div>
             </div>

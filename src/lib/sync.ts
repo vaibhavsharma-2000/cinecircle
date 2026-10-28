@@ -1,5 +1,6 @@
 import { supabase, Recommendation, WatchlistItem, FriendItem, UserProfile } from "./supabase";
 import { DEFAULT_AVATAR_ID } from "@/constants/avatars";
+import { MOCK_FRIENDS_WATCHLISTS } from "@/lib/mockData";
 
 /**
  * Check if a username is available in Supabase profiles table
@@ -338,7 +339,19 @@ export async function fetchLiveFriends(userIdOrUsername: string): Promise<Friend
  * Fetch a friend's shared watchlist
  */
 export async function fetchFriendWatchlist(friendUserId: string): Promise<WatchlistItem[]> {
-  return fetchLiveWatchlist(friendUserId);
+  const isMockMode = process.env.NEXT_PUBLIC_ENABLE_MOCK_DATA === "true";
+  if (isMockMode && MOCK_FRIENDS_WATCHLISTS[friendUserId]) {
+    return MOCK_FRIENDS_WATCHLISTS[friendUserId];
+  }
+
+  const live = await fetchLiveWatchlist(friendUserId);
+  if (live.length > 0) return live;
+
+  if (MOCK_FRIENDS_WATCHLISTS[friendUserId]) {
+    return MOCK_FRIENDS_WATCHLISTS[friendUserId];
+  }
+
+  return [];
 }
 
 /**

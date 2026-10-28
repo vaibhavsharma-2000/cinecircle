@@ -138,7 +138,7 @@ export function InviteModal({
             <button
               type="button"
               onClick={handleWhatsAppShare}
-              className="h-11 px-4 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/30 text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+              className="h-11 px-4 rounded-xl bg-[var(--success-subtle)] hover:opacity-90 border border-[var(--success-border)] text-[var(--success)] font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
             >
               <Send className="w-4 h-4" /> WhatsApp
             </button>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, IconButton, Badge } from "@usefragments/ui";
-import { MOVIE_GENRES, FilterOptions } from "@/lib/tmdb";
+import { MOVIE_GENRES, FilterOptions, STREAMING_PLATFORMS } from "@/lib/tmdb";
 import {
   X,
   SlidersHorizontal,
@@ -14,6 +14,7 @@ import {
   Film,
   Tv,
   Video,
+  Tv2,
 } from "lucide-react";
 
 interface GenreFilterDrawerProps {
@@ -38,6 +39,9 @@ export function GenreFilterDrawer({
   const [sortBy, setSortBy] = useState<"popularity.desc" | "vote_average.desc" | "primary_release_date.desc">(
     currentFilters.sortBy || "popularity.desc"
   );
+  const [selectedProviderId, setSelectedProviderId] = useState<number | undefined>(
+    currentFilters.providerId
+  );
 
   if (!isOpen) return null;
 
@@ -47,21 +51,33 @@ export function GenreFilterDrawer({
     );
   };
 
+  const toggleProvider = (id: number) => {
+    setSelectedProviderId((prev) => (prev === id ? undefined : id));
+  };
+
   const handleReset = () => {
     setContentType("all");
     setSelectedGenreIds([]);
     setMinRating(0);
     setDecade("all");
     setSortBy("popularity.desc");
+    setSelectedProviderId(undefined);
   };
 
   const handleApply = () => {
+    const region =
+      typeof window !== "undefined"
+        ? localStorage.getItem("cinecircle_streaming_country") || "DE"
+        : "DE";
+
     onApplyFilters({
       contentType,
       genreIds: selectedGenreIds,
       minRating,
       decade,
       sortBy,
+      providerId: selectedProviderId,
+      watchRegion: selectedProviderId ? region : undefined,
       page: 1,
     });
     onClose();
@@ -128,6 +144,42 @@ export function GenreFilterDrawer({
             </div>
           </div>
 
+          {/* 2. Streaming Service Platform Selector */}
+          <div className="space-y-3 pt-4 border-t border-[var(--surface-border)]">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-1.5">
+                <Tv2 className="w-3.5 h-3.5 text-[var(--brand-accent)]" /> 2. Stream on Service
+              </label>
+              {selectedProviderId && (
+                <span className="text-[10px] font-black text-[var(--secondary)] bg-[var(--secondary-subtle)] px-2 py-0.5 rounded-full border border-[var(--secondary-border)]">
+                  Active
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {STREAMING_PLATFORMS.map((platform) => {
+                const isSelected = selectedProviderId === platform.id;
+                return (
+                  <button
+                    key={platform.id}
+                    type="button"
+                    onClick={() => toggleProvider(platform.id)}
+                    className={`p-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition border cursor-pointer ${
+                      isSelected
+                        ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] border-[var(--brand-accent)] shadow-sm"
+                        : "bg-[var(--canvas)] border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-white/30"
+                    }`}
+                  >
+                    <span>{platform.icon}</span>
+                    <span className="truncate">{platform.name}</span>
+                    {isSelected && <Check className="w-3 h-3 ml-auto stroke-[3]" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* 2. Multi-Genre Pill Cloud */}
           <div className="space-y-3 pt-4 border-t border-[var(--surface-border)]">
             <div className="flex items-center justify-between">
@@ -135,7 +187,7 @@ export function GenreFilterDrawer({
                 2. Select Genres to Combine
               </label>
               {selectedGenreIds.length > 0 && (
-                <span className="text-[10px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                <span className="text-[10px] font-black text-[var(--brand-accent)] bg-[var(--surface-sunken)] px-2 py-0.5 rounded-full border border-[var(--brand-accent)]/30">
                   {selectedGenreIds.length} Selected
                 </span>
               )}
@@ -170,7 +222,7 @@ export function GenreFilterDrawer({
           {/* 3. Minimum Rating Threshold */}
           <div className="space-y-3 pt-4 border-t border-[var(--surface-border)]">
             <label className="text-xs font-black uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-1.5">
-              <Star className="w-3.5 h-3.5 text-amber-400 fill-current" /> 3. Quality & Rating Filter
+              <Star className="w-3.5 h-3.5 text-[var(--star-accent)] fill-current" /> 3. Quality & Rating Filter
             </label>
 
             <div className="grid grid-cols-2 gap-2">

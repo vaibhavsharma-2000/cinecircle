@@ -115,7 +115,7 @@ export function FriendLibraryModal({
             onClick={() => setFilter("CURRENTLY_WATCHING")}
             className={`h-8 px-3.5 rounded-full text-xs font-bold transition cursor-pointer ${
               filter === "CURRENTLY_WATCHING"
-                ? "bg-amber-500 text-slate-950 font-extrabold shadow"
+                ? "bg-[var(--secondary)] text-[var(--secondary-text)] font-extrabold shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
@@ -126,7 +126,7 @@ export function FriendLibraryModal({
             onClick={() => setFilter("WATCHED")}
             className={`h-8 px-3.5 rounded-full text-xs font-bold transition cursor-pointer ${
               filter === "WATCHED"
-                ? "bg-emerald-600 text-white font-extrabold shadow"
+                ? "bg-[var(--success)] text-white font-extrabold shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
@@ -182,11 +182,11 @@ export function FriendLibraryModal({
                       {/* Status Badge */}
                       <div className="absolute top-2.5 left-2.5 z-10">
                         {item.status === "CURRENTLY_WATCHING" ? (
-                          <Badge className="bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-black text-[9px] uppercase tracking-wider shadow">
+                          <Badge className="bg-[var(--secondary)] text-[var(--secondary-text)] px-2 py-0.5 rounded-full font-black text-[9px] uppercase tracking-wider shadow">
                             <Eye className="w-2.5 h-2.5 inline mr-1" /> Watching
                           </Badge>
                         ) : item.status === "WATCHED" ? (
-                          <Badge className="bg-emerald-600 text-white px-2 py-0.5 rounded-full font-black text-[9px] uppercase tracking-wider shadow">
+                          <Badge className="bg-[var(--success)] text-white px-2 py-0.5 rounded-full font-black text-[9px] uppercase tracking-wider shadow">
                             <CheckCircle2 className="w-2.5 h-2.5 inline mr-1" /> Watched
                           </Badge>
                         ) : (
@@ -199,8 +199,8 @@ export function FriendLibraryModal({
                       {/* Star Rating Badge if rated */}
                       {item.rating_stars && item.status === "WATCHED" && (
                         <div className="absolute top-2.5 right-2.5 z-10">
-                          <Badge className="bg-black/80 text-amber-400 font-black text-[10px] px-2 py-0.5 rounded-full border border-white/10 shadow flex items-center gap-1">
-                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <Badge className="bg-black/80 text-[var(--star-accent)] font-black text-[10px] px-2 py-0.5 rounded-full border border-white/10 shadow flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-[var(--star-accent)] text-[var(--star-accent)]" />
                             {item.rating_stars.toFixed(1)}
                           </Badge>
                         </div>
