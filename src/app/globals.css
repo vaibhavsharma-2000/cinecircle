@@ -54,53 +54,6 @@
   --danger-text: #782619;
 }
 
-/* Dark mode: follows the system unless the user explicitly chose light */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --bg: #1A2217;
-    --surface: #232F1E;
-    --surface-raised: #2E3D28;
-    --surface-sunken: #131A11;
-    --border: #3C4B35;
-    --text: #E8E9DF;
-    --text-muted: #A7AE9A;
-    --primary: #A9B887;
-    --primary-hover: #BCC99D;
-    --primary-active: #94A474;
-    --on-primary: #1A2217;
-    --secondary: #A9B887;
-    --accent: #A9B887;
-    --accent-soft: #2E3D28;
-    --accent-text: #BCC99D;
-    --rating: #A9B887;
-    --success: #8FBF7A;
-    --danger: #D9695A;
-    --focus-ring: #BCC99D;
-
-    /* Backward-compatible aliases */
-    --canvas: var(--bg);
-    --surface-card: var(--surface);
-    --surface-hover: var(--surface-raised);
-    --surface-border: var(--border);
-    --text-primary: var(--text);
-    --text-secondary: var(--text-muted);
-    --brand-accent: var(--primary);
-    --brand-accent-text: var(--on-primary);
-    --brand-accent-hover: var(--primary-hover);
-    --brand-accent-active: var(--primary-active);
-    --star-accent: var(--rating);
-    --secondary-subtle: var(--accent-soft);
-    --secondary-border: var(--border);
-    --success-subtle: rgba(143, 191, 122, 0.16);
-    --success-border: rgba(143, 191, 122, 0.35);
-    --success-text: #B5DE9E;
-    --danger-subtle: rgba(217, 105, 90, 0.16);
-    --danger-border: rgba(217, 105, 90, 0.35);
-    --danger-text: #F29D93;
-  }
-}
-
 /* Dark mode: explicit user choice via the toggle */
 :root[data-theme="dark"] {
   color-scheme: dark;

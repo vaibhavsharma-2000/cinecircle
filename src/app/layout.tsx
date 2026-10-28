@@ -37,10 +37,14 @@ export default function RootLayout({
               (function() {
                 try {
                   const stored = localStorage.getItem("cinecircle_theme");
-                  if (stored === "dark" || stored === "light") {
-                    document.documentElement.setAttribute("data-theme", stored);
+                  if (stored === "dark") {
+                    document.documentElement.setAttribute("data-theme", "dark");
+                  } else {
+                    document.documentElement.setAttribute("data-theme", "light");
                   }
-                } catch (e) {}
+                } catch (e) {
+                  document.documentElement.setAttribute("data-theme", "light");
+                }
               })();
             `,
           }}

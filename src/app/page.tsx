@@ -59,15 +59,14 @@ const STORAGE_PREFIX = IS_MOCK_MODE ? "cinecircle_stage_" : "cinecircle_prod_";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>("discover");
-  // Theme state: initialized from localStorage or prefers-color-scheme
+  // Theme state: defaults to light mode unless the user explicitly chose dark
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("cinecircle_theme");
       if (stored === "dark") return true;
       if (stored === "light") return false;
-      return window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
-    return true;
+    return false;
   });
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(IS_MOCK_MODE ? MOCK_DEMO_EMAIL : null);
