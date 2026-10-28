@@ -5,38 +5,11 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
-## 🎨 Design System & Color Palette (Palette A: Marquee)
+## 🎨 Design System & Color Palette (Minimalist Black & White)
 - **Component Engine**: Built entirely with authentic Fragments UI (`@usefragments/ui`) component primitives.
-- **Marquee Dual-Mode Palette**:
-  - **Atmosphere**: Warm cream paper, cocoa ink, ember-orange accent like theater marquee bulbs, muted teal secondary, and gold reserved for star ratings.
-  - **Light Mode**:
-    - `bg`: `#FBF6EE` (Warm cream page background)
-    - `surface`: `#FFFDF9` (Cards, modals, navbar)
-    - `surface-sunken`: `#F3EBDD` (Input fields, inset areas, stripes)
-    - `border`: `#E4D8C5` (Card outlines, dividers)
-    - `text`: `#2A211B` (Cocoa ink body text and headings)
-    - `text-muted`: `#6B5D50` / `#958474` (Secondary text, timestamps, metadata)
-    - `primary`: `#C4461A` (Ember orange primary buttons, active items, key links)
-    - `primary-hover`: `#A83A14` | `primary-active`: `#8F300F` | `on-primary`: `#FFFFFF`
-    - `secondary`: `#1F6F6B` (Muted teal secondary buttons, tags, "friend" badges)
-    - `secondary-hover`: `#185755`
-    - `rating`: `#E0A526` (Star ratings only)
-    - `success`: `#3E7D4F` (Confirmations) | `danger`: `#B3261E` (Errors, destructive actions)
-    - `focus-ring`: `#1F6F6B` (Keyboard focus outline)
-  - **Dark Mode**:
-    - `bg`: `#17120F` (Dark warm espresso page background)
-    - `surface`: `#211A16` (Cards, modals, navbar)
-    - `surface-sunken`: `#120E0B` (Input fields, inset areas)
-    - `border`: `#3A2F28` (Card outlines, dividers)
-    - `text`: `#F4EBDD` (Cream body text and headings)
-    - `text-muted`: `#B3A494` / `#8E7E6E` (Secondary text, metadata)
-    - `primary`: `#F2793F` (Luminous ember orange primary buttons, active nav, key links)
-    - `primary-hover`: `#FF8E58` | `primary-active`: `#D9652D` | `on-primary`: `#1A0F08` (Dark text on ember)
-    - `secondary`: `#4FB3AC` (Muted luminous teal secondary buttons, tags, "friend" badges)
-    - `secondary-hover`: `#6CC7C0`
-    - `rating`: `#F0B93A` (Star ratings only)
-    - `success`: `#6DBB82` (Confirmations) | `danger`: `#F07167` (Errors, destructive actions)
-    - `focus-ring`: `#4FB3AC` (Keyboard focus outline)
+- **Minimalist Monochrome Dual-Mode Palette**:
+  - **Dark Mode**: Pitch Black `#000000` canvas, pitch black `#000000` cards, subtle `#222222` borders, stark white `#ffffff` primary text & buttons, `#f59e0b` gold stars.
+  - **Light Mode**: Seamless Pure White `#ffffff` site canvas & white cards, clean `#eaeaea` borders, stark pitch black `#000000` primary text & buttons, `#f59e0b` gold stars.
 - **Rounded Visual Style**: Standardized on Fragments UI signature rounded geometry (`rounded-2xl`, `rounded-full` pills).
 
 ---

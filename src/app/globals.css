@@ -2,104 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ==========================================================================
-   Palette A: Marquee
-   Warm cream paper, cocoa ink, ember-orange accent, muted teal secondary,
-   and gold reserved for star ratings.
-   ========================================================================== */
-
-/* DARK MODE (Default on :root) */
+/* True Modern Minimalist Theme (Linear / Vercel Style) */
 :root {
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
   
-  /* Core Marquee Dark Theme */
-  --canvas: #17120F;
-  --surface-card: #211A16;
-  --surface-hover: #2B221D;
-  --surface-sunken: #120E0B;
-  --surface-border: #3A2F28;
-  
-  /* Typography */
-  --text-primary: #F4EBDD;
-  --text-secondary: #B3A494;
-  --text-muted: #8E7E6E;
-
-  /* Primary Brand (Ember Orange) */
-  --brand-accent: #F2793F;
-  --brand-accent-hover: #FF8E58;
-  --brand-accent-active: #D9652D;
-  --brand-accent-text: #1A0F08;
-
-  /* Secondary (Muted Teal) */
-  --secondary: #4FB3AC;
-  --secondary-hover: #6CC7C0;
-  --secondary-text: #120E0B;
-  --secondary-subtle: rgba(79, 179, 172, 0.15);
-  --secondary-border: rgba(79, 179, 172, 0.35);
-
-  /* Ratings */
-  --star-accent: #F0B93A;
-  --star-accent-hover: #F6C858;
-
-  /* Semantic Feedback */
-  --success: #6DBB82;
-  --success-subtle: rgba(109, 187, 130, 0.16);
-  --success-border: rgba(109, 187, 130, 0.35);
-  --success-text: #86D199;
-
-  --danger: #F07167;
-  --danger-subtle: rgba(240, 113, 103, 0.16);
-  --danger-border: rgba(240, 113, 103, 0.35);
-  --danger-text: #F49189;
-
-  /* Focus Ring */
-  --focus-ring: #4FB3AC;
+  /* DARK MODE: Pitch Black Seamless */
+  --canvas: #000000;
+  --surface-card: #000000;
+  --surface-hover: #0a0a0a;
+  --surface-sunken: #050505;
+  --surface-border: #222222;
+  --brand-accent: #ffffff;
+  --brand-accent-text: #000000;
+  --brand-accent-hover: #f5f5f5;
+  --star-accent: #f59e0b;
+  --text-primary: #ffffff;
+  --text-secondary: #888888;
+  --text-muted: #555555;
+  --secondary: #ffffff;
+  --secondary-text: #000000;
+  --secondary-subtle: rgba(255, 255, 255, 0.1);
+  --secondary-border: rgba(255, 255, 255, 0.2);
+  --success: #10b981;
+  --success-subtle: rgba(16, 185, 129, 0.15);
+  --success-border: rgba(16, 185, 129, 0.3);
+  --success-text: #34d399;
+  --danger: #ef4444;
+  --danger-subtle: rgba(239, 68, 68, 0.15);
+  --danger-border: rgba(239, 68, 68, 0.3);
+  --danger-text: #f87171;
+  --focus-ring: #ffffff;
 }
 
-/* LIGHT MODE */
+/* LIGHT MODE: Pure White Seamless */
 .light {
-  /* Core Marquee Light Theme */
-  --canvas: #FBF6EE;
-  --surface-card: #FFFDF9;
-  --surface-hover: #F7EFE1;
-  --surface-sunken: #F3EBDD;
-  --surface-border: #E4D8C5;
-  
-  /* Typography */
-  --text-primary: #2A211B;
-  --text-secondary: #6B5D50;
-  --text-muted: #958474;
-
-  /* Primary Brand (Ember Orange) */
-  --brand-accent: #C4461A;
-  --brand-accent-hover: #A83A14;
-  --brand-accent-active: #8F300F;
-  --brand-accent-text: #FFFFFF;
-
-  /* Secondary (Muted Teal) */
-  --secondary: #1F6F6B;
-  --secondary-hover: #185755;
-  --secondary-text: #FFFFFF;
-  --secondary-subtle: rgba(31, 111, 107, 0.12);
-  --secondary-border: rgba(31, 111, 107, 0.28);
-
-  /* Ratings */
-  --star-accent: #E0A526;
-  --star-accent-hover: #C9901C;
-
-  /* Semantic Feedback */
-  --success: #3E7D4F;
-  --success-subtle: rgba(62, 125, 79, 0.12);
-  --success-border: rgba(62, 125, 79, 0.28);
-  --success-text: #285E36;
-
-  --danger: #B3261E;
-  --danger-subtle: rgba(179, 38, 30, 0.12);
-  --danger-border: rgba(179, 38, 30, 0.28);
-  --danger-text: #961C15;
-
-  /* Focus Ring */
-  --focus-ring: #1F6F6B;
+  --canvas: #ffffff;
+  --surface-card: #ffffff;
+  --surface-hover: #fafafa;
+  --surface-sunken: #f5f5f5;
+  --surface-border: #eaeaea;
+  --brand-accent: #000000;
+  --brand-accent-text: #ffffff;
+  --brand-accent-hover: #333333;
+  --star-accent: #f59e0b;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --secondary: #000000;
+  --secondary-text: #ffffff;
+  --secondary-subtle: rgba(0, 0, 0, 0.05);
+  --secondary-border: rgba(0, 0, 0, 0.15);
+  --success: #059669;
+  --success-subtle: rgba(5, 150, 105, 0.1);
+  --success-border: rgba(5, 150, 105, 0.25);
+  --success-text: #065f46;
+  --danger: #dc2626;
+  --danger-subtle: rgba(220, 38, 38, 0.1);
+  --danger-border: rgba(220, 38, 38, 0.25);
+  --danger-text: #991b1b;
+  --focus-ring: #000000;
 }
 
 body {
