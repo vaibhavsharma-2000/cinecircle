@@ -50,19 +50,19 @@ export function StarRatingPicker({
                 {/* Visual Star */}
                 <div className="relative">
                   {/* Base / Empty Star */}
-                  <Star className={`${starSizeClass} text-[var(--text-muted)]`} />
+                  <Star className={`${starSizeClass} text-[var(--border)]`} />
 
                   {/* Half-Filled Layer */}
                   {isHalf && (
                     <div className="absolute inset-0 overflow-hidden w-1/2 pointer-events-none">
-                      <Star className={`${starSizeClass} fill-[var(--star-accent)] text-[var(--star-accent)]`} />
+                      <Star className={`${starSizeClass} fill-[var(--rating)] text-[var(--rating)]`} />
                     </div>
                   )}
 
                   {/* Full-Filled Layer */}
                   {isFull && (
                     <div className="absolute inset-0 pointer-events-none">
-                      <Star className={`${starSizeClass} fill-[var(--star-accent)] text-[var(--star-accent)]`} />
+                      <Star className={`${starSizeClass} fill-[var(--rating)] text-[var(--rating)]`} />
                     </div>
                   )}
                 </div>
@@ -91,7 +91,7 @@ export function StarRatingPicker({
 
         {/* Dynamic Numerical Badge */}
         {showLabel && (
-          <span className="text-xs font-black text-[var(--star-accent)] bg-[var(--surface-sunken)] px-2.5 py-0.5 rounded-full border border-[var(--surface-border)] shadow-xs">
+          <span className="text-xs font-bold text-[var(--rating)] bg-[var(--surface-sunken)] px-2 py-0.5 rounded border border-[var(--border)] shadow-none">
             ★ {activeRating.toFixed(1)}
           </span>
         )}
@@ -106,10 +106,10 @@ export function StarRatingPicker({
               key={preset}
               type="button"
               onClick={() => onChange(preset)}
-              className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition border cursor-pointer ${
+              className={`px-2 py-0.5 rounded text-[10px] font-bold transition border cursor-pointer ${
                 isSelected
-                  ? "bg-[var(--star-accent)] text-slate-950 border-[var(--star-accent)] font-black shadow-xs"
-                  : "bg-[var(--canvas)] text-[var(--text-secondary)] border-[var(--surface-border)] hover:text-[var(--text-primary)] hover:border-[var(--brand-accent)]"
+                  ? "bg-[var(--accent)] text-[var(--primary)] border-[var(--accent)] font-extrabold shadow-none"
+                  : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text)] hover:bg-[var(--accent-soft)]"
               }`}
             >
               ★ {preset.toFixed(1)}

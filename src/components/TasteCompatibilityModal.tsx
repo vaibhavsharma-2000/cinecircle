@@ -160,7 +160,7 @@ export function TasteCompatibilityModal({
           {friendRecs.length > 0 && (
             <div className="space-y-2.5">
               <h4 className="text-xs font-extrabold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5">
-                <Heart className="w-4 h-4 text-pink-400" /> {friend.display_name}&apos;s Top Recommendations
+                <Heart className="w-4 h-4 text-[var(--accent-text)]" /> {friend.display_name}&apos;s Top Recommendations
               </h4>
               <div className="space-y-2">
                 {friendRecs.map((rec) => (

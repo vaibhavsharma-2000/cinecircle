@@ -206,7 +206,7 @@ export function RecommendationsView({
                             🔒 Circle
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                          <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-[var(--surface-sunken)] text-[var(--text-muted)] border border-[var(--border)]">
                             🎯 Direct
                           </span>
                         )}
@@ -232,7 +232,7 @@ export function RecommendationsView({
                             e.stopPropagation();
                             onDeleteRecommendation(rec.id);
                           }}
-                          className="text-[var(--text-muted)] hover:text-red-400 p-1 transition cursor-pointer"
+                          className="text-[var(--text-muted)] hover:text-[var(--danger)] p-1 transition cursor-pointer"
                           title="Delete Recommendation"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

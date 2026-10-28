@@ -316,11 +316,11 @@ export function FriendsView({
 
             {topCinephile && (
               <div className="p-4 bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl flex items-center gap-3 shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-black shrink-0 text-lg">
+                <div className="w-10 h-10 rounded-xl bg-[var(--surface-sunken)] text-[var(--accent-text)] flex items-center justify-center font-black shrink-0 text-lg">
                   🍿
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 block">Most Dedicated Watcher</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[var(--accent-text)] block">Most Dedicated Watcher</span>
                   <p className="text-xs font-black text-[var(--text-primary)]">{topCinephile.display_name} (@{topCinephile.username})</p>
                   <p className="text-[11px] text-[var(--text-secondary)]">{topCinephile.stats.watchedCount} movies logged & watched</p>
                 </div>

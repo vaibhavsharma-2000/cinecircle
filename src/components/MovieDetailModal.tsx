@@ -303,8 +303,8 @@ export function MovieDetailModal({
               <Star className="w-3.5 h-3.5 fill-current" /> {voteAverage.toFixed(1)} / 10 TMDB
             </Badge>
             {recommendedBy && (
-              <Badge className="px-3.5 h-8 rounded-full bg-black/80 text-[var(--star-accent)] text-xs font-bold border border-[var(--star-accent)]/40 flex items-center">
-                ⭐ {ratingStars ? ratingStars.toFixed(1) : "5.0"} by {recommendedBy}
+              <Badge className="px-3.5 h-8 rounded-full bg-[var(--surface)] text-[var(--rating)] text-xs font-bold border border-[var(--border)] flex items-center shadow-none">
+                ★ {ratingStars ? ratingStars.toFixed(1) : "5.0"} by {recommendedBy}
               </Badge>
             )}
           </div>
@@ -551,7 +551,7 @@ export function MovieDetailModal({
                 onClick={() => onSetWatchStatus?.(currentMovie, "CURRENTLY_WATCHING")}
                 className={`py-2.5 px-3 rounded-xl font-bold text-xs flex flex-col items-center justify-center gap-1 transition border cursor-pointer ${
                   currentWatchItem?.status === "CURRENTLY_WATCHING"
-                    ? "bg-[var(--secondary)] text-[var(--secondary-text)] border-[var(--secondary)] shadow-md font-extrabold"
+                    ? "bg-[var(--accent-soft)] text-[var(--text)] border-[var(--border)] shadow-none font-extrabold"
                     : "bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--surface-border)]"
                 }`}
               >
@@ -564,7 +564,7 @@ export function MovieDetailModal({
                 onClick={() => onSetWatchStatus?.(currentMovie, "WATCHED", currentWatchItem?.rating_stars || 5.0)}
                 className={`py-2.5 px-3 rounded-xl font-bold text-xs flex flex-col items-center justify-center gap-1 transition border cursor-pointer ${
                   currentWatchItem?.status === "WATCHED"
-                    ? "bg-[var(--success)] text-white border-[var(--success)] shadow-md font-extrabold"
+                    ? "bg-[var(--primary)] text-[var(--on-primary)] border-[var(--primary)] shadow-none font-extrabold"
                     : "bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--surface-border)]"
                 }`}
               >

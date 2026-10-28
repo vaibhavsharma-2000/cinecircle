@@ -5,12 +5,45 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ---
 
-## 🎨 Design System & Color Palette (Minimalist Black & White)
+## 🎨 Design System & Color Palette ("Soft White, Sage & Deep Olive")
 - **Component Engine**: Built entirely with authentic Fragments UI (`@usefragments/ui`) component primitives.
-- **Minimalist Monochrome Dual-Mode Palette**:
-  - **Dark Mode**: Pitch Black `#000000` canvas, pitch black `#000000` cards, subtle `#222222` borders, stark white `#ffffff` primary text & buttons, `#f59e0b` gold stars.
-  - **Light Mode**: Seamless Pure White `#ffffff` site canvas & white cards, clean `#eaeaea` borders, stark pitch black `#000000` primary text & buttons, `#f59e0b` gold stars.
-- **Rounded Visual Style**: Standardized on Fragments UI signature rounded geometry (`rounded-2xl`, `rounded-full` pills).
+- **Calm Minimal Editorial Palette**:
+  - **Light Mode (`:root` / `[data-theme="light"]`)**:
+    - `bg`: `#E8E9DF` (Soft paper-like cream background)
+    - `surface`: `#F3F4EC` (Cards, nav bar, modals)
+    - `surface-raised`: `#FAFAF5` (Elevated cards and modal elements)
+    - `surface-sunken`: `#DCDECF` (Input fields, inset quote blocks, table stripes)
+    - `border`: `#CDD0BC` (Hairline 1px borders & dividers)
+    - `text`: `#1B2418` (Deep olive body text and headings)
+    - `text-muted`: `#5B6753` (Secondary text, metadata, runtime, timestamps)
+    - `primary`: `#2E3D28` (Primary buttons, active item fills)
+    - `primary-hover`: `#3A4C33` | `primary-active`: `#243020` | `on-primary`: `#E8E9DF`
+    - `secondary`: `#2E3D28` (Secondary button border & text, hover: `--accent-soft`)
+    - `accent`: `#A9B887` (Sage accent fill / active chip fill with `#2E3D28` text)
+    - `accent-soft`: `#D3D9BE` (Chip/tag fill with `--text`)
+    - `accent-text`: `#4F6338` (High-contrast links & action accents)
+    - `rating`: `#6F8450` (Olive-gold reserved for star ratings)
+    - `success`: `#4F7A3E` | `danger`: `#A8402F` | `focus-ring`: `#4F6338`
+  - **Dark Mode (`@media (prefers-color-scheme: dark)` / `[data-theme="dark"]`)**:
+    - `bg`: `#1A2217` (Deep olive night background)
+    - `surface`: `#232F1E` (Cards, nav bar, modals)
+    - `surface-raised`: `#2E3D28` (Elevated components)
+    - `surface-sunken`: `#131A11` (Input fields, inset trays)
+    - `border`: `#3C4B35` (Hairline dividers)
+    - `text`: `#E8E9DF` (Soft cream text)
+    - `text-muted`: `#A7AE9A` (Muted secondary text)
+    - `primary`: `#A9B887` (Sage primary buttons)
+    - `primary-hover`: `#BCC99D` | `primary-active`: `#94A474` | `on-primary`: `#1A2217`
+    - `secondary`: `#A9B887`
+    - `accent`: `#A9B887` | `accent-soft`: `#2E3D28` | `accent-text`: `#BCC99D`
+    - `rating`: `#A9B887` (Sage star ratings)
+    - `success`: `#8FBF7A` | `danger`: `#D9695A` | `focus-ring`: `#BCC99D`
+- **Visual Style Cues**:
+  - Generous whitespace and a soft, paper-like page background (`--bg`).
+  - Hairline 1px borders (`--border`) without heavy dropshadows (`shadow-none` or subtle).
+  - Navigation and small metadata labels in uppercase with wide letter-spacing (`tracking-wider`).
+  - Strict WCAG AA contrast compliance: `--accent` (#A9B887) is never used as raw text on soft white backgrounds.
+  - Dual theme persistence with zero-flash inline hydration script in `layout.tsx`.
 
 ---
 

@@ -59,7 +59,16 @@ const STORAGE_PREFIX = IS_MOCK_MODE ? "cinecircle_stage_" : "cinecircle_prod_";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>("discover");
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+  // Theme state: initialized from localStorage or prefers-color-scheme
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("cinecircle_theme");
+      if (stored === "dark") return true;
+      if (stored === "light") return false;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return true;
+  });
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(IS_MOCK_MODE ? MOCK_DEMO_EMAIL : null);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>(IS_MOCK_MODE ? MOCK_WATCHLIST : []);
@@ -421,13 +430,13 @@ export default function Home() {
   }, []);
 
   const handleToggleTheme = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    if (newMode) {
-      document.documentElement.classList.remove("light");
-    } else {
-      document.documentElement.classList.add("light");
-    }
+    const nextMode = !isDarkMode;
+    setIsDarkMode(nextMode);
+    const themeName = nextMode ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", themeName);
+    try {
+      localStorage.setItem("cinecircle_theme", themeName);
+    } catch (e) {}
   };
 
   const handleLogout = async () => {

@@ -116,7 +116,7 @@ export function InstallPwaModal({ isOpen, onClose }: InstallPwaModalProps) {
                 </div>
                 <div className="text-xs space-y-0.5">
                   <p className="font-extrabold text-[var(--text-primary)] flex items-center gap-1.5">
-                    Tap the Share button <Share2 className="w-3.5 h-3.5 text-blue-400 inline" />
+                    Tap the Share button <Share2 className="w-3.5 h-3.5 text-[var(--accent-text)] inline" />
                   </p>
                   <p className="text-[11px] text-[var(--text-secondary)]">
                     Located in Safari's bottom navigation toolbar.

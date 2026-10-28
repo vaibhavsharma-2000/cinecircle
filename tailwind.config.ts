@@ -10,27 +10,36 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        canvas: "var(--canvas)",
+        bg: "var(--bg)",
         surface: {
-          DEFAULT: "var(--surface-card)",
-          hover: "var(--surface-hover)",
+          DEFAULT: "var(--surface)",
+          raised: "var(--surface-raised)",
           sunken: "var(--surface-sunken)",
-          border: "var(--surface-border)",
+          border: "var(--border)",
+        },
+        border: "var(--border)",
+        text: {
+          DEFAULT: "var(--text)",
+          muted: "var(--text-muted)",
         },
         primary: {
-          DEFAULT: "var(--brand-accent)",
-          hover: "var(--brand-accent-hover)",
-          active: "var(--brand-accent-active)",
-          text: "var(--brand-accent-text)",
+          DEFAULT: "var(--primary)",
+          hover: "var(--primary-hover)",
+          active: "var(--primary-active)",
+          on: "var(--on-primary)",
         },
         secondary: {
           DEFAULT: "var(--secondary)",
-          hover: "var(--secondary-hover)",
-          text: "var(--secondary-text)",
         },
-        rating: "var(--star-accent)",
+        accent: {
+          DEFAULT: "var(--accent)",
+          soft: "var(--accent-soft)",
+          text: "var(--accent-text)",
+        },
+        rating: "var(--rating)",
         success: "var(--success)",
         danger: "var(--danger)",
+        canvas: "var(--bg)",
       },
     },
   },

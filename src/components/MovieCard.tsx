@@ -54,29 +54,28 @@ export function MovieCard({
   return (
     <Card
       onClick={onCardClick}
-      className="rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] group hover:border-[var(--brand-accent)] transition duration-300 shadow-xl flex flex-col justify-between cursor-pointer"
+      className="rounded-lg overflow-hidden bg-[var(--surface)] border border-[var(--border)] group hover:outline-1 hover:outline-[var(--accent)] transition-all duration-150 flex flex-col justify-between cursor-pointer shadow-none"
     >
       {/* 2:3 Vertical Movie Poster */}
-      <div className="relative aspect-[2/3] bg-black/60 overflow-hidden">
+      <div className="relative aspect-[2/3] bg-[var(--surface-sunken)] overflow-hidden border-b border-[var(--border)]">
         <img
           src={getTMDBImageUrl(posterPath, "w500")}
           alt={title}
-          className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+          className="w-full h-full object-cover group-hover:scale-[1.02] transition duration-200"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface-card)] via-transparent to-transparent opacity-90" />
 
         {/* Top Badges: Direct Rec & Star Rating */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-1 z-10">
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1 z-10">
           {isDirectForYou ? (
-            <Badge className="bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-black text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+            <Badge className="bg-[var(--accent)] text-[var(--primary)] font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm flex items-center gap-1 shadow-none">
               <Target className="w-3 h-3" /> Direct For You
             </Badge>
           ) : (
             <span />
           )}
 
-          <Badge className="bg-black/75 backdrop-blur-md text-[var(--star-accent)] font-extrabold text-xs px-3 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow">
-            <Star className="w-3.5 h-3.5 fill-[var(--star-accent)] text-[var(--star-accent)]" />
+          <Badge className="bg-[var(--surface)] text-[var(--rating)] font-extrabold text-xs px-2.5 py-0.5 rounded-sm border border-[var(--border)] flex items-center gap-1 shadow-none">
+            <Star className="w-3.5 h-3.5 fill-[var(--rating)] text-[var(--rating)]" />
             {friendRating ? friendRating.toFixed(1) : tmdbRating?.toFixed(1) || "5.0"}
           </Badge>
         </div>
@@ -86,26 +85,26 @@ export function MovieCard({
       <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="font-extrabold text-base text-[var(--text-primary)] truncate group-hover:text-[var(--text-primary)] transition">
+            <h3 className="font-extrabold text-sm text-[var(--text)] truncate group-hover:text-[var(--text)] transition">
               {title}
             </h3>
-            <span className="text-xs text-[var(--text-secondary)] font-bold shrink-0">{releaseYear}</span>
+            <span className="text-[11px] text-[var(--text-muted)] font-medium shrink-0 uppercase tracking-wider">{releaseYear}</span>
           </div>
 
-          <p className="text-xs text-[var(--text-secondary)] font-medium truncate">{genre}</p>
+          <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider font-medium truncate">{genre}</p>
 
           {/* Friend Quote & Review Note */}
           {friendNote && (
-            <div className="p-3 rounded-xl bg-[var(--canvas)] border border-[var(--surface-border)] space-y-1 mt-1">
-              <div className="flex items-center gap-1.5 text-xs text-[var(--text-primary)] font-extrabold">
+            <div className="p-2.5 rounded bg-[var(--surface-sunken)] border border-[var(--border)] space-y-1 mt-1">
+              <div className="flex items-center gap-1.5 text-[11px] text-[var(--text)] font-bold">
                 <UserAvatar
                   avatarId={friendAvatarId}
                   displayName={friendName || "Friend"}
                   size="xs"
                 />
-                <span>{friendName} says:</span>
+                <span className="uppercase tracking-wider text-[10px] text-[var(--text-muted)]">{friendName} says:</span>
               </div>
-              <p className="text-xs text-[var(--text-primary)] italic line-clamp-2 leading-relaxed">
+              <p className="text-xs text-[var(--text)] italic line-clamp-2 leading-relaxed">
                 &quot;{friendNote}&quot;
               </p>
             </div>
@@ -117,7 +116,7 @@ export function MovieCard({
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-[var(--canvas)] text-[var(--text-secondary)] border border-[var(--surface-border)]"
+                  className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-[var(--accent-soft)] text-[var(--text)] border border-transparent"
                 >
                   #{tag}
                 </span>
@@ -127,13 +126,13 @@ export function MovieCard({
         </div>
 
         {/* Action Row: Recommend & Library */}
-        <div className="flex items-center gap-2 pt-3 border-t border-[var(--surface-border)]">
+        <div className="flex items-center gap-2 pt-3 border-t border-[var(--border)]">
           <Button
             onClick={(e) => {
               e.stopPropagation();
               onRecommendClick?.(e);
             }}
-            className="flex-1 h-10 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] text-xs font-black rounded-xl transition shadow flex items-center justify-center gap-1.5 cursor-pointer"
+            className="flex-1 h-9 bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] text-[var(--on-primary)] text-xs font-bold uppercase tracking-wider rounded transition flex items-center justify-center gap-1.5 cursor-pointer shadow-none"
           >
             <Sparkles className="w-3.5 h-3.5 fill-current" /> Recommend
           </Button>
@@ -144,13 +143,13 @@ export function MovieCard({
               onWatchlistClick?.(e);
             }}
             title={isSaved ? "Saved in Library" : "Add to Library"}
-            className={`w-10 h-10 rounded-xl border transition flex items-center justify-center cursor-pointer ${
+            className={`w-9 h-9 rounded border transition flex items-center justify-center cursor-pointer ${
               isSaved
-                ? "bg-[var(--brand-accent)]/20 border-[var(--brand-accent)] text-[var(--text-primary)]"
-                : "bg-[var(--canvas)] border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
+                ? "bg-[var(--accent)] border-[var(--accent)] text-[var(--primary)]"
+                : "bg-transparent border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--accent-soft)]"
             }`}
           >
-            {isSaved ? <Check className="w-4 h-4 text-[var(--brand-accent)] stroke-[3]" /> : <Bookmark className="w-4 h-4" />}
+            {isSaved ? <Check className="w-4 h-4 stroke-[3]" /> : <Bookmark className="w-4 h-4" />}
           </IconButton>
         </div>
       </div>

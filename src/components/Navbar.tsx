@@ -86,7 +86,7 @@ export function Navbar({
   }, []);
 
   return (
-    <Header className="sticky top-0 z-40 bg-[var(--canvas)]/95 backdrop-blur-xl border-b border-[var(--surface-border)] px-3 sm:px-6 lg:px-8 py-3 transition-colors duration-300">
+    <Header className="sticky top-0 z-40 bg-[var(--bg)] border-b border-[var(--border)] px-3 sm:px-6 lg:px-8 py-3 transition-colors duration-150">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 w-full">
         
         {/* Top Header Row: Brand Logo & Mobile Right Controls */}
@@ -190,7 +190,7 @@ export function Navbar({
                     setDropdownOpen(false);
                     onLogout();
                   }}
-                  className="w-full px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 hover:bg-red-950/40 flex items-center gap-2 transition text-left border-t border-[var(--surface-border)] pt-2 mt-1"
+                  className="w-full px-3 py-2.5 rounded-xl text-xs font-bold text-[var(--danger)] hover:bg-[var(--danger-subtle)] flex items-center gap-2 transition text-left border-t border-[var(--surface-border)] pt-2 mt-1 cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" /> Sign Out
                 </button>
@@ -205,7 +205,7 @@ export function Navbar({
         </div>
 
         {/* Navigation Tabs - Desktop Segmented Pill Control */}
-        <nav className="hidden md:flex items-center gap-0.5 bg-[var(--surface-card)] p-1 rounded-full border border-[var(--surface-border)] shadow-sm shrink-0">
+        <nav className="hidden md:flex items-center gap-1 bg-transparent shrink-0">
           {tabs.map((tab) => {
             const IconComp = tab.icon;
             const isSelected = activeTab === tab.id;
@@ -215,22 +215,22 @@ export function Navbar({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`h-8 px-3 rounded-full text-xs font-bold flex items-center gap-1.5 transition shrink-0 ${
+                className={`h-8 px-3 text-xs tracking-wider uppercase font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer ${
                   isSelected
-                    ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow-xs font-extrabold"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
+                    ? "text-[var(--text)] underline decoration-[1px] underline-offset-8 font-black"
+                    : "text-[var(--text-muted)] hover:text-[var(--text)]"
                 }`}
               >
-                <IconComp className={`w-3.5 h-3.5 ${isSelected ? "text-[var(--brand-accent-text)]" : "text-[var(--text-secondary)]"}`} />
+                <IconComp className={`w-3.5 h-3.5 ${isSelected ? "text-[var(--text)]" : "text-[var(--text-muted)]"}`} />
                 <span className="truncate">{tab.label}</span>
                 {Boolean(tab.badge) && (
                   <Badge
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                       tab.isAlert
-                        ? "bg-[var(--secondary)] text-[var(--secondary-text)] font-black shadow animate-pulse"
+                        ? "bg-[var(--danger)] text-white font-black animate-pulse"
                         : isSelected
-                        ? "bg-black/20 text-[var(--brand-accent-text)]"
-                        : "bg-[var(--canvas)] text-[var(--text-primary)]"
+                        ? "bg-[var(--accent)] text-[var(--primary)] font-extrabold"
+                        : "bg-[var(--surface-sunken)] text-[var(--text-muted)]"
                     }`}
                   >
                     {tab.badge}
@@ -316,7 +316,7 @@ export function Navbar({
                       setDropdownOpen(false);
                       onLogout();
                     }}
-                    className="w-full px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 hover:bg-red-950/40 flex items-center gap-2 transition text-left border-t border-[var(--surface-border)] pt-2 mt-1 cursor-pointer"
+                    className="w-full px-3 py-2.5 rounded-xl text-xs font-bold text-[var(--danger)] hover:bg-[var(--danger-subtle)] flex items-center gap-2 transition text-left border-t border-[var(--surface-border)] pt-2 mt-1 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" /> Sign Out
                   </button>

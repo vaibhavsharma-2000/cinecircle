@@ -78,19 +78,19 @@ export function WatchlistView({
     switch (status) {
       case "CURRENTLY_WATCHING":
         return (
-          <Badge className="bg-[var(--secondary)] text-[var(--secondary-text)] px-2.5 py-0.5 rounded-full font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow">
+          <Badge className="bg-[var(--accent-soft)] text-[var(--text)] px-2.5 py-0.5 rounded font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-none border border-[var(--border)]">
             <Eye className="w-3 h-3" /> Watching
           </Badge>
         );
       case "WATCHED":
         return (
-          <Badge className="bg-[var(--success)] text-white px-2.5 py-0.5 rounded-full font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow">
+          <Badge className="bg-[var(--primary)] text-[var(--on-primary)] px-2.5 py-0.5 rounded font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-none">
             <CheckCircle2 className="w-3 h-3" /> Watched
           </Badge>
         );
       default:
         return (
-          <Badge className="bg-[var(--brand-accent)] text-[var(--brand-accent-text)] px-2.5 py-0.5 rounded-full font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow">
+          <Badge className="bg-[var(--surface-sunken)] text-[var(--text)] px-2.5 py-0.5 rounded font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-none border border-[var(--border)]">
             <Bookmark className="w-3 h-3" /> Want to Watch
           </Badge>
         );
@@ -238,7 +238,7 @@ export function WatchlistView({
                     <Badge className="bg-[var(--brand-accent)] text-[var(--brand-accent-text)] px-2.5 py-1 rounded-full font-black text-[10px] uppercase tracking-wider shadow">
                       Recommended
                     </Badge>
-                    <Badge className="bg-black/75 text-[var(--star-accent)] font-extrabold text-xs px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1">
+                    <Badge className="bg-[var(--surface)] text-[var(--rating)] font-extrabold text-xs px-2.5 py-1 rounded border border-[var(--border)] flex items-center gap-1 shadow-none">
                       ★ {item.rating_stars.toFixed(1)}
                     </Badge>
                   </div>
@@ -326,8 +326,8 @@ export function WatchlistView({
                     {/* Star Rating Badge if Rated */}
                     {item.rating_stars && item.status === "WATCHED" && (
                       <div className="absolute top-3 right-3 z-10">
-                        <Badge className="bg-black/80 text-[var(--star-accent)] font-extrabold text-xs px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow">
-                          <Star className="w-3.5 h-3.5 fill-[var(--star-accent)] text-[var(--star-accent)]" />
+                        <Badge className="bg-[var(--surface)] text-[var(--rating)] font-extrabold text-xs px-2.5 py-1 rounded border border-[var(--border)] flex items-center gap-1 shadow-none">
+                          <Star className="w-3.5 h-3.5 fill-[var(--rating)] text-[var(--rating)]" />
                           {item.rating_stars.toFixed(1)}
                         </Badge>
                       </div>
