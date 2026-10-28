@@ -131,7 +131,7 @@ export function WatchlistView({
         <div className="flex flex-wrap items-center gap-1.5 bg-[var(--surface-card)] p-1.5 rounded-2xl sm:rounded-full border border-[var(--surface-border)]">
           <Button
             onClick={() => setFilter("ALL")}
-            className={`h-9 px-3.5 rounded-full text-xs font-bold transition cursor-pointer ${
+            className={`h-9 px-3.5 rounded-full text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 flex-nowrap ${
               filter === "ALL"
                 ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
@@ -142,7 +142,7 @@ export function WatchlistView({
 
           <Button
             onClick={() => setFilter("WANT_TO_WATCH")}
-            className={`h-9 px-3.5 rounded-full text-xs font-bold transition cursor-pointer ${
+            className={`h-9 px-3.5 rounded-full text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 flex-nowrap ${
               filter === "WANT_TO_WATCH"
                 ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
@@ -153,7 +153,7 @@ export function WatchlistView({
 
           <Button
             onClick={() => setFilter("CURRENTLY_WATCHING")}
-            className={`h-9 px-3.5 rounded-full text-xs font-bold transition cursor-pointer ${
+            className={`h-9 px-3.5 rounded-full text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 flex-nowrap ${
               filter === "CURRENTLY_WATCHING"
                 ? "bg-[var(--secondary)] text-[var(--secondary-text)] font-extrabold shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
@@ -164,7 +164,7 @@ export function WatchlistView({
 
           <Button
             onClick={() => setFilter("WATCHED")}
-            className={`h-9 px-3.5 rounded-full text-xs font-bold transition cursor-pointer ${
+            className={`h-9 px-3.5 rounded-full text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 flex-nowrap ${
               filter === "WATCHED"
                 ? "bg-[var(--success)] text-white font-extrabold shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
@@ -175,14 +175,14 @@ export function WatchlistView({
 
           <Button
             onClick={() => setFilter("RECOMMENDED")}
-            className={`h-9 px-3.5 rounded-full text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+            className={`h-9 px-3.5 rounded-full text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0 flex-nowrap ${
               filter === "RECOMMENDED"
                 ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            Recommended ({myRecommendations.length})
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+            <span className="whitespace-nowrap">Recommended ({myRecommendations.length})</span>
           </Button>
         </div>
       </div>

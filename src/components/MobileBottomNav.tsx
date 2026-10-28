@@ -53,14 +53,14 @@ export function MobileBottomNav({
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center justify-center gap-1 py-1 px-3 rounded transition relative cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-md transition relative cursor-pointer ${
               isSelected
-                ? "text-[var(--text)] font-extrabold underline decoration-1 underline-offset-4"
+                ? "text-[var(--text)] font-black"
                 : "text-[var(--text-muted)] hover:text-[var(--text)] font-medium"
             }`}
           >
             <div className="relative">
-              <Icon className={`w-5 h-5 ${isSelected ? "stroke-[2.5]" : "stroke-[1.75]"}`} />
+              <Icon className={`w-5 h-5 transition-colors ${isSelected ? "text-[var(--primary)] stroke-[2.5]" : "stroke-[1.75]"}`} />
               {Boolean(tab.badge) && (
                 <span
                   className={`absolute -top-1.5 -right-2.5 px-1 py-0.2 rounded text-[9px] font-black ${
@@ -73,7 +73,10 @@ export function MobileBottomNav({
                 </span>
               )}
             </div>
-            <span className="text-[10px] tracking-wider uppercase">{tab.label}</span>
+            <span className="text-[10px] tracking-wider uppercase font-bold">{tab.label}</span>
+            {isSelected && (
+              <span className="absolute bottom-0 left-2 right-2 h-[2.5px] bg-[var(--primary)] rounded-full" />
+            )}
           </button>
         );
       })}

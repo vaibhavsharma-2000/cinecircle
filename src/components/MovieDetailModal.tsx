@@ -299,12 +299,14 @@ export function MovieDetailModal({
 
           {/* Rating Scores */}
           <div className="absolute bottom-4 left-6 flex flex-wrap items-center gap-2">
-            <Badge className="px-3.5 h-8 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] text-xs font-black flex items-center gap-1 shadow">
-              <Star className="w-3.5 h-3.5 fill-current" /> {voteAverage.toFixed(1)} / 10 TMDB
+            <Badge className="px-3.5 h-8 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] text-xs font-black inline-flex items-center gap-1.5 shadow flex-nowrap whitespace-nowrap shrink-0">
+              <Star className="w-3.5 h-3.5 fill-current shrink-0" />
+              <span className="whitespace-nowrap">{voteAverage.toFixed(1)} / 10 TMDB</span>
             </Badge>
             {recommendedBy && (
-              <Badge className="px-3.5 h-8 rounded-full bg-[var(--surface)] text-[var(--rating)] text-xs font-bold border border-[var(--border)] flex items-center shadow-none">
-                ★ {ratingStars ? ratingStars.toFixed(1) : "5.0"} by {recommendedBy}
+              <Badge className="px-3.5 h-8 rounded-full bg-[var(--surface)] text-[var(--rating)] text-xs font-bold border border-[var(--border)] inline-flex items-center gap-1.5 shadow-none flex-nowrap whitespace-nowrap shrink-0">
+                <span className="shrink-0">★</span>
+                <span className="whitespace-nowrap">{ratingStars ? ratingStars.toFixed(1) : "5.0"} by {recommendedBy}</span>
               </Badge>
             )}
           </div>

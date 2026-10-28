@@ -124,9 +124,9 @@ export function Navbar({
             ) : (
               <Button
                 onClick={onOpenAuth}
-                className="h-8 px-3.5 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold text-[11px]"
+                className="h-8 px-3.5 rounded-full bg-[var(--brand-accent)] text-[var(--brand-accent-text)] font-extrabold text-[11px] whitespace-nowrap shrink-0 inline-flex items-center justify-center flex-nowrap"
               >
-                Sign In
+                <span className="whitespace-nowrap">Sign In</span>
               </Button>
             )}
 
@@ -204,8 +204,8 @@ export function Navbar({
           <SearchAutocomplete onSelectMovie={onSelectMovie} />
         </div>
 
-        {/* Navigation Tabs - Desktop Segmented Pill Control */}
-        <nav className="hidden md:flex items-center gap-1 bg-transparent shrink-0">
+        {/* Navigation Tabs - Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-1.5 bg-transparent shrink-0">
           {tabs.map((tab) => {
             const IconComp = tab.icon;
             const isSelected = activeTab === tab.id;
@@ -215,17 +215,21 @@ export function Navbar({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`h-8 px-3 text-xs tracking-wider uppercase font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer ${
+                className={`relative h-9 px-3.5 text-xs tracking-wider uppercase font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer rounded-md ${
                   isSelected
-                    ? "text-[var(--text)] underline decoration-[1px] underline-offset-8 font-black"
-                    : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                    ? "text-[var(--text)] font-black bg-[var(--surface-sunken)]/60 shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-sunken)]/30"
                 }`}
               >
-                <IconComp className={`w-3.5 h-3.5 ${isSelected ? "text-[var(--text)]" : "text-[var(--text-muted)]"}`} />
-                <span className="truncate">{tab.label}</span>
+                <IconComp
+                  className={`w-3.5 h-3.5 shrink-0 transition-colors ${
+                    isSelected ? "text-[var(--primary)] stroke-[2.5]" : "text-[var(--text-muted)] stroke-[1.75]"
+                  }`}
+                />
+                <span className="whitespace-nowrap shrink-0">{tab.label}</span>
                 {Boolean(tab.badge) && (
                   <Badge
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-black shrink-0 ${
                       tab.isAlert
                         ? "bg-[var(--danger)] text-white font-black animate-pulse"
                         : isSelected
@@ -235,6 +239,11 @@ export function Navbar({
                   >
                     {tab.badge}
                   </Badge>
+                )}
+
+                {/* Clear, Prominent Active Underline Indicator */}
+                {isSelected && (
+                  <span className="absolute bottom-0 left-2 right-2 h-[2.5px] bg-[var(--primary)] rounded-full transition-all duration-200" />
                 )}
               </button>
             );
@@ -336,10 +345,10 @@ export function Navbar({
 
               <Button
                 onClick={onOpenAuth}
-                className="h-9 px-4 rounded-full bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs shadow-sm flex items-center gap-1.5 transition"
+                className="h-9 px-4 rounded-full bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] font-extrabold text-xs shadow-sm inline-flex items-center justify-center gap-1.5 transition whitespace-nowrap shrink-0 flex-nowrap"
               >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Sign In</span>
+                <LogIn className="w-3.5 h-3.5 shrink-0" />
+                <span className="whitespace-nowrap shrink-0">Sign In</span>
               </Button>
             </div>
           )}

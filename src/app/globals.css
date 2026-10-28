@@ -207,32 +207,24 @@ button, input, select, textarea, [role="button"] {
   background: var(--text-muted);
 }
 
-body {
-  background-color: var(--canvas);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
+/* Universal Button and Badge Layout Safeguards (prevents awkward clipping and text wrapping) */
+button,
+[role="button"],
+[data-fc-canonical="Button"],
+[data-fc-canonical="Badge"],
+[class*="_button_"],
+[class*="_badge_"] {
+  white-space: nowrap !important;
+  flex-wrap: nowrap !important;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+button > *,
+[role="button"] > *,
+[data-fc-canonical="Button"] > *,
+[data-fc-canonical="Badge"] > *,
+[class*="_button_"] > *,
+[class*="_badge_"] > * {
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--surface-border);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}

@@ -49,8 +49,9 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ## 🧭 Header Navigation & Profile Avatar Dropdown
 - **Branded Logo Asset**: Uses custom high-resolution `/logo.png` located in `public/logo.png` for navbar branding, reset password views, PWA manifest, and app icons.
-- **Streamlined Single-Row Layout**: Ultra-clean header featuring Logo on the left, compact Search bar (`md:w-64`), single unified segmented control pill navigation bar in the middle, and profile avatar dropdown menu on the right.
-- **Unified Segmented Pill Navigation Bar**: Groups all 5 main view pills (*Discover, Recommendations, Watchlist, Group Matcher, Friends*) inside a single minimalist container (`bg-[var(--surface-card)] p-1 rounded-full`), keeping horizontal space compact and clutter-free.
+- **Streamlined Single-Row Layout**: Ultra-clean header featuring Logo on the left, compact Search bar (`md:w-64`), navigation bar in the middle, and profile avatar dropdown menu on the right.
+- **Distinct Active Navigation Indicator**: The active navigation tab features bold contrast styling (`text-[var(--text)] font-black`), subtle sunken highlight background (`bg-[var(--surface-sunken)]/60`), and a dedicated solid primary underline bar (`h-[2.5px] bg-[var(--primary)] rounded-full`), making the active tab immediately recognizable across both desktop and mobile viewports.
+- **Button & Badge Anti-Wrapping Safeguards**: Universal whitespace and flexbox safeguards (`white-space: nowrap !important; flex-wrap: nowrap !important;`) applied globally across all `Button`, `Badge`, and pill controls to eliminate awkward vertical text clipping, awkward word breaking, or icon/label misalignments.
 - **Avatar Profile Dropdown Menu**: Clicking the user avatar opens a floating menu containing:
   - User Handle & Email header (@username)
   - ⚙️ **Account & Settings**

@@ -86,48 +86,48 @@ export function RecommendationsView({
         <div className="flex items-center gap-1.5 bg-[var(--surface-card)] p-1.5 rounded-full border border-[var(--surface-border)] text-xs self-start sm:self-auto flex-wrap">
           <Button
             onClick={() => setRecFilter("GLOBAL")}
-            className={`px-3.5 h-8 rounded-full font-bold transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 h-8 rounded-full font-bold transition inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 flex-nowrap ${
               recFilter === "GLOBAL"
                 ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
             }`}
           >
-            <Globe className="w-3.5 h-3.5" /> Global ({globalRecs.length})
+            <Globe className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">Global ({globalRecs.length})</span>
           </Button>
 
           <Button
             onClick={() => setRecFilter("CIRCLE")}
-            className={`px-3.5 h-8 rounded-full font-bold transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 h-8 rounded-full font-bold transition inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 flex-nowrap ${
               recFilter === "CIRCLE"
                 ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
             }`}
           >
-            <Users className="w-3.5 h-3.5" /> Circle ({circleRecs.length})
+            <Users className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">Circle ({circleRecs.length})</span>
           </Button>
 
           {directRecs.length > 0 && (
             <Button
               onClick={() => setRecFilter("DIRECT")}
-              className={`px-3.5 h-8 rounded-full font-bold flex items-center gap-1.5 transition cursor-pointer ${
+              className={`px-3.5 h-8 rounded-full font-bold inline-flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap shrink-0 flex-nowrap ${
                 recFilter === "DIRECT"
                   ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow font-extrabold"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
               }`}
             >
-              <Target className="w-3.5 h-3.5" /> For You ({directRecs.length})
+              <Target className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">For You ({directRecs.length})</span>
             </Button>
           )}
 
           <Button
             onClick={() => setRecFilter("ALL")}
-            className={`px-3.5 h-8 rounded-full font-bold transition cursor-pointer ${
+            className={`px-3.5 h-8 rounded-full font-bold transition cursor-pointer whitespace-nowrap shrink-0 inline-flex items-center flex-nowrap ${
               recFilter === "ALL"
                 ? "bg-[var(--brand-accent)] text-[var(--brand-accent-text)] shadow"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent border-0"
             }`}
           >
-            All ({friendRecommendations.length})
+            <span className="whitespace-nowrap">All ({friendRecommendations.length})</span>
           </Button>
         </div>
       </div>
