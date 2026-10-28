@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { Button, IconButton, Badge } from "@usefragments/ui";
 import { MOVIE_GENRES, FilterOptions, STREAMING_PLATFORMS } from "@/lib/tmdb";
 import {
@@ -43,6 +42,28 @@ export function GenreFilterDrawer({
   const [selectedProviderId, setSelectedProviderId] = useState<number | undefined>(
     currentFilters.providerId
   );
+
+  // Smooth Apple-style slide and fade lifecycle without external runtime chunk dependencies
+  const [isRendered, setIsRendered] = useState(isOpen);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true);
+      const frame = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
+      return () => cancelAnimationFrame(frame);
+    } else {
+      setIsVisible(false);
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   // Sync state whenever drawer opens with active filters
   useEffect(() => {
@@ -106,34 +127,30 @@ export function GenreFilterDrawer({
     onClose();
   };
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Apple-style smooth backdrop with fade & subtle blur */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
-          />
+  if (!isRendered) return null;
 
-          {/* Apple-style spring sheet with natural physics */}
-          <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{
-              type: "spring",
-              damping: 32,
-              stiffness: 340,
-              mass: 0.85,
-            }}
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md bg-[var(--surface-card)] border-l border-[var(--surface-border)] h-full flex flex-col shadow-2xl z-10 cursor-default"
-          >
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex justify-end ${
+        isVisible ? "pointer-events-auto" : "pointer-events-none"
+      }`}
+      aria-hidden={!isOpen}
+    >
+      {/* Apple-style smooth backdrop with fade & subtle blur */}
+      <div
+        onClick={onClose}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          isVisible ? "opacity-100" : "opacity-0"
+        } cursor-pointer`}
+      />
+
+      {/* Apple-style spring sheet with cubic-bezier(0.32, 0.72, 0, 1) */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`relative w-full max-w-md bg-[var(--surface-card)] border-l border-[var(--surface-border)] h-full flex flex-col shadow-2xl z-10 cursor-default transform transition-transform duration-350 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform ${
+          isVisible ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
             {/* Header */}
         <div className="p-6 border-b border-[var(--surface-border)] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -374,9 +391,7 @@ export function GenreFilterDrawer({
           </Button>
         </div>
 
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+      </div>
+    </div>
   );
 }

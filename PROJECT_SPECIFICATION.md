@@ -203,8 +203,8 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 ## 🎛️ Multi-Genre Discovery Studio & Filter Drawer
 - **Filter by Genres Trigger Button**: Prominently placed on the **Discover** tab next to Curated Collections, with real-time active filter count indicators.
 - **Apple-Style Fluid Spring Transition (`GenreFilterDrawer`)**:
-  - Powered by Framer Motion `<AnimatePresence>` for fluid opening and closing transitions.
-  - Natural Apple iOS / macOS spring physics (`type: "spring", damping: 32, stiffness: 340, mass: 0.85`), eliminating abrupt unmounting on close.
+  - Implemented with hardware-accelerated CSS GPU transforms and React lifecycle animation hooks without external runtime chunk dependencies.
+  - Natural Apple iOS / macOS sheet physics (`cubic-bezier(0.32, 0.72, 0, 1)`, 350ms duration, `will-change-transform`), eliminating abrupt unmounting on close.
   - Backdrop dimming with gentle blur and fade transition (`opacity: 0 -> 1` and `1 -> 0`), dismissible by clicking the backdrop or pressing the `Escape` key.
 - **Slide-Over Drawer Filter Capabilities**:
   - **Content Format & Media Types**: Filter between 🌟 *All Media*, 🎬 *Feature Movies*, 📺 *TV Series & Shows*, and 📽️ *Documentaries & Docuseries*.
