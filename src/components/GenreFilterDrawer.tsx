@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button, IconButton, Badge } from "@usefragments/ui";
 import { MOVIE_GENRES, FilterOptions, STREAMING_PLATFORMS } from "@/lib/tmdb";
 import {
@@ -43,7 +44,29 @@ export function GenreFilterDrawer({
     currentFilters.providerId
   );
 
-  if (!isOpen) return null;
+  // Sync state whenever drawer opens with active filters
+  useEffect(() => {
+    if (isOpen) {
+      setContentType(currentFilters.contentType || "all");
+      setSelectedGenreIds(currentFilters.genreIds || []);
+      setMinRating(currentFilters.minRating || 0);
+      setDecade(currentFilters.decade || "all");
+      setSortBy(currentFilters.sortBy || "popularity.desc");
+      setSelectedProviderId(currentFilters.providerId);
+    }
+  }, [isOpen, currentFilters]);
+
+  // Keyboard Escape key dismissal for Apple-level UX
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   const toggleGenre = (id: number) => {
     setSelectedGenreIds((prev) =>
@@ -84,10 +107,34 @@ export function GenreFilterDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-[var(--surface-card)] border-l border-[var(--surface-border)] h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
-        
-        {/* Header */}
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Apple-style smooth backdrop with fade & subtle blur */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+          />
+
+          {/* Apple-style spring sheet with natural physics */}
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{
+              type: "spring",
+              damping: 32,
+              stiffness: 340,
+              mass: 0.85,
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md bg-[var(--surface-card)] border-l border-[var(--surface-border)] h-full flex flex-col shadow-2xl z-10 cursor-default"
+          >
+            {/* Header */}
         <div className="p-6 border-b border-[var(--surface-border)] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[var(--brand-accent)] text-[var(--brand-accent-text)] flex items-center justify-center font-black shadow">
@@ -327,7 +374,9 @@ export function GenreFilterDrawer({
           </Button>
         </div>
 
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

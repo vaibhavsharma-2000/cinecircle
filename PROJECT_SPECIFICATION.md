@@ -202,14 +202,27 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 
 ## 🎛️ Multi-Genre Discovery Studio & Filter Drawer
 - **Filter by Genres Trigger Button**: Prominently placed on the **Discover** tab next to Curated Collections, with real-time active filter count indicators.
-- **Slide-Over Drawer (`GenreFilterDrawer`)**:
+- **Apple-Style Fluid Spring Transition (`GenreFilterDrawer`)**:
+  - Powered by Framer Motion `<AnimatePresence>` for fluid opening and closing transitions.
+  - Natural Apple iOS / macOS spring physics (`type: "spring", damping: 32, stiffness: 340, mass: 0.85`), eliminating abrupt unmounting on close.
+  - Backdrop dimming with gentle blur and fade transition (`opacity: 0 -> 1` and `1 -> 0`), dismissible by clicking the backdrop or pressing the `Escape` key.
+- **Slide-Over Drawer Filter Capabilities**:
   - **Content Format & Media Types**: Filter between 🌟 *All Media*, 🎬 *Feature Movies*, 📺 *TV Series & Shows*, and 📽️ *Documentaries & Docuseries*.
-  - **Multi-select genre cloud**: Supports combining arbitrary genres (`🚀 Sci-Fi`, `🔪 Thriller`, `😂 Comedy`, `❤️ Romance`, `⚡ Action`, `👻 Horror`, `🎭 Drama`, etc.) with automatic TV genre ID mapping.
-  - **Quality thresholds**: Any Rating, ★ 7.0+, ★ 7.5+, ★ 8.0+ Masterpieces (`vote_count.gte=100`).
+  - **Multi-Select Genre Cloud**: Supports combining arbitrary genres (`🚀 Sci-Fi`, `🔪 Thriller`, `😂 Comedy`, `❤️ Romance`, `⚡ Action`, `👻 Horror`, `🎭 Drama`, etc.) with automatic TV genre ID mapping. TMDB query utilizes pipe delimiters (`|`) for rich OR matching so multi-genre selections return expansive, relevant results.
+  - **Quality thresholds**: Any Rating, ★ 7.0+, ★ 7.5+, ★ 8.0+ Masterpieces with calibrated vote thresholds.
   - **Release era selectors**: All Time, 2020s Modern, 2010s, 2000s, 90s Classics.
   - **Sort ordering**: Most Popular, Highest Rated, Latest Releases.
+  - **Streaming Provider Filtering**: Includes monetization types (`flatrate|free|ads|rent|buy`) for reliable regional catalog queries.
+- **Graceful Empty State & Filter Reset**: When no titles match strict filter criteria, an informative empty state card provides 1-click **"Adjust Filters"** and **"Reset to Top Rated"** CTAs.
 - **Active Custom Filter Feedback Banner**: Displays active media format pill, genre tags, and criteria above the discovery grid with 1-click "Adjust Filters" and "Clear" actions.
 - **Infinite Pagination**: "Explore More Titles" dynamically fetches subsequent pages from TMDB matching the combined filter parameters.
+
+---
+
+## 🎬 TMDB Algorithmic Recommendations & Live Feed Sharing
+- **More Like This Carousel (`MovieDetailModal`)**: Integrated TMDB `/recommendations` API with automatic `/similar` fallback, rendering a horizontal scrolling carousel of related films and series with poster artwork and ratings. Tapping any title immediately loads its details, credits, and streaming availability.
+- **Instant Self-Sender Feed Feedback**: When a user shares a recommendation (whether to "All Friends", "Global", or directly to another user), their own recommendation is guaranteed to appear immediately in their Circle and Feeds views without being filtered out.
+- **Sensory Alert Confirmation**: Publishing a recommendation triggers an instant confirmation toast alert verifying the recipient and film title.
 
 ---
 

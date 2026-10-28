@@ -625,7 +625,7 @@ export default function Home() {
     guestName?: string;
   }) => {
     const senderName = data.guestName || profile.displayName;
-    const senderAvatar = data.guestName ? "goku" : profile.avatarId;
+    const senderAvatar = data.guestName ? "solaris" : profile.avatarId;
     const tempId = `rec_${Date.now()}`;
     const newRec: Recommendation = {
       id: tempId,
@@ -645,6 +645,13 @@ export default function Home() {
       created_at: new Date().toISOString(),
     };
     setFriendRecommendations((prev) => [newRec, ...prev]);
+
+    // Sensory toast alert confirming recommendation was submitted
+    addToast({
+      type: "rec",
+      title: "Recommendation Shared!",
+      message: `"${data.title}" was published to ${data.recipient === "Global" ? "the Global Community" : data.recipient}!`,
+    });
 
     const saved = await createLiveRecommendation({
       senderId: userId || undefined,

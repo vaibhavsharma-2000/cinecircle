@@ -141,6 +141,14 @@ export function DiscoverView({
 
   const isCircleRec = (r: Recommendation) => {
     if (isDirectRec(r)) return true;
+
+    // Senders should always see their own recommendations in Circle view
+    const isSelfSender = Boolean(
+      (currentUserDisplayName && r.sender_name.toLowerCase() === currentUserDisplayName.toLowerCase()) ||
+      (currentUsername && r.sender_name.toLowerCase() === currentUsername.toLowerCase())
+    );
+    if (isSelfSender) return true;
+
     if (r.recipient !== "All Friends") return false;
 
     // Check if sender is in friends list
@@ -149,12 +157,8 @@ export function DiscoverView({
         f.display_name.toLowerCase() === r.sender_name.toLowerCase() ||
         f.username.toLowerCase() === r.sender_name.toLowerCase()
     );
-    // Or if sender is current user
-    const isSelfSender =
-      currentUserDisplayName &&
-      r.sender_name.toLowerCase() === currentUserDisplayName.toLowerCase();
 
-    return Boolean(isFriendSender || isSelfSender);
+    return Boolean(isFriendSender);
   };
 
   const isGlobalRec = (r: Recommendation) => {
@@ -514,6 +518,37 @@ export function DiscoverView({
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="h-72 rounded-2xl bg-[var(--surface-card)] animate-pulse" />
             ))}
+          </div>
+        ) : tmdbMovies.length === 0 ? (
+          <div className="py-16 text-center space-y-4 bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl p-8 max-w-xl mx-auto shadow-sm animate-in fade-in">
+            <div className="w-12 h-12 rounded-2xl bg-[var(--canvas)] border border-[var(--surface-border)] flex items-center justify-center mx-auto text-[var(--brand-accent)]">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-base font-extrabold text-[var(--text-primary)]">No matching titles found on TMDB</h4>
+              <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
+                No films or series matched all your active filter criteria. Try adjusting your genre or rating filters.
+              </p>
+            </div>
+            <div className="pt-2 flex items-center justify-center gap-2">
+              <Button
+                type="button"
+                onClick={() => setIsGenreDrawerOpen(true)}
+                className="h-10 px-4 rounded-xl text-xs font-bold bg-[var(--canvas)] hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] text-[var(--text-primary)] transition cursor-pointer"
+              >
+                Adjust Filters
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setCustomFilters(null);
+                  setSelectedCategory("critics");
+                }}
+                className="h-10 px-5 rounded-xl text-xs font-black bg-[var(--brand-accent)] text-[var(--brand-accent-text)] transition shadow cursor-pointer"
+              >
+                Reset to Top Rated
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-10">

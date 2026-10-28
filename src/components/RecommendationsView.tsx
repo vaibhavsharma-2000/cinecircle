@@ -40,6 +40,14 @@ export function RecommendationsView({
 
   const isCircleRec = (r: Recommendation) => {
     if (isDirectRec(r)) return true;
+
+    // Senders should always see their own recommendations in Circle view
+    const isSelfSender = Boolean(
+      (currentUserDisplayName && r.sender_name.toLowerCase() === currentUserDisplayName.toLowerCase()) ||
+      (currentUsername && r.sender_name.toLowerCase() === currentUsername.toLowerCase())
+    );
+    if (isSelfSender) return true;
+
     if (r.recipient !== "All Friends") return false;
 
     const isFriendSender = friends.some(
@@ -47,11 +55,8 @@ export function RecommendationsView({
         f.display_name.toLowerCase() === r.sender_name.toLowerCase() ||
         f.username.toLowerCase() === r.sender_name.toLowerCase()
     );
-    const isSelfSender =
-      currentUserDisplayName &&
-      r.sender_name.toLowerCase() === currentUserDisplayName.toLowerCase();
 
-    return Boolean(isFriendSender || isSelfSender);
+    return Boolean(isFriendSender);
   };
 
   const isGlobalRec = (r: Recommendation) => {

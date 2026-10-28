@@ -8,6 +8,7 @@ import {
   getMovieDetails,
   getWatchProviders,
   getMovieCredits,
+  getMovieRecommendations,
   CastMember,
   getMovieTrailerKey,
   getTMDBImageUrl,
@@ -84,6 +85,7 @@ export function MovieDetailModal({
     return "DE";
   });
   const [cast, setCast] = useState<CastMember[]>([]);
+  const [recommendations, setRecommendations] = useState<MovieItem[]>([]);
   const [filmographyPerson, setFilmographyPerson] = useState<{ id: number; name: string } | null>(null);
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState<{author: string; text: string}[]>([]);
@@ -175,6 +177,7 @@ export function MovieDetailModal({
       setMovie(null);
       setProviders(null);
       setCast([]);
+      setRecommendations([]);
       return;
     }
 
@@ -185,14 +188,16 @@ export function MovieDetailModal({
     async function loadData() {
       setIsLoading(true);
       try {
-        const [details, watchData, creditsData] = await Promise.all([
+        const [details, watchData, creditsData, recsData] = await Promise.all([
           getMovieDetails(movieId!, mediaType),
           getWatchProviders(movieId!, mediaType, selectedCountry),
           getMovieCredits(movieId!, mediaType),
+          getMovieRecommendations(movieId!, mediaType),
         ]);
         if (details) setMovie(details);
         setProviders(watchData);
         setCast(creditsData);
+        setRecommendations(recsData);
       } catch (err) {
         console.error("Error loading movie details in modal:", err);
       } finally {
@@ -517,6 +522,55 @@ export function MovieDetailModal({
                     </span>
                   </button>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* TMDB Algorithmic Recommendations ("More Like This") */}
+          {recommendations.length > 0 && (
+            <div className="space-y-3 pt-3 border-t border-[var(--surface-border)]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-extrabold text-[var(--text-primary)] flex items-center gap-1.5 uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4 text-[var(--brand-accent)]" /> More Like This (TMDB Recommendations)
+                </h3>
+                <span className="text-[10px] text-[var(--text-secondary)]">Tap title to explore</span>
+              </div>
+
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+                {recommendations.map((recItem) => {
+                  const recTitle = recItem.title || recItem.name || "Untitled";
+                  const recYear = (recItem.release_date || recItem.first_air_date || "").substring(0, 4);
+                  return (
+                    <button
+                      key={recItem.id}
+                      type="button"
+                      onClick={() => {
+                        setMovie(recItem);
+                        setProviders(null);
+                        setCast([]);
+                        setRecommendations([]);
+                      }}
+                      className="flex flex-col items-start gap-1.5 shrink-0 w-28 text-left group cursor-pointer"
+                    >
+                      <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-[var(--canvas)] border border-[var(--surface-border)] group-hover:border-[var(--brand-accent)] transition shadow">
+                        <img
+                          src={getTMDBImageUrl(recItem.poster_path, "w500")}
+                          alt={recTitle}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                        <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-black/80 backdrop-blur-sm text-[10px] font-black text-[var(--star-accent)]">
+                          ★ {recItem.vote_average.toFixed(1)}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-bold text-[var(--text-primary)] truncate w-full group-hover:text-[var(--brand-accent)] transition">
+                        {recTitle}
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)]">
+                        {recYear || "Film"}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

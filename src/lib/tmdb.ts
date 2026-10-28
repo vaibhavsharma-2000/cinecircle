@@ -405,14 +405,15 @@ export async function discoverMoviesWithFilters(
       }
 
       if (genres.length > 0) {
-        p.append("with_genres", genres.join(","));
+        // TMDB Discover: pipe delimiter "|" represents OR query, ensuring multi-genre combinations return rich results
+        p.append("with_genres", genres.join("|"));
       }
 
       if (filters.minRating && filters.minRating > 0) {
         p.append("vote_average.gte", String(filters.minRating));
-        p.append("vote_count.gte", isTv ? "30" : "100");
+        p.append("vote_count.gte", isTv ? "10" : "20");
       } else {
-        p.append("vote_count.gte", isTv ? "15" : "50");
+        p.append("vote_count.gte", isTv ? "5" : "10");
       }
 
       if (filters.decade && filters.decade !== "all") {
@@ -434,6 +435,7 @@ export async function discoverMoviesWithFilters(
       if (filters.providerId && filters.watchRegion) {
         p.append("with_watch_providers", String(filters.providerId));
         p.append("watch_region", filters.watchRegion);
+        p.append("with_watch_monetization_types", "flatrate|free|ads|rent|buy");
       }
 
       return p;
@@ -535,5 +537,64 @@ export async function discoverMoviesWithFilters(
   } catch (error) {
     console.error("Error discovering movies with filters:", error);
     return { results: [], totalPages: 0, totalResults: 0 };
+  }
+}
+
+/**
+ * Fetch algorithmic movie/TV recommendations directly from TMDB
+ * Uses /recommendations endpoint and augments with /similar if needed
+ */
+export async function getMovieRecommendations(
+  id: number,
+  mediaType: "movie" | "tv" = "movie"
+): Promise<MovieItem[]> {
+  try {
+    const res = await fetch(
+      `${TMDB_BASE_URL}/${mediaType}/${id}/recommendations?api_key=${TMDB_API_KEY}&language=en-US&page=1`
+    );
+    if (!res.ok) throw new Error("TMDB recommendations fetch failed");
+    const data = await res.json();
+    let results: MovieItem[] = (data.results || [])
+      .filter((item: any) => item.poster_path && (item.title || item.name))
+      .map((item: any) => ({
+        id: item.id,
+        title: item.title || item.name || "Untitled",
+        overview: item.overview || "",
+        poster_path: item.poster_path,
+        backdrop_path: item.backdrop_path,
+        release_date: item.release_date || item.first_air_date,
+        vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
+        vote_count: item.vote_count || 0,
+        media_type: mediaType,
+      }));
+
+    if (results.length < 5) {
+      const simRes = await fetch(
+        `${TMDB_BASE_URL}/${mediaType}/${id}/similar?api_key=${TMDB_API_KEY}&language=en-US&page=1`
+      );
+      if (simRes.ok) {
+        const simData = await simRes.json();
+        const existingIds = new Set(results.map((r) => r.id));
+        const simItems = (simData.results || [])
+          .filter((item: any) => item.poster_path && !existingIds.has(item.id))
+          .map((item: any) => ({
+            id: item.id,
+            title: item.title || item.name || "Untitled",
+            overview: item.overview || "",
+            poster_path: item.poster_path,
+            backdrop_path: item.backdrop_path,
+            release_date: item.release_date || item.first_air_date,
+            vote_average: item.vote_average ? Number(item.vote_average.toFixed(1)) : 7.0,
+            vote_count: item.vote_count || 0,
+            media_type: mediaType,
+          }));
+        results = [...results, ...simItems];
+      }
+    }
+
+    return results.slice(0, 10);
+  } catch (error) {
+    console.error("Error fetching TMDB recommendations:", error);
+    return [];
   }
 }
