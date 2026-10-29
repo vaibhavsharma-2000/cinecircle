@@ -271,7 +271,7 @@ export async function getWatchProviders(
   }
 }
 
-export function getTMDBImageUrl(path: string | null, size: "w500" | "original" = "w500"): string {
+export function getTMDBImageUrl(path: string | null, size: "w500" | "w1280" | "original" = "w500"): string {
   const defaultFallback = "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80";
   if (!path) return defaultFallback;
   if (path.startsWith("http")) return path;

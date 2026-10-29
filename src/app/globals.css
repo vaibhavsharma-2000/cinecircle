@@ -9,8 +9,9 @@
 /* Light mode (Default) */
 :root {
   color-scheme: light;
-  --font-sans: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: var(--font-dm-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: var(--font-montserrat), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: var(--font-bebas), 'Arial Narrow', system-ui, sans-serif;
 
   --bg: #E8E9DF;
   --surface: #F3F4EC;
@@ -54,28 +55,28 @@
   --danger-text: #782619;
 }
 
-/* Dark mode: explicit user choice via the toggle */
+/* Dark mode "Night Sage": neutral near-black with the brand sage, brightened for dark */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #1A2217;
-  --surface: #232F1E;
-  --surface-raised: #2E3D28;
-  --surface-sunken: #131A11;
-  --border: #3C4B35;
-  --text: #E8E9DF;
-  --text-muted: #A7AE9A;
-  --primary: #A9B887;
-  --primary-hover: #BCC99D;
-  --primary-active: #94A474;
-  --on-primary: #1A2217;
-  --secondary: #A9B887;
-  --accent: #A9B887;
-  --accent-soft: #2E3D28;
-  --accent-text: #BCC99D;
-  --rating: #A9B887;
-  --success: #8FBF7A;
-  --danger: #D9695A;
-  --focus-ring: #BCC99D;
+  --bg: #0A0B09;
+  --surface: #131512;
+  --surface-raised: #1C1F1A;
+  --surface-sunken: #060705;
+  --border: #2A2E27;
+  --text: #F1F3EC;
+  --text-muted: #A1A79A;
+  --primary: #B5CC8E;
+  --primary-hover: #C6DAA3;
+  --primary-active: #A1B97A;
+  --on-primary: #10150B;
+  --secondary: #B5CC8E;
+  --accent: #B5CC8E;
+  --accent-soft: #1E2618;
+  --accent-text: #C6DAA3;
+  --rating: #C6DAA3;
+  --success: #5FD08A;
+  --danger: #FF6B5E;
+  --focus-ring: #C6DAA3;
 
   /* Backward-compatible aliases */
   --canvas: var(--bg);
@@ -91,12 +92,12 @@
   --star-accent: var(--rating);
   --secondary-subtle: var(--accent-soft);
   --secondary-border: var(--border);
-  --success-subtle: rgba(143, 191, 122, 0.16);
-  --success-border: rgba(143, 191, 122, 0.35);
-  --success-text: #B5DE9E;
-  --danger-subtle: rgba(217, 105, 90, 0.16);
-  --danger-border: rgba(217, 105, 90, 0.35);
-  --danger-text: #F29D93;
+  --success-subtle: rgba(95, 208, 138, 0.14);
+  --success-border: rgba(95, 208, 138, 0.35);
+  --success-text: #8FE3AE;
+  --danger-subtle: rgba(255, 107, 94, 0.14);
+  --danger-border: rgba(255, 107, 94, 0.35);
+  --danger-text: #FF9A90;
 }
 
 /* Light mode: explicit user choice via the toggle */
@@ -162,9 +163,28 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
 }
 
+/* Poster-style display titles (Bebas Neue ships one weight) */
+.font-display {
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 0.95;
+}
+
+/* Dark mode screening-room texture: static film grain plus an edge vignette */
+:root[data-theme="dark"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.45) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 /* Text Selection: --accent at 35% opacity */
 ::selection {
-  background-color: rgba(169, 184, 135, 0.35);
+  background-color: color-mix(in srgb, var(--accent) 35%, transparent);
   color: var(--text);
 }
 

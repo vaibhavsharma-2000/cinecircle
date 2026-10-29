@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Badge, Button, IconButton } from "@usefragments/ui";
 import { UserAvatar } from "./UserAvatar";
+import { PosterImage } from "./PosterImage";
 import {
   MovieItem,
   getMovieDetails,
@@ -259,6 +260,14 @@ export function MovieDetailModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-200 cursor-pointer"
       onClick={onClose}
     >
+      {(posterPath || backdropPath) && (
+        <img
+          src={getTMDBImageUrl(posterPath || backdropPath, "w500")}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 w-full h-full object-cover scale-125 blur-3xl saturate-150 opacity-40"
+        />
+      )}
       <div 
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
         className="relative w-full max-w-2xl bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col cursor-default"
@@ -266,10 +275,11 @@ export function MovieDetailModal({
         
         {/* Top Widescreen Backdrop Banner */}
         <div className="relative aspect-[21/9] bg-black/60 overflow-hidden shrink-0">
-          <img
-            src={getTMDBImageUrl(backdropPath || posterPath, "original")}
-            alt={title}
-            className="w-full h-full object-cover"
+          <PosterImage
+            path={backdropPath || posterPath}
+            title={title}
+            size="original"
+            className="w-full h-full [&>svg]:hidden"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface-card)] via-[var(--surface-card)]/50 to-transparent" />
           
@@ -326,7 +336,7 @@ export function MovieDetailModal({
           
           {/* Movie Title & Info Header */}
           <div className="space-y-1">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">{title}</h2>
+            <h2 className="font-display text-4xl sm:text-5xl text-[var(--text-primary)]">{title}</h2>
             <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-secondary)] pt-1">
               <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {releaseYear || "N/A"}</span>
               {movie?.runtime && <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {movie.runtime} min</span>}

@@ -38,7 +38,7 @@
 - **Form Controls**: `<Input>` and `<Textarea>` (`rounded-xl` with monochrome focus state).
 - **Overlays**: Floating `<Dialog>` (`rounded-2xl` with backdrop blur).
 
-> Note: the live tokens in `src/app/globals.css` have drifted from Section 2 (olive/green tints, e.g. light `--bg #E8E9DF`, `--text-muted #5B6753`, `--primary #2E3D28`; dark `--bg #1A2217`, `--primary #A9B887`). Contrast figures below are computed from the live CSS values.
+> Note: the live tokens in `src/app/globals.css` have drifted from Section 2 (light mode uses olive/green tints, e.g. `--bg #E8E9DF`, `--text-muted #5B6753`, `--primary #2E3D28`; dark mode is "Night Sage": near-black `--bg #0A0B09` with brightened sage `--primary #B5CC8E`, plus film grain and a vignette). Display titles use Bebas Neue (`font-display`); see `PROJECT_SPECIFICATION.md` for the featured film, poster cards, and detail glow. Contrast figures below are computed from the live CSS values.
 
 ---
 
@@ -54,4 +54,4 @@ Reviewed with the [apple-design skill](https://github.com/dickwu/apple-design-sk
 - **Motion**: `prefers-reduced-motion: reduce` disables animations, transitions, and hover scaling globally (`globals.css`).
 - **Appearance**: follows the device's `prefers-color-scheme` by default; the navbar toggle is a saved per-browser override.
 - **Copy**: title-style capitalization for buttons and titles ("Create Account", "Send Reset Link"). Labels say what happens; confirmations reuse the verb ("Reset link sent"). Errors say what went wrong and how to fix it, without "we", "oops", or raw Supabase messages (mapped in `src/lib/authErrors.ts`). No emoji in interface copy.
-- **Contrast (live tokens)**: light `--text-secondary` on surface 5.40:1, on canvas 4.89:1; light success on surface 4.53:1; light danger text on danger-subtle 8.10:1; light primary button text 9.45:1; dark `--text-secondary` on surface 6.12:1; dark primary button text 7.70:1. All meet 4.5:1.
+- **Contrast (live tokens)**: light `--text-secondary` on surface 5.40:1, on canvas 4.89:1; light success on surface 4.53:1; light danger text on danger-subtle 8.10:1; light primary button text 9.45:1; dark `--text-secondary` on raised 6.75:1; dark primary button text 10.57:1; dark sage on surface 10.49:1; dark accent text on accent-soft 10.37:1; dark rating on surface 12.2:1. All meet 4.5:1.

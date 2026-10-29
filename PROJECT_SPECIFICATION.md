@@ -24,20 +24,25 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
     - `accent-text`: `#4F6338` (High-contrast links & action accents)
     - `rating`: `#6F8450` (Olive-gold reserved for star ratings)
     - `success`: `#4F7A3E` | `danger`: `#A8402F` | `focus-ring`: `#4F6338`
-  - **Dark Mode (`@media (prefers-color-scheme: dark)` / `[data-theme="dark"]`)**:
-    - `bg`: `#1A2217` (Deep olive night background)
-    - `surface`: `#232F1E` (Cards, nav bar, modals)
-    - `surface-raised`: `#2E3D28` (Elevated components)
-    - `surface-sunken`: `#131A11` (Input fields, inset trays)
-    - `border`: `#3C4B35` (Hairline dividers)
-    - `text`: `#E8E9DF` (Soft cream text)
-    - `text-muted`: `#A7AE9A` (Muted secondary text)
-    - `primary`: `#A9B887` (Sage primary buttons)
-    - `primary-hover`: `#BCC99D` | `primary-active`: `#94A474` | `on-primary`: `#1A2217`
-    - `secondary`: `#A9B887`
-    - `accent`: `#A9B887` | `accent-soft`: `#2E3D28` | `accent-text`: `#BCC99D`
-    - `rating`: `#A9B887` (Sage star ratings)
-    - `success`: `#8FBF7A` | `danger`: `#D9695A` | `focus-ring`: `#BCC99D`
+  - **Dark Mode "Night Sage" (`[data-theme="dark"]`, defaults to `prefers-color-scheme`)**: neutral near-black with only a hint of green, and the brand sage brightened as the single accent, plus a static film-grain and vignette overlay (`body::after`, dark mode only).
+    - `bg`: `#0A0B09` (Near-black background)
+    - `surface`: `#131512` (Cards, nav bar, modals)
+    - `surface-raised`: `#1C1F1A` (Elevated components)
+    - `surface-sunken`: `#060705` (Input fields, inset trays)
+    - `border`: `#2A2E27` (Hairline dividers)
+    - `text`: `#F1F3EC` (Soft off-white text)
+    - `text-muted`: `#A1A79A` (Muted secondary text)
+    - `primary`: `#B5CC8E` (Sage primary buttons, dark `on-primary` text)
+    - `primary-hover`: `#C6DAA3` | `primary-active`: `#A1B97A` | `on-primary`: `#10150B`
+    - `secondary`: `#B5CC8E`
+    - `accent`: `#B5CC8E` | `accent-soft`: `#1E2618` | `accent-text`: `#C6DAA3`
+    - `rating`: `#C6DAA3` (Light sage star ratings)
+    - `success`: `#5FD08A` | `danger`: `#FF6B5E` | `focus-ring`: `#C6DAA3`
+- **Typography** (loaded with `next/font/google` in `layout.tsx`): DM Sans body (`--font-sans`, also Tailwind `font-sans`), Montserrat for regular headings (`--font-heading`), Bebas Neue poster-style display titles (`--font-display`, Tailwind `font-display`) for tab page titles, Discover section titles, the featured film, and the movie detail title.
+- **Discover featured film**: the top of Discover is a full-width backdrop hero. It features the first friend pick with artwork (direct, then circle, then global), else the first TMDB title with a backdrop, with Play Trailer, Details, and Library actions.
+- **Poster-only cards**: Discover grid cards are full posters with title and year on a dark gradient, a Library toggle (44px) and rating badge on top. On hover-capable devices Recommend slides in on hover or keyboard focus; touch users recommend from the detail view.
+- **Poster fallback** (`PosterImage`): missing or failed TMDB images render a gradient tile with a film icon instead of a broken image (also checked after hydration).
+- **Movie detail glow**: a blurred, saturated copy of the poster sits behind the detail modal so each film tints the room.
 - **Visual Style Cues**:
   - Generous whitespace and a soft, paper-like page background (`--bg`).
   - Hairline 1px borders (`--border`) without heavy dropshadows (`shadow-none` or subtle).

@@ -119,7 +119,7 @@ export function WatchlistView({
       {/* Header & Filter Controls */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[var(--surface-border)] pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight flex items-center gap-2.5">
+          <h1 className="font-display text-4xl sm:text-5xl text-[var(--text-primary)] flex items-center gap-2.5">
             <Bookmark className="w-7 h-7 text-[var(--star-accent)]" /> My Library
           </h1>
           <p className="text-xs text-[var(--text-secondary)] mt-1">

@@ -7,15 +7,14 @@ import {
   DISCOVERY_CATEGORIES,
   getMoviesByCategory,
   getMovieTrailerKey,
-  getTMDBImageUrl,
   discoverMoviesWithFilters,
   FilterOptions,
   MOVIE_GENRES,
   STREAMING_PLATFORMS,
 } from "@/lib/tmdb";
 import { Recommendation, WatchlistItem } from "@/lib/supabase";
-import { MovieCard } from "./MovieCard";
 import { UserAvatar } from "./UserAvatar";
+import { PosterImage } from "./PosterImage";
 import {
   Sparkles,
   Users,
@@ -32,9 +31,23 @@ import {
   Globe,
   ArrowUp,
   Tv2,
+  Play,
+  Info,
 } from "lucide-react";
 import { GenreFilterDrawer } from "./GenreFilterDrawer";
 import { FriendItem } from "@/lib/supabase";
+
+const recToMovie = (rec: Recommendation): MovieItem => ({
+  id: rec.tmdb_id,
+  title: rec.title,
+  overview: rec.note,
+  poster_path: rec.poster_path,
+  backdrop_path: rec.backdrop_path || null,
+  release_date: rec.release_year,
+  vote_average: 8.0,
+  vote_count: 100,
+  media_type: rec.media_type,
+});
 
 interface DiscoverViewProps {
   onOpenMovieDetail: (movie: MovieItem, rec?: Recommendation) => void;
@@ -187,14 +200,80 @@ export function DiscoverView({
   const activeCategoryObj =
     DISCOVERY_CATEGORIES.find((c) => c.id === selectedCategory) || DISCOVERY_CATEGORIES[0];
 
+  const featuredRec = [...directRecs, ...circleRecs, ...globalRecs].find((r) => r.backdrop_path || r.poster_path);
+  const featuredMovie = featuredRec ? recToMovie(featuredRec) : tmdbMovies.find((m) => m.backdrop_path);
+  const featuredTitle = featuredMovie ? featuredMovie.title || featuredMovie.name || "Untitled" : "";
+  const featuredYear = featuredMovie ? (featuredMovie.release_date || featuredMovie.first_air_date || "").substring(0, 4) : "";
+  const featuredSaved = featuredMovie ? watchlist.some((w) => w.tmdb_id === featuredMovie.id) : false;
+
+  const playFeaturedTrailer = async () => {
+    if (!featuredMovie) return;
+    onOpenTrailer(featuredTitle, await getMovieTrailerKey(featuredMovie.id, featuredMovie.media_type === "tv" ? "tv" : "movie"));
+  };
+
   return (
     <div className="space-y-16 animate-in fade-in duration-300">
+
+      {featuredMovie && (
+        <section
+          aria-label={`Featured: ${featuredTitle}`}
+          className="relative -mx-4 sm:mx-0 -mt-4 sm:mt-0 overflow-hidden sm:rounded-3xl border-y sm:border border-[var(--surface-border)] min-h-[440px] sm:min-h-[480px] flex items-end"
+        >
+          <PosterImage
+            path={featuredMovie.backdrop_path || featuredMovie.poster_path}
+            title={featuredTitle}
+            size="w1280"
+            className="absolute inset-0 w-full h-full [&>svg]:hidden"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg)] via-[var(--bg)]/75 to-[var(--bg)]/5" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg)]/85 via-[var(--bg)]/20 to-transparent" />
+
+          <div className="relative p-6 sm:p-10 max-w-2xl space-y-4">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
+              {featuredRec ? `Recommended by ${featuredRec.sender_name}` : `Tonight's Pick · ${activeCategoryObj.label}`}
+            </p>
+            <h2 className="font-display text-6xl sm:text-8xl text-[var(--text)] tracking-normal">{featuredTitle}</h2>
+            <div className="flex items-center gap-3 text-xs font-bold text-[var(--text-secondary)]">
+              {featuredYear && <span>{featuredYear}</span>}
+              <span className="text-[var(--star-accent)]">
+                ★ {(featuredRec ? featuredRec.rating_stars : featuredMovie.vote_average).toFixed(1)}
+              </span>
+            </div>
+            <p className="text-sm sm:text-base text-[var(--text-primary)]/85 leading-relaxed line-clamp-3">
+              {featuredRec ? `"${featuredRec.note}"` : featuredMovie.overview}
+            </p>
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
+              <Button
+                onClick={playFeaturedTrailer}
+                className="h-11 px-6 rounded-full bg-[var(--brand-accent)] hover:bg-[var(--brand-accent-hover)] text-[var(--brand-accent-text)] text-sm font-extrabold inline-flex items-center gap-2 shadow-lg cursor-pointer"
+              >
+                <Play className="w-4 h-4 fill-current" /> Play Trailer
+              </Button>
+              <Button
+                onClick={() => onOpenMovieDetail(featuredMovie, featuredRec)}
+                className="h-11 px-5 rounded-full bg-[var(--surface-card)]/80 backdrop-blur-md hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] text-[var(--text-primary)] text-sm font-bold inline-flex items-center gap-2 cursor-pointer"
+              >
+                <Info className="w-4 h-4" /> Details
+              </Button>
+              <button
+                type="button"
+                onClick={() => onToggleWatchlist(featuredMovie)}
+                aria-label={featuredSaved ? `${featuredTitle} is in your Library` : `Add ${featuredTitle} to Library`}
+                aria-pressed={featuredSaved}
+                className="w-11 h-11 rounded-full bg-[var(--surface-card)]/80 backdrop-blur-md hover:bg-[var(--surface-hover)] border border-[var(--surface-border)] text-[var(--text-primary)] flex items-center justify-center transition cursor-pointer"
+              >
+                {featuredSaved ? <Check className="w-4 h-4 text-[var(--brand-accent)] stroke-[3]" /> : <Bookmark className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
       
       {/* Section 1: Community & Circle Recommendations */}
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--surface-border)] pb-5">
           <div className="space-y-1">
-            <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] tracking-tight flex items-center gap-3">
+            <h2 className="font-display text-4xl sm:text-5xl text-[var(--text-primary)] flex items-center gap-3">
               {activeFilter === "CIRCLE" ? (
                 <>
                   <Users className="w-7 h-7 text-[var(--text-primary)]" /> From Your Circle
@@ -265,17 +344,7 @@ export function DiscoverView({
           <div className="space-y-8">
             <div className="flex flex-col gap-4">
               {visibleRecs.map((rec) => {
-                const movieObj: MovieItem = {
-                  id: rec.tmdb_id,
-                  title: rec.title,
-                  overview: rec.note,
-                  poster_path: rec.poster_path,
-                  backdrop_path: rec.backdrop_path || null,
-                  release_date: rec.release_year,
-                  vote_average: 8.0,
-                  vote_count: 100,
-                  media_type: rec.media_type,
-                };
+                const movieObj = recToMovie(rec);
                 const isSaved = watchlist.some((w) => w.tmdb_id === rec.tmdb_id && w.status === "WANT_TO_WATCH");
 
                 return (
@@ -286,10 +355,10 @@ export function DiscoverView({
                   >
                     {/* Tiny Poster Left */}
                     <div className="w-full sm:w-24 shrink-0 aspect-[2/3] sm:aspect-auto sm:h-32 rounded-xl bg-black/10 overflow-hidden relative">
-                      <img
-                        src={getTMDBImageUrl(rec.poster_path, "w500")}
-                        alt={rec.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      <PosterImage
+                        path={rec.poster_path}
+                        title={rec.title}
+                        className="w-full h-full group-hover:scale-105 transition duration-500"
                       />
                     </div>
 
@@ -379,7 +448,7 @@ export function DiscoverView({
       <section className="space-y-6 pt-4 border-t border-[var(--surface-border)]">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h3 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] tracking-tight flex items-center gap-2.5">
+            <h3 className="font-display text-4xl sm:text-5xl text-[var(--text-primary)] flex items-center gap-2.5">
               <Sparkles className="w-7 h-7 text-[var(--text-primary)]" /> Curated Collections
             </h3>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
@@ -565,52 +634,41 @@ export function DiscoverView({
                   <Card
                     key={movie.id}
                     onClick={() => onOpenMovieDetail(movie)}
-                    className="rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] group transition duration-300 hover:-translate-y-1.5 flex flex-col justify-between cursor-pointer shadow-xl"
+                    className="group relative aspect-[2/3] rounded-2xl overflow-hidden bg-[var(--surface-card)] border border-[var(--surface-border)] hover:border-[var(--brand-accent)] transition duration-300 hover:-translate-y-1.5 cursor-pointer shadow-xl"
                   >
-                    <div className="relative aspect-[2/3] bg-black/40 overflow-hidden">
-                      <img
-                        src={getTMDBImageUrl(movie.poster_path, "w500")}
-                        alt={title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                      />
-                      <Badge className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md text-[11px] font-black text-[var(--star-accent)] border border-white/10 shadow">
-                        ★ {movie.vote_average.toFixed(1)}
-                      </Badge>
-                    </div>
+                    <PosterImage
+                      path={movie.poster_path}
+                      title={title}
+                      className="absolute inset-0 w-full h-full group-hover:scale-105 transition duration-500"
+                    />
+                    <Badge className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md text-[11px] font-black text-[var(--star-accent)] border border-white/10 shadow">
+                      ★ {movie.vote_average.toFixed(1)}
+                    </Badge>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleWatchlist(movie);
+                      }}
+                      aria-label={isSaved ? `${title} is in your Library` : `Add ${title} to Library`}
+                      aria-pressed={isSaved}
+                      className="absolute top-1.5 left-1.5 w-11 h-11 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/80 transition cursor-pointer"
+                    >
+                      {isSaved ? <Check className="w-4 h-4 text-[var(--brand-accent)] stroke-[3]" /> : <Bookmark className="w-4 h-4" />}
+                    </button>
 
-                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                      <div>
-                        <h4 className="font-extrabold text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--text-primary)] transition">
-                          {title}
-                        </h4>
-                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">{year || "Film"}</p>
-                      </div>
-
-                      <div className="flex gap-2 pt-1">
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOpenRecommend(movie);
-                          }}
-                          className="flex-1 h-10 bg-[var(--brand-accent)] hover:opacity-90 text-[var(--brand-accent-text)] text-xs font-black rounded-xl transition shadow flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <Sparkles className="w-3.5 h-3.5 fill-current" /> Recommend
-                        </Button>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleWatchlist(movie);
-                          }}
-                          title={isSaved ? "Saved in Library" : "Add to Library"}
-                          className={`w-10 h-10 rounded-xl text-xs font-bold border transition flex items-center justify-center p-0 cursor-pointer ${
-                            isSaved
-                              ? "bg-[var(--brand-accent)]/20 border-[var(--brand-accent)] text-[var(--text-primary)]"
-                              : "bg-[var(--canvas)] border-[var(--surface-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]"
-                          }`}
-                        >
-                          {isSaved ? <Check className="w-4 h-4 text-[var(--brand-accent)] stroke-[3]" /> : <Bookmark className="w-4 h-4" />}
-                        </Button>
-                      </div>
+                    <div className="absolute inset-x-0 bottom-0 p-3 pt-20 bg-gradient-to-t from-black/95 via-black/70 to-transparent">
+                      <h4 className="font-bold text-sm text-white truncate">{title}</h4>
+                      <p className="text-xs text-white/70 mt-0.5">{year || "Film"}</p>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenRecommend(movie);
+                        }}
+                        className="hidden [@media(hover:hover)]:flex mt-0 max-h-0 opacity-0 group-hover:max-h-12 group-hover:mt-3 group-hover:opacity-100 group-focus-within:max-h-12 group-focus-within:mt-3 group-focus-within:opacity-100 w-full h-10 overflow-hidden bg-[var(--brand-accent)] hover:bg-[var(--brand-accent-hover)] text-[var(--brand-accent-text)] text-xs font-black rounded-xl transition-all items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 fill-current" /> Recommend
+                      </Button>
                     </div>
                   </Card>
                 );

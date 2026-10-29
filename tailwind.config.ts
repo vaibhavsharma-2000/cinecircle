@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: "var(--font-sans)",
+        display: "var(--font-display)",
+      },
       colors: {
         bg: "var(--bg)",
         surface: {

@@ -64,12 +64,16 @@ type PendingAction = (h: {
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>("discover");
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const stored = localStorage.getItem("cinecircle_theme");
-    if (stored) return stored === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  useEffect(() => {
+    let dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    try {
+      const stored = localStorage.getItem("cinecircle_theme");
+      if (stored) dark = stored === "dark";
+    } catch (e) {}
+    setIsDarkMode(dark);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  }, []);
   const [authReady, setAuthReady] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);

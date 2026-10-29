@@ -185,7 +185,7 @@ export function GroupMatcherView({
     <div className="space-y-10 animate-in fade-in duration-300">
       {/* Header */}
       <div className="border-b border-[var(--surface-border)] pb-6 space-y-1">
-        <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight flex items-center gap-2.5">
+        <h1 className="font-display text-4xl sm:text-5xl text-[var(--text-primary)] flex items-center gap-2.5">
           <Sparkles className="w-7 h-7 text-[var(--text-primary)]" /> Movie Night Group Matcher
         </h1>
         <p className="text-xs text-[var(--text-secondary)]">
