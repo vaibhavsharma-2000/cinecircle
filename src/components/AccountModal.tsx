@@ -190,6 +190,7 @@ export function AccountModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="account-title"
+          data-private=""
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
           className="relative w-full sm:max-w-lg bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-t-3xl sm:rounded-2xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto"
         >

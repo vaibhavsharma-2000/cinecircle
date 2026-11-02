@@ -35,12 +35,17 @@ Thumbs.db
 # IDE, AI Agents & Tooling
 .skills/
 skills/
+!.cursor/skills/
+.cursor/skills/*
+!.cursor/skills/piwik-rrweb-session-replay/
+!.cursor/skills/rrweb-cloud-browser-client/
 scratch/
 .gemini/
 .antigravity/
 .agent/
 .cortex/
-.cursor/
+.cursor/*
+!.cursor/skills/
 .windsurf/
 .claude/
 .idea/

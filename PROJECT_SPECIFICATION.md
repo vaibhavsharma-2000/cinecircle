@@ -112,6 +112,8 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
   1. **Essential Authentication & Session Storage** (Always Active — keeps users signed in across tab closes).
   2. **Functional & UI Preferences** (Saves dark/light mode preference and custom avatar choices).
   3. **Personalized TMDB Discovery & Analytics** (Optimizes genre collections based on circle activity).
+  4. **Session Replay (rrweb Cloud)** (Opt-in, off by default in Customize; on only via "Accept All", which the banner discloses. Stored as `sessionReplay` in `cinecircle_cookie_consent`; older records without it count as no consent).
+- **Cookie settings footer link**: Reopens the preferences modal (`cinecircle:open-cookie-settings` event) so visitors can withdraw consent at any time.
 
 ---
 
@@ -318,4 +320,5 @@ CineCircle is a private, UX-first movie and TV show recommendation platform desi
 - **Database & Auth**: Supabase (Postgres Database, Row Level Security, Supabase Auth)
 - **External Data**: TMDB API v3 (Paginated Search & Discovery, Watch Providers, YouTube Trailers)
 - **Analytics & Observability**: `@vercel/analytics` integrated into Root Layout (`<Analytics />`) for privacy-friendly real-time audience metrics.
+- **Session replay (rrweb Cloud, `@rrweb/browser-client`)**: `SessionReplay` in the root layout lazy-loads the client and calls `start()` only when `NEXT_PUBLIC_RRWEB_PUBLIC_KEY` is set **and** the visitor opted in to the Session Replay consent category; withdrawing calls `stop(true)`. Uses `includePii: false` (no cookies, no IP/user agent; only the tab-scoped `rrweb-browser-client-recording-id` session storage key), `blockSelector: "[data-private]"`, `maskTextSelector: "[data-mask]"`, `maskAllInputs: true`, and `meta.environment` (staging/production from `NEXT_PUBLIC_ENABLE_MOCK_DATA`). Sign-in, account settings, profile setup, and `/reset-password` are `data-private`; the account-menu email is `data-mask`. Reusable install guide: `.cursor/skills/rrweb-cloud-browser-client/`. The older Piwik-based skill (`.cursor/skills/piwik-rrweb-session-replay/`) is not used.
 - **PWA & Mobile App Shell**: Full Progressive Web App support via `/manifest.json`, viewport theme controls (`#000000`), standalone fullscreen display, maskable SVG icons, and interactive `InstallPwaModal` guiding iOS Safari and Android Chrome home screen installation.

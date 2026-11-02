@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Bebas_Neue, DM_Sans, Montserrat } from "next/font/google";
+import { SessionReplay } from "@/components/SessionReplay";
 import "./globals.css";
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });
@@ -56,6 +57,7 @@ export default function RootLayout({
       <body className="bg-[var(--bg)] text-[var(--text)] min-h-screen font-sans antialiased">
         {children}
         <Analytics />
+        <SessionReplay />
       </body>
     </html>
   );

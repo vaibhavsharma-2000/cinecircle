@@ -190,7 +190,7 @@ export function Navbar({
                     <div className="space-y-0.5 min-w-0">
                       <p className="text-xs font-extrabold text-[var(--text-primary)] truncate">{profile.displayName}</p>
                       <p className="text-[11px] text-[var(--text-secondary)] truncate">@{profile.username}</p>
-                      <p className="text-xs text-[var(--text-muted)] truncate">{userEmail}</p>
+                      <p data-mask="" className="text-xs text-[var(--text-muted)] truncate">{userEmail}</p>
                     </div>
                   </div>
 

@@ -230,6 +230,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "SIGN_IN" }: AuthModa
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-title"
+        data-private=""
         onClick={(e) => e.stopPropagation()}
         className="relative w-full sm:max-w-md bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-t-3xl sm:rounded-2xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto"
       >

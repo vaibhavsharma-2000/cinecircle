@@ -56,7 +56,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between p-4 sm:p-6 lg:p-8">
+    <div data-private="" className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between p-4 sm:p-6 lg:p-8">
       {/* Top Header Logo */}
       <header className="max-w-md mx-auto w-full pt-4 flex items-center justify-between">
         <button
