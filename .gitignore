@@ -38,6 +38,7 @@ skills/
 !.cursor/skills/
 .cursor/skills/*
 !.cursor/skills/piwik-rrweb-session-replay/
+!.cursor/skills/rrweb-cloud-browser-client/
 scratch/
 .gemini/
 .antigravity/

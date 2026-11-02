@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { SessionReplay } from "@/components/SessionReplay";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -51,6 +52,7 @@ export default function RootLayout({
       <body className="bg-[var(--bg)] text-[var(--text)] min-h-screen font-sans antialiased">
         {children}
         <Analytics />
+        <SessionReplay />
       </body>
     </html>
   );

@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { Card, Button, IconButton, Badge } from "@usefragments/ui";
-import { Cookie, ShieldCheck, Settings, X, Check } from "lucide-react";
+import { Cookie, ShieldCheck, Settings, X, Check, Video } from "lucide-react";
+import {
+  CONSENT_CHANGED_EVENT,
+  CONSENT_KEY,
+  OPEN_COOKIE_SETTINGS_EVENT,
+  readConsent,
+  type CookiePreferences,
+} from "@/lib/consent";
 
-export interface CookiePreferences {
-  essential: boolean; // Always true
-  functional: boolean;
-  analytics: boolean;
-}
+export type { CookiePreferences };
 
 interface CookieConsentModalProps {
   onPreferencesSaved?: (prefs: CookiePreferences) => void;
@@ -22,27 +25,33 @@ export function CookieConsentModal({ onPreferencesSaved }: CookieConsentModalPro
     essential: true,
     functional: true,
     analytics: true,
+    sessionReplay: false,
   });
 
   useEffect(() => {
-    // Check if user has already set cookie consent
-    const savedConsent = localStorage.getItem("cinecircle_cookie_consent");
-    if (!savedConsent) {
-      // Delay showing banner slightly for smooth entrance
-      const timer = setTimeout(() => setShowBanner(true), 800);
-      return () => clearTimeout(timer);
-    } else {
-      try {
-        const parsed = JSON.parse(savedConsent);
-        setPreferences({ essential: true, functional: !!parsed.functional, analytics: !!parsed.analytics });
-      } catch (e) {
-        setShowBanner(true);
-      }
+    const openSettings = () => {
+      const saved = readConsent();
+      if (saved) setPreferences(saved);
+      setShowModal(true);
+    };
+    window.addEventListener(OPEN_COOKIE_SETTINGS_EVENT, openSettings);
+
+    const saved = readConsent();
+    if (saved) {
+      setPreferences(saved);
+      return () => window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, openSettings);
     }
+    // Delay showing banner slightly for smooth entrance
+    const timer = setTimeout(() => setShowBanner(true), 800);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, openSettings);
+    };
   }, []);
 
   const saveConsent = (prefs: CookiePreferences) => {
-    localStorage.setItem("cinecircle_cookie_consent", JSON.stringify(prefs));
+    localStorage.setItem(CONSENT_KEY, JSON.stringify(prefs));
+    window.dispatchEvent(new Event(CONSENT_CHANGED_EVENT));
     setPreferences(prefs);
     setShowBanner(false);
     setShowModal(false);
@@ -52,12 +61,12 @@ export function CookieConsentModal({ onPreferencesSaved }: CookieConsentModalPro
   };
 
   const handleAcceptAll = () => {
-    const allOn: CookiePreferences = { essential: true, functional: true, analytics: true };
+    const allOn: CookiePreferences = { essential: true, functional: true, analytics: true, sessionReplay: true };
     saveConsent(allOn);
   };
 
   const handleEssentialOnly = () => {
-    const essentialOnly: CookiePreferences = { essential: true, functional: false, analytics: false };
+    const essentialOnly: CookiePreferences = { essential: true, functional: false, analytics: false, sessionReplay: false };
     saveConsent(essentialOnly);
   };
 
@@ -91,6 +100,9 @@ export function CookieConsentModal({ onPreferencesSaved }: CookieConsentModalPro
 
             <p className="text-xs text-[var(--text-primary)] leading-relaxed">
               We use essential local storage to <strong className="text-[var(--text-primary)]">keep you logged in across browser closes</strong>, remember your dark/light mode preference, and save your watchlist.
+            </p>
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              <strong className="text-[var(--text-primary)]">Accept All</strong> also turns on session replay: a recording of the pages you see and your clicks and scrolls, sent to rrweb Cloud to help us fix bugs. Typed text is masked, and sign-in and account screens are never recorded. Change this anytime under <strong className="text-[var(--text-primary)]">Cookie settings</strong> in the footer.
             </p>
 
             <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -204,6 +216,32 @@ export function CookieConsentModal({ onPreferencesSaved }: CookieConsentModalPro
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                   Remembers your multi-genre filter selections (Feature Films, TV Shows, Documentaries) and watchlist sorting criteria to tailor recommendations.
+                </p>
+              </div>
+
+              {/* Category 4: Session Replay (opt-in, off unless chosen) */}
+              <div className="p-4 bg-[var(--canvas)] border border-[var(--surface-border)] rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Video className="w-4 h-4 text-[var(--brand-accent)]" />
+                    <h4 id="session-replay-label" className="font-extrabold text-xs text-[var(--text-primary)]">Session Replay (rrweb Cloud)</h4>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      aria-labelledby="session-replay-label"
+                      checked={preferences.sessionReplay}
+                      onChange={(e) => setPreferences({ ...preferences, sessionReplay: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-[var(--surface-card)] border border-[var(--surface-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--brand-accent)]" />
+                  </label>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                  Records how you use CineCircle (the pages you see, including names and recommendations from your circle, plus clicks, scrolling and navigation) and sends it to our processor <strong className="text-[var(--text-primary)]">rrweb Cloud</strong> (<code className="text-[var(--brand-accent)]">api.rrweb.com</code>) so we can reproduce bugs and improve the design. Everything you type is masked, sign-in, account, profile and password-reset screens are blocked entirely, and we don&apos;t send your IP address, browser details or account ID. It uses one tab-scoped session storage key (<code className="text-[var(--brand-accent)]">rrweb-browser-client-recording-id</code>) and no cookies.
+                </p>
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                  Turning this off stops recording immediately. Recordings already sent are kept under our retention policy; contact the CineCircle team to have them deleted.
                 </p>
               </div>
 

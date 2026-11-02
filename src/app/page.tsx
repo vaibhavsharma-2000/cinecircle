@@ -15,6 +15,7 @@ import { MovieDetailModal } from "@/components/MovieDetailModal";
 import { AuthModal, AuthMode } from "@/components/AuthModal";
 import { CompleteProfileModal } from "@/components/CompleteProfileModal";
 import { CookieConsentModal } from "@/components/CookieConsentModal";
+import { OPEN_COOKIE_SETTINGS_EVENT } from "@/lib/consent";
 import { InstallPwaModal } from "@/components/InstallPwaModal";
 import { InviteModal } from "@/components/InviteModal";
 import { FriendLibraryModal } from "@/components/FriendLibraryModal";
@@ -988,6 +989,14 @@ export default function Home() {
             <span>Supabase Auth</span>
             <span>•</span>
             <span>Fragments UI</span>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event(OPEN_COOKIE_SETTINGS_EVENT))}
+              className="underline underline-offset-2 hover:text-[var(--text-primary)] transition"
+            >
+              Cookie settings
+            </button>
           </div>
         </div>
       </footer>
